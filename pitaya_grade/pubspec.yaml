@@ -1,0 +1,42 @@
+name: pitaya_grade
+description: "PitayaGrade - AI-Powered Pre-Harvest Quality Grading and Disease Detection for Dragon Fruit"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.0.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.6
+  image_picker: ^1.0.7
+  tflite_flutter: ^0.10.4
+  image: ^4.1.7
+  path_provider: ^2.1.2
+  shared_preferences: ^2.2.2
+  sqflite: ^2.3.2
+  path: ^1.9.0
+  fl_chart: ^0.66.2
+  intl: ^0.19.0
+  google_fonts: ^6.1.0
+  firebase_core: ^2.27.0
+  firebase_auth: ^4.17.8
+  cloud_firestore: ^4.15.8
+  firebase_messaging: ^14.7.19
+  csv: ^6.0.0
+  share_plus: ^7.2.2
+  permission_handler: ^11.3.0
+  uuid: ^4.3.3
+  animate_do: ^3.3.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.1
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/models/
+    - assets/images/

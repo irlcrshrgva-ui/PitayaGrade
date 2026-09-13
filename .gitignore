@@ -1,0 +1,42 @@
+# Dependencies and temporary tooling
+node_modules/
+_ort_tmp/
+
+# Android / Gradle generated files
+android/.gradle/
+android/app/build/
+android/build/
+*.apk
+*.aab
+
+# Flutter generated files
+pitaya_grade/.dart_tool/
+pitaya_grade/build/
+pitaya_grade/.flutter-plugins
+pitaya_grade/.flutter-plugins-dependencies
+
+# Large datasets (download or regenerate separately)
+dataset/
+dataset_prepared/
+yolo_dataset/images/
+yolo_dataset/labels/
+
+# Training checkpoints and duplicate exported models
+training_results/*.pth
+yolo_results/train/weights/
+yolo_results/best.onnx
+yolov8n.pt
+
+# Python and editor artifacts
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.idea/
+.vscode/
+
+# OS and office temporary files
+.DS_Store
+Thumbs.db
+~$*
+

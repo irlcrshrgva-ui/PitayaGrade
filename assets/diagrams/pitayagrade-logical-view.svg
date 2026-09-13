@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1500" viewBox="0 0 1200 1500">
+  <defs>
+    <style>
+      .title{font:700 34px Arial;fill:#35152f}.subtitle{font:400 17px Arial;fill:#76536f}.head{font:700 21px Arial;fill:#35152f}.body{font:600 17px Arial;fill:#35152f}.small{font:400 15px Arial;fill:#76536f}.white{fill:#fff}.line{stroke:#8d557e;stroke-width:3;fill:none;marker-end:url(#arrow)}.dash{stroke:#8d557e;stroke-width:2;stroke-dasharray:8 7;fill:none}.outer{fill:#fff;stroke:#e6c8df;stroke-width:2}.pink{fill:#fae7f2;stroke:#bd4d8f;stroke-width:2}.green{fill:#e8f5ee;stroke:#3b8c68;stroke-width:2}.gold{fill:#fff3da;stroke:#c58b26;stroke-width:2}.core{fill:#512044;stroke:#35152f;stroke-width:3}
+    </style>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0 0L0 6L9 3z" fill="#8d557e"/></marker>
+  </defs>
+  <rect width="1200" height="1500" fill="#fffafd"/>
+  <text x="90" y="90" class="title">Logical View Diagram</text>
+  <text x="90" y="125" class="subtitle">PitayaGrade — AI-Based Dragon Fruit Quality Grading and Disease Detection</text>
+  <rect x="70" y="165" width="1060" height="1245" rx="24" class="outer"/>
+
+  <rect x="425" y="220" width="350" height="145" rx="18" class="pink"/>
+  <text x="600" y="260" text-anchor="middle" class="head">Users</text>
+  <text x="600" y="295" text-anchor="middle" class="body">• Dragon Fruit Farmer</text>
+  <text x="600" y="325" text-anchor="middle" class="body">• Agricultural Worker</text>
+
+  <rect x="385" y="485" width="430" height="470" rx="20" class="core"/>
+  <text x="600" y="530" text-anchor="middle" class="head white">PitayaGrade Core Application</text>
+  <rect x="425" y="560" width="350" height="60" rx="10" fill="#744065"/><text x="600" y="597" text-anchor="middle" class="body white">Image Capture &amp; Validation</text>
+  <rect x="425" y="635" width="350" height="60" rx="10" fill="#744065"/><text x="600" y="672" text-anchor="middle" class="body white">Model Selection &amp; Comparison</text>
+  <rect x="425" y="710" width="350" height="60" rx="10" fill="#744065"/><text x="600" y="747" text-anchor="middle" class="body white">Quality &amp; Disease Analysis</text>
+  <rect x="425" y="785" width="350" height="60" rx="10" fill="#744065"/><text x="600" y="822" text-anchor="middle" class="body white">Results &amp; Recommendations</text>
+  <rect x="425" y="860" width="350" height="60" rx="10" fill="#744065"/><text x="600" y="897" text-anchor="middle" class="body white">History, Analytics &amp; Reports</text>
+
+  <rect x="105" y="550" width="230" height="330" rx="18" class="green"/>
+  <text x="220" y="595" text-anchor="middle" class="head">Mobile Interface</text>
+  <text x="140" y="640" class="body">• Dashboard</text><text x="140" y="675" class="body">• Camera / Gallery</text><text x="140" y="710" class="body">• Model Selector</text><text x="140" y="745" class="body">• Scan Results</text><text x="140" y="780" class="body">• Scan History</text><text x="140" y="815" class="body">• CSV Export</text>
+
+  <rect x="865" y="490" width="230" height="450" rx="18" class="gold"/>
+  <text x="980" y="535" text-anchor="middle" class="head">AI Models</text>
+  <text x="900" y="585" class="body">Detection</text><text x="900" y="615" class="small">YOLOv8-Nano</text>
+  <line x1="900" y1="640" x2="1060" y2="640" stroke="#d7ad66"/>
+  <text x="900" y="680" class="body">Selectable Grading</text><text x="900" y="715" class="small">MobileNetV2</text><text x="900" y="745" class="small">ResNet50</text><text x="900" y="775" class="small">EfficientNet-B3</text>
+  <line x1="900" y1="800" x2="1060" y2="800" stroke="#d7ad66"/>
+  <text x="900" y="840" class="body">Disease Analysis</text><text x="900" y="875" class="small">Disease Classifier</text>
+
+  <rect x="390" y="1080" width="420" height="235" rx="18" class="pink"/>
+  <text x="600" y="1125" text-anchor="middle" class="head">Local Data Layer</text>
+  <text x="435" y="1175" class="body">• Bundled ONNX model files</text><text x="435" y="1210" class="body">• Selected model and settings</text><text x="435" y="1245" class="body">• Scan results and timestamps</text><text x="435" y="1280" class="body">• Analytics and report data</text>
+
+  <path d="M600 365V485" class="line"/><path d="M335 715H385" class="line"/><path d="M815 715H865" class="line"/><path d="M600 955V1080" class="line"/>
+  <text x="620" y="430" class="small">interacts with</text><text x="342" y="695" class="small">UI</text><text x="825" y="695" class="small">inference</text><text x="620" y="1030" class="small">stores locally</text>
+  <text x="600" y="1370" text-anchor="middle" class="small">Capacitor Android application • Offline ONNX inference • Local record keeping</text>
+</svg>

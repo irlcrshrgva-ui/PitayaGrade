@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">PitayaGrade</string>
+    <string name="title_activity_main">PitayaGrade</string>
+    <string name="package_name">com.pitayagrade.app</string>
+    <string name="custom_url_scheme">com.pitayagrade.app</string>
+</resources>

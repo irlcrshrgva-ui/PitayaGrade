@@ -1,0 +1,10 @@
+names:
+- Grade A
+- Grade B
+- Grade C
+- Reject
+nc: 4
+path: D:\desktop\PitayaGrade\yolo_dataset
+test: images/test
+train: images/train
+val: images/val

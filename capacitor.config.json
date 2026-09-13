@@ -1,0 +1,11 @@
+{
+  "appId": "com.pitayagrade.app",
+  "appName": "PitayaGrade",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": true
+  }
+}

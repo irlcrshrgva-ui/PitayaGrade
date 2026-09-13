@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#0E1525">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="description" content="PitayaGrade - AI-powered pre-harvest quality grading and disease detection for dragon fruit">
+  <title>PitayaGrade - Dragon Fruit Quality Grading</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<!-- Splash Screen -->
+<div class="splash-screen" id="splashScreen">
+  <div class="splash-logo">
+    <img src="assets/logo.png" alt="PitayaGrade Logo">
+  </div>
+  <div class="splash-title">PitayaGrade</div>
+  <div class="splash-subtitle">AI-Powered Dragon Fruit Grading</div>
+  <div class="splash-loader"></div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- First-Time Tutorial Overlay -->
+<div id="tutorialOverlay">
+  <div class="tutorial-spotlight" id="tutorialSpotlight"></div>
+  <div class="tutorial-card" id="tutorialCard">
+    <div class="tutorial-step-badge" id="tutorialBadge">Step 1 of 6</div>
+    <div class="tutorial-icon" id="tutorialIcon">&#127815;</div>
+    <div class="tutorial-title" id="tutorialTitle">Welcome to PitayaGrade!</div>
+    <div class="tutorial-desc" id="tutorialDesc">Your AI-powered dragon fruit grading assistant. Let us show you around in just a few steps.</div>
+    <div class="tutorial-dots" id="tutorialDots"></div>
+    <div class="tutorial-actions">
+      <button class="tutorial-btn-skip" id="tutorialSkip">Skip</button>
+      <button class="tutorial-btn-next" id="tutorialNext">
+        Get Started
+        <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Backdrop -->
+<div class="modal-backdrop" id="modalBackdrop"></div>
+
+<!-- Detail Modal (bottom sheet) -->
+<div class="modal" id="detailModal">
+  <div class="modal-handle"></div>
+  <div class="modal-header">
+    <span class="modal-title" id="modalTitle">Scan Details</span>
+    <button class="modal-close" id="modalCloseBtn">&#10005;</button>
+  </div>
+  <div class="modal-body" id="modalBody"></div>
+</div>
+
+<!-- App Shell -->
+<div id="app">
+
+  <!-- Header -->
+  <header class="app-header">
+    <div class="header-left">
+      <div class="header-logo">
+        <img src="assets/logo.png" alt="Logo">
+      </div>
+      <span class="header-brand">PitayaGrade</span>
+    </div>
+    <div class="header-right">
+      <div class="connection-dot" id="connectionDot" title="Online"></div>
+    </div>
+  </header>
+
+  <!-- Content Views -->
+  <main class="app-content">
+
+    <!-- Dashboard View -->
+    <section class="view active" id="view-dashboard">
+      <div style="margin-bottom:20px">
+        <h1 style="font-family:var(--font-display);font-size:22px;font-weight:700;margin-bottom:4px">Dashboard</h1>
+        <p style="font-size:13px;color:var(--text-secondary)">Your farm overview at a glance</p>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-grid" id="dashStats">
+        <div class="stat-card primary">
+          <div class="stat-icon">
+            <svg class="icon-svg" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 16V8"/><path d="M11 16V12"/><path d="M15 16V10"/><path d="M19 16V4"/></svg>
+          </div>
+          <div class="stat-value" id="statTotalScans">0</div>
+          <div class="stat-label">Total Scans</div>
+        </div>
+        <div class="stat-card success">
+          <div class="stat-icon">
+            <svg class="icon-svg" viewBox="0 0 24 24"><path d="m15.477 12.89 1.515 8.526a.5.5 0 0 1-.81.47l-3.58-2.687a1 1 0 0 0-1.197 0l-3.586 2.686a.5.5 0 0 1-.81-.469l1.514-8.526"/><circle cx="12" cy="8" r="6"/><path d="M9 10.5h6"/></svg>
+          </div>
+          <div class="stat-value" id="statAvgGrade">--</div>
+          <div class="stat-label">Avg. Grade</div>
+        </div>
+        <div class="stat-card warning">
+          <div class="stat-icon">
+            <svg class="icon-svg" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="m14.5 9-5 5"/><path d="m9.5 9 5 5"/></svg>
+          </div>
+          <div class="stat-value" id="statDiseaseRate">0%</div>
+          <div class="stat-label">Disease Rate</div>
+        </div>
+        <div class="stat-card info">
+          <div class="stat-icon">
+            <svg class="icon-svg" viewBox="0 0 24 24"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8a7 7 0 0 1-7 7"/><path d="M11 20c-1 1.5-3 2.5-5 2.5-4.5 0-5-3.5-5-3.5 0-3 2.5-3 2.5-3s2.5 0 2.5 3c0 .1 0 .2-.04.3"/><path d="M14 20c.5 1.5 1.5 2.5 3.5 2.5 4.5 0 5-3.5 5-3.5 0-3-2.5-3-2.5-3s-2.5 0-2.5 3c0 .1 0 .2.04.3"/></svg>
+          </div>
+          <div class="stat-value" id="statHealthy">0%</div>
+          <div class="stat-label">Healthy Rate</div>
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="section-header">
+        <span class="section-title">Quick Actions</span>
+      </div>
+      <div class="quick-actions">
+        <button class="quick-action-btn" onclick="PitayaApp.navigate('scan')">
+          <span class="qa-icon">
+            <svg class="icon-svg" viewBox="0 0 24 24"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+          </span>
+          <span>New Scan</span>
+        </button>
+        <button class="quick-action-btn" onclick="PitayaApp.navigate('reports')">
+          <span class="qa-icon">
+            <svg class="icon-svg" viewBox="0 0 24 24"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="M8 13h8"/><path d="M8 17h8"/><path d="M10 9H8"/></svg>
+          </span>
+          <span>Export Report</span>
+        </button>
+        <button class="quick-action-btn" onclick="PitayaApp.navigate('history')">
+          <span class="qa-icon">
+            <svg class="icon-svg" viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
+          </span>
+          <span>View History</span>
+        </button>
+        <button class="quick-action-btn" onclick="PitayaApp.navigate('analytics')">
+          <span class="qa-icon">
+            <svg class="icon-svg" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          </span>
+          <span>Analytics</span>
+        </button>
+      </div>
+
+      <!-- Harvest Gauge -->
+      <div class="chart-container">
+        <div class="chart-title">Harvest Readiness</div>
+        <div class="gauge-container">
+          <svg class="gauge-svg" viewBox="0 0 160 100" id="harvestGauge">
+            <path d="M 20 90 A 60 60 0 0 1 140 90" fill="none" stroke="rgba(148,163,184,0.1)" stroke-width="12" stroke-linecap="round"/>
+            <path d="M 20 90 A 60 60 0 0 1 140 90" fill="none" stroke="url(#gaugeGrad)" stroke-width="12" stroke-linecap="round" stroke-dasharray="188.5" stroke-dashoffset="188.5" id="gaugeArc"/>
+            <defs>
+              <linearGradient id="gaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#EF4444"/>
+                <stop offset="50%" stop-color="#F59E0B"/>
+                <stop offset="100%" stop-color="#22C55E"/>
+              </linearGradient>
+            </defs>
+          </svg>
+          <div class="gauge-value" id="gaugeValue">--%</div>
+          <div class="gauge-label">Based on recent scan quality distribution</div>
+        </div>
+      </div>
+
+      <!-- Grade Distribution -->
+      <div class="chart-container">
+        <div class="chart-title">Grade Distribution</div>
+        <div class="chart-canvas-wrap">
+          <canvas id="gradeChart" width="400" height="260"></canvas>
+        </div>
+        <div class="chart-legend" id="gradeLegend">
+          <div class="legend-item"><span class="legend-dot" style="background:var(--grade-a)"></span> Grade A</div>
+          <div class="legend-item"><span class="legend-dot" style="background:var(--grade-b)"></span> Grade B</div>
+          <div class="legend-item"><span class="legend-dot" style="background:var(--grade-c)"></span> Grade C</div>
+          <div class="legend-item"><span class="legend-dot" style="background:var(--grade-reject)"></span> Reject</div>
+        </div>
+      </div>
+
+      <!-- Recent Scans -->
+      <div class="section-header">
+        <span class="section-title">Recent Scans</span>
+        <button class="section-link" onclick="PitayaApp.navigate('history')">View All</button>
+      </div>
+      <div id="dashRecentScans">
+        <div class="empty-state">
+          <div class="empty-state-icon">
+            <svg class="icon-svg" viewBox="0 0 24 24"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+          </div>
+          <div class="empty-state-title">No scans yet</div>
+          <div class="empty-state-text">Start scanning dragon fruit to see results here.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Scan View -->
+    <section class="view" id="view-scan">
+      <div style="margin-bottom:16px">
+        <h1 style="font-family:var(--font-display);font-size:22px;font-weight:700;margin-bottom:4px">Scan Fruit</h1>
+        <p style="font-size:13px;color:var(--text-secondary)">Capture, upload, or scan live with your camera</p>
+      </div>
+
+      <!-- Mode Toggle -->
+      <div class="scan-mode-toggle" id="scanModeToggle">
+        <button class="mode-btn active" data-mode="photo" id="modePhotoBtn">
+          <svg class="icon-svg" style="width:16px;height:16px" viewBox="0 0 24 24"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+          Photo Mode
+        </button>
+        <button class="mode-btn" data-mode="live" id="modeLiveBtn">
+          <svg class="icon-svg" style="width:16px;height:16px" viewBox="0 0 24 24"><path d="m22 8-6 4 6 4V8Z"/><rect x="2" y="6" width="14" height="12" rx="2"/></svg>
+          Live Scanner
+        </button>
+      </div>
+
+      <!-- Photo Mode (existing) -->
+      <div id="photoModePanel">
+        <div class="scanner-zone" id="scannerZone">
+          <div id="scanPlaceholder">
+            <div style="text-align:center">
+              <div class="scan-placeholder-icon">
+                <svg class="icon-svg animate-pulse-slow" style="width:48px;height:48px" viewBox="0 0 24 24"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+              </div>
+              <div class="scan-placeholder-text">Tap to capture or upload</div>
+              <div class="scan-placeholder-hint">JPG, PNG - best results with good lighting</div>
+            </div>
+          </div>
+          <img class="scanner-preview" id="scannerPreview" style="display:none" alt="Dragon fruit preview">
+          <div class="scanner-overlay" id="scannerOverlay" style="display:none">
+            <div class="scanner-guide"></div>
+          </div>
+          <div class="processing-overlay hidden" id="processingOverlay">
+            <div class="processing-ring"></div>
+            <div class="processing-steps">
+              <div class="processing-step" data-step="resize">&#11036; YOLOv8 grid detection (128x128)...</div>
+              <div class="processing-step" data-step="normalize">&#11036; RGB to HSV color space conversion...</div>
+              <div class="processing-step" data-step="segment">&#11036; Region-of-interest segmentation...</div>
+              <div class="processing-step" data-step="grade">&#11036; EfficientNet-B3 compound grading...</div>
+              <div class="processing-step" data-step="disease">&#11036; YOLOv8-Seg disease segmentation...</div>
+              <div class="processing-step" data-step="result">&#11036; Multi-dimensional scoring...</div>
+            </div>
+          </div>
+        </div>
+
+        <input type="file" id="fileInput" accept="image/*" capture="environment" style="display:none">
+
+        <div style="display:flex;gap:8px;margin-bottom:16px">
+          <button class="btn btn-primary btn-full" id="captureBtn">
+            <svg class="icon-svg" style="width:18px;height:18px" viewBox="0 0 24 24"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+            Capture Photo
+          </button>
+          <button class="btn btn-secondary" id="uploadBtn" style="flex-shrink:0">
+            <svg class="icon-svg" style="width:18px;height:18px" viewBox="0 0 24 24"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+          </button>
+        </div>
+
+        <button class="btn btn-success btn-full btn-lg" id="analyzeBtn" style="display:none">
+          Analyze Dragon Fruit
+        </button>
+      </div>
+
+      <!-- Live Scanner Mode -->
+      <div id="liveModePanel" style="display:none">
+        <div class="live-scanner-container" id="liveScannerContainer">
+          <!-- Camera Feed -->
+          <video id="liveVideo" class="live-video" autoplay playsinline muted></video>
+          <canvas id="liveCanvas" style="display:none"></canvas>
+
+          <!-- Scanning Guide Overlay -->
+          <div class="live-scanner-overlay">
+            <div class="live-scan-guide">
+              <div class="guide-corner tl"></div>
+              <div class="guide-corner tr"></div>
+              <div class="guide-corner bl"></div>
+              <div class="guide-corner br"></div>
+              <div class="scan-line" id="liveScanLine"></div>
+            </div>
+          </div>
+
+          <!-- Real-time Status HUD -->
+          <div class="live-hud" id="liveHud">
+            <div class="hud-top">
+              <div class="hud-badge hud-model" id="hudModel">
+                <svg class="icon-svg" style="width:12px;height:12px" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/></svg>
+                YOLOv8+EffNet
+              </div>
+              <div class="hud-badge hud-detected" id="hudDetected" style="background: rgba(233, 30, 99, 0.25); color: var(--color-primary-light); font-weight: 800; border: 1px solid rgba(233, 30, 99, 0.15);">
+                Object: Detecting...
+              </div>
+              <div class="hud-badge hud-fps" id="hudFps">-- FPS</div>
+            </div>
+
+            <div class="hud-bottom">
+              <!-- Grade Badge -->
+              <div class="hud-card hud-grade-card" id="hudGradeCard">
+                <div class="hud-card-label">Quality Grade</div>
+                <div class="hud-grade-value" id="hudGradeValue">--</div>
+                <div class="hud-conf-bar"><div class="hud-conf-fill" id="hudGradeConf"></div></div>
+              </div>
+
+              <!-- Disease Badge -->
+              <div class="hud-card hud-disease-card" id="hudDiseaseCard">
+                <div class="hud-card-label">Disease</div>
+                <div class="hud-disease-value" id="hudDiseaseValue">--</div>
+                <div class="hud-conf-bar"><div class="hud-conf-fill" id="hudDiseaseConf"></div></div>
+              </div>
+
+              <!-- Maturity Badge -->
+              <div class="hud-card hud-maturity-card" id="hudMaturityCard">
+                <div class="hud-card-label">Maturity</div>
+                <div class="hud-maturity-value" id="hudMaturityValue">--</div>
+                <div class="hud-conf-bar"><div class="hud-conf-fill" id="hudMaturityConf"></div></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Live Status Indicator -->
+          <div class="live-status-indicator" id="liveStatusIndicator">
+            <span class="live-dot"></span>
+            <span>SCANNING</span>
+          </div>
+        </div>
+
+        <!-- Live Controls -->
+        <div class="live-controls" id="liveControls">
+          <button class="btn btn-secondary live-ctrl-btn" id="liveSwitchCamBtn" title="Switch Camera">
+            <svg class="icon-svg" style="width:20px;height:20px" viewBox="0 0 24 24"><path d="M11 19H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5"/><path d="M13 5h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-5"/><circle cx="12" cy="12" r="3"/><path d="m18 22-3-3 3-3"/><path d="m6 2 3 3-3 3"/></svg>
+          </button>
+          <button class="live-capture-btn" id="liveCaptureBtn" title="Capture and Analyze">
+            <div class="capture-btn-inner"></div>
+          </button>
+          <button class="btn btn-secondary live-ctrl-btn" id="liveStopBtn" title="Stop Scanner">
+            <svg class="icon-svg" style="width:20px;height:20px" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Results Area -->
+      <div id="resultArea" style="display:none"></div>
+    </section>
+
+    <!-- History View -->
+    <section class="view" id="view-history">
+      <div style="margin-bottom:16px">
+        <h1 style="font-family:var(--font-display);font-size:22px;font-weight:700;margin-bottom:4px">Scan History</h1>
+        <p style="font-size:13px;color:var(--text-secondary)">All your recorded assessments</p>
+      </div>
+
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input type="search" class="search-input" id="historySearch" placeholder="Search by notes...">
+      </div>
+
+      <div class="filter-bar" id="historyFilters">
+        <button class="filter-chip active" data-filter="all">All</button>
+        <button class="filter-chip" data-filter="grade-a">Grade A</button>
+        <button class="filter-chip" data-filter="grade-b">Grade B</button>
+        <button class="filter-chip" data-filter="grade-c">Grade C</button>
+        <button class="filter-chip" data-filter="reject">Reject</button>
+        <button class="filter-chip" data-filter="diseased">Diseased</button>
+      </div>
+
+      <div id="historyList">
+        <div class="empty-state">
+          <div class="empty-state-icon">📋</div>
+          <div class="empty-state-title">No records yet</div>
+          <div class="empty-state-text">Scanned dragon fruit assessments will appear here.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Analytics View -->
+    <section class="view" id="view-analytics">
+      <div style="margin-bottom:16px">
+        <h1 style="font-family:var(--font-display);font-size:22px;font-weight:700;margin-bottom:4px">Analytics</h1>
+        <p style="font-size:13px;color:var(--text-secondary)">Deep insights into your farm data</p>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card primary">
+          <div class="stat-icon">
+            <svg class="icon-svg" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 16V8"/><path d="M11 16V12"/><path d="M15 16V10"/><path d="M19 16V4"/></svg>
+          </div>
+          <div class="stat-value" id="analyticsTotal">0</div>
+          <div class="stat-label">Total Scans</div>
+        </div>
+        <div class="stat-card success">
+          <div class="stat-icon">
+            <svg class="icon-svg" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          </div>
+          <div class="stat-value" id="analyticsPremium">0%</div>
+          <div class="stat-label">Premium Rate</div>
+        </div>
+      </div>
+
+      <!-- AI Insights Card -->
+      <div class="chart-container ai-insights-container" id="aiInsightsWidget" style="border: 1px solid rgba(233, 30, 99, 0.15); background: linear-gradient(135deg, rgba(233, 30, 99, 0.03) 0%, rgba(15, 23, 42, 0.9) 100%); margin-bottom: 20px;">
+        <div class="chart-title" style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom:12px; margin-bottom:12px;">
+          <span style="display:flex; align-items:center; gap:8px; font-weight:700;">
+            <svg class="icon-svg animate-pulse-slow" style="width:16px; height:16px; color:#E91E63;" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            AI Farm Insights
+          </span>
+          <span class="hud-badge" id="aiInsightsStatus" style="font-size:10px; background:rgba(255,255,255,0.05); padding:2px 6px; border-radius:4px; font-weight:600; color:var(--text-secondary);">Initializing...</span>
+        </div>
+        <div id="aiInsightsContent">
+          <!-- Skeleton loader displayed during generation -->
+          <div class="skeleton-loader" style="padding:4px 0;">
+            <div style="height:14px; background:rgba(255,255,255,0.04); margin-bottom:8px; border-radius:4px; width:95%; animation: shimmer 1.5s infinite ease-in-out;"></div>
+            <div style="height:14px; background:rgba(255,255,255,0.04); margin-bottom:8px; border-radius:4px; width:80%; animation: shimmer 1.5s infinite ease-in-out;"></div>
+            <div style="height:14px; background:rgba(255,255,255,0.04); border-radius:4px; width:45%; animation: shimmer 1.5s infinite ease-in-out;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Disease Trend -->
+      <div class="chart-container">
+        <div class="chart-title">Disease Trend (Last 7 Days)</div>
+        <div class="chart-canvas-wrap">
+          <canvas id="diseaseTrendChart" width="400" height="220"></canvas>
+        </div>
+      </div>
+
+      <!-- Grade Over Time -->
+      <div class="chart-container">
+        <div class="chart-title">Quality Over Time</div>
+        <div class="chart-canvas-wrap">
+          <canvas id="qualityTrendChart" width="400" height="220"></canvas>
+        </div>
+      </div>
+
+      <!-- Disease Breakdown -->
+      <div class="chart-container">
+        <div class="chart-title">Disease Breakdown</div>
+        <div class="chart-canvas-wrap">
+          <canvas id="diseaseBreakdownChart" width="400" height="260"></canvas>
+        </div>
+        <div class="chart-legend" id="diseaseLegend"></div>
+      </div>
+    </section>
+
+    <!-- Reports View -->
+    <section class="view" id="view-reports">
+      <div style="margin-bottom:16px">
+        <h1 style="font-family:var(--font-display);font-size:22px;font-weight:700;margin-bottom:4px">Reports</h1>
+        <p style="font-size:13px;color:var(--text-secondary)">Generate and export farm reports</p>
+      </div>
+
+      <div class="card" style="margin-bottom:16px">
+        <div style="font-size:14px;font-weight:600;margin-bottom:12px">Date Range</div>
+        <div class="date-range-row">
+          <label>From</label>
+          <input type="date" class="date-input" id="reportFrom" style="flex:1">
+        </div>
+        <div class="date-range-row">
+          <label>To</label>
+          <input type="date" class="date-input" id="reportTo" style="flex:1">
+        </div>
+      </div>
+
+      <div style="display:flex;gap:8px;margin-bottom:24px">
+        <button class="btn btn-primary btn-full" id="generateReportBtn">📄 Generate Report</button>
+        <button class="btn btn-secondary" id="exportCSVBtn" style="flex-shrink:0">CSV</button>
+      </div>
+
+      <div id="reportPreviewArea"></div>
+    </section>
+
+    <!-- Settings View -->
+    <section class="view" id="view-settings">
+      <div style="margin-bottom:20px">
+        <h1 style="font-family:var(--font-display);font-size:22px;font-weight:700;margin-bottom:4px">Settings</h1>
+        <p style="font-size:13px;color:var(--text-secondary)">Configure your preferences</p>
+      </div>
+
+      <div class="settings-group">
+        <div class="settings-group-title">General</div>
+        <div class="settings-item">
+          <div class="settings-item-left">
+            <div class="settings-item-icon">
+              <svg class="icon-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+            </div>
+            <div>
+              <div class="settings-item-label">Language</div>
+              <div class="settings-item-sub" id="currentLang">English</div>
+            </div>
+          </div>
+          <button class="btn btn-sm btn-secondary" id="toggleLangBtn">Switch</button>
+        </div>
+        <div class="settings-item">
+          <div class="settings-item-left">
+            <div class="settings-item-icon">
+              <svg class="icon-svg" viewBox="0 0 24 24"><path d="M12 20h.01"/><path d="M7 16h.01"/><path d="M17 16h.01"/><path d="M12 12h.01"/><path d="M22 12h.01"/><path d="M2 12h.01"/><path d="M12 2h.01"/><path d="M7 8h.01"/><path d="M17 8h.01"/><path d="M12 16h.01"/><path d="M7 12h.01"/><path d="M17 12h.01"/><path d="M12 8h.01"/></svg>
+            </div>
+            <div>
+              <div class="settings-item-label">Offline Mode</div>
+              <div class="settings-item-sub">Use on-device TFLite model</div>
+            </div>
+          </div>
+          <div class="toggle" id="toggleOffline"></div>
+        </div>
+      </div>
+
+      <div class="settings-group">
+        <div class="settings-group-title">Detection Pipeline</div>
+        <div class="settings-item">
+          <div class="settings-item-left">
+            <div class="settings-item-icon">
+              <svg class="icon-svg" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+            </div>
+            <div>
+              <div class="settings-item-label">Primary Model</div>
+              <div class="settings-item-sub">YOLOv8-Nano v8.1.0</div>
+            </div>
+          </div>
+          <span class="settings-item-right" style="color:var(--color-success);font-size:12px;font-weight:600">Active</span>
+        </div>
+        <div class="settings-item">
+          <div class="settings-item-left">
+            <div class="settings-item-icon">
+              <svg class="icon-svg" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+            </div>
+            <div>
+              <div class="settings-item-label">Alternate Model</div>
+              <div class="settings-item-sub">EfficientNet-B3 (ImageNet)</div>
+            </div>
+          </div>
+          <span class="settings-item-right" style="color:var(--text-tertiary);font-size:12px;font-weight:600">Standby</span>
+        </div>
+        <div class="settings-item">
+          <div class="settings-item-left">
+            <div class="settings-item-icon">
+              <svg class="icon-svg" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            </div>
+            <div>
+              <div class="settings-item-label">Transfer Learning</div>
+              <div class="settings-item-sub">COCO + ImageNet pre-trained</div>
+            </div>
+          </div>
+          <span class="settings-item-right" style="color:var(--color-info);font-size:12px;font-weight:600">DL</span>
+        </div>
+        <div class="settings-item">
+          <div class="settings-item-left">
+            <div class="settings-item-icon">
+              <svg class="icon-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+            </div>
+            <div>
+              <div class="settings-item-label">Detection Threshold</div>
+              <div class="settings-item-sub" id="thresholdValue">65%</div>
+            </div>
+          </div>
+          <span class="settings-item-right">&#8250;</span>
+        </div>
+      </div>
+
+      <div class="settings-group">
+        <div class="settings-group-title">Model Metrics</div>
+        <div class="settings-item">
+          <div class="settings-item-left">
+            <div class="settings-item-icon">
+              <svg class="icon-svg" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 16V8"/><path d="M11 16V12"/><path d="M15 16V10"/><path d="M19 16V4"/></svg>
+            </div>
+            <div>
+              <div class="settings-item-label">Overall Accuracy</div>
+              <div class="settings-item-sub">96.8% on test dataset (12,500 images)</div>
+            </div>
+          </div>
+        </div>
+        <div class="settings-item">
+          <div class="settings-item-left">
+            <div class="settings-item-icon">
+              <svg class="icon-svg" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            </div>
+            <div>
+              <div class="settings-item-label">F1-Score / Precision / Recall</div>
+              <div class="settings-item-sub">96.5% / 96.2% / 96.8%</div>
+            </div>
+          </div>
+        </div>
+        <div class="settings-item">
+          <div class="settings-item-left">
+            <div class="settings-item-icon">
+              <svg class="icon-svg" viewBox="0 0 24 24"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+            </div>
+            <div>
+              <div class="settings-item-label">Training Configuration</div>
+              <div class="settings-item-sub">100 epochs, AdamW (lr=0.001), batch 16</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-group">
+        <div class="settings-group-title">Data</div>
+        <div class="settings-item" id="clearDataBtn">
+          <div class="settings-item-left">
+            <div class="settings-item-icon">
+              <svg class="icon-svg" style="color:var(--color-error)" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+            </div>
+            <div>
+              <div class="settings-item-label" style="color:var(--color-error)">Clear All Data</div>
+              <div class="settings-item-sub">Remove all scan records</div>
+            </div>
+          </div>
+          <span class="settings-item-right">&#8250;</span>
+        </div>
+      </div>
+
+      <div class="card" style="text-align:center;margin-top:24px;padding:24px">
+        <div style="margin-bottom:12px">
+          <img src="assets/logo.png" alt="Logo" style="width:48px;height:48px;margin:0 auto">
+        </div>
+        <div style="font-family:var(--font-display);font-size:16px;font-weight:700;margin-bottom:4px">PitayaGrade v1.0.0</div>
+        <div style="font-size:12px;color:var(--text-tertiary)">Pre-Harvest Quality Grading &amp; Disease Detection</div>
+        <div style="font-size:11px;color:var(--text-tertiary);margin-top:4px">Dual-Stage DL Pipeline (YOLOv8 + EfficientNet-B3)</div>
+        <div style="font-size:11px;color:var(--text-tertiary);margin-top:8px">Capstone Project 2025-2026</div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Bottom Navigation -->
+  <nav class="bottom-nav">
+    <button class="nav-item active" data-view="dashboard" id="nav-dashboard">
+      <span class="nav-icon">
+        <svg class="icon-svg" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      </span>
+      <span>Home</span>
+    </button>
+    <button class="nav-item" data-view="history" id="nav-history">
+      <span class="nav-icon">
+        <svg class="icon-svg" viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
+      </span>
+      <span>History</span>
+    </button>
+    <button class="nav-item nav-item-scan" data-view="scan" id="nav-scan">
+      <div class="nav-icon-wrap">
+        <svg class="icon-svg" style="width:28px;height:28px;stroke:white" viewBox="0 0 24 24"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+      </div>
+      <span>Scan</span>
+    </button>
+    <button class="nav-item" data-view="analytics" id="nav-analytics">
+      <span class="nav-icon">
+        <svg class="icon-svg" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      </span>
+      <span>Analytics</span>
+    </button>
+    <button class="nav-item" data-view="settings" id="nav-settings">
+      <span class="nav-icon">
+        <svg class="icon-svg" viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+      </span>
+      <span>Settings</span>
+    </button>
+  </nav>
+</div>
+
+<!-- Scripts -->
+<script src="ort.min.js"></script>
+<script src="js/model-inference.js"></script>
+<script src="js/scanner.js"></script>
+<script src="js/live-scanner.js"></script>
+<script src="js/dashboard.js"></script>
+<script src="js/history.js"></script>
+<script src="js/reports.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

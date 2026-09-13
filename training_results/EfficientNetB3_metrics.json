@@ -1,0 +1,62 @@
+{
+  "model": "EfficientNetB3",
+  "test_accuracy": 1.0,
+  "per_class": {
+    "Grade A": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1_score": 1.0,
+      "support": 143
+    },
+    "Grade B": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1_score": 1.0,
+      "support": 149
+    },
+    "Grade C": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1_score": 1.0,
+      "support": 100
+    },
+    "Reject": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1_score": 1.0,
+      "support": 134
+    }
+  },
+  "confusion_matrix": [
+    [
+      143,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      149,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      100,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      134
+    ]
+  ],
+  "class_names": [
+    "Grade A",
+    "Grade B",
+    "Grade C",
+    "Reject"
+  ]
+}
