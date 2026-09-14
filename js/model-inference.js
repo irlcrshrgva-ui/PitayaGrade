@@ -9,48 +9,84 @@
 
 const ModelInference = {
   session: null,
+  sessions: {},
+  loadingPromises: {},
   isLoaded: false,
   isLoading: false,
 
   ASSET_BASE: new URL('.', document.querySelector('script[src$="ort.min.js"]').src).href,
-  MODEL_PATH: 'model/best.onnx',
-  INPUT_SIZE: 640,
   CONF_THRESHOLD: 0.30,
-  CLASSES: ['Grade A', 'Grade B', 'Grade C', 'Reject'],
+  MODELS: [
+    {
+      id: 'yolov8-nano',
+      name: 'YOLOv8-Nano',
+      modelPath: 'model/best.onnx',
+      inputSize: 640,
+      classes: ['Grade A', 'Grade B', 'Grade C', 'Reject']
+    }
+  ],
+  selectedModelId: 'yolov8-nano',
 
-  // ── Load model (called once on first scan) ────────────────────────────────
-  async load() {
-    if (this.isLoaded) return true;
-    if (this.isLoading) return this.loadingPromise;
+  getAvailableModels() {
+    return this.MODELS.slice();
+  },
+
+  getSelectedModel() {
+    return this.MODELS.find(model => model.id === this.selectedModelId) || this.MODELS[0];
+  },
+
+  selectModel(modelId) {
+    const model = this.MODELS.find(candidate => candidate.id === modelId);
+    if (!model) return false;
+    this.selectedModelId = model.id;
+    this.session = this.sessions[model.id] || null;
+    this.isLoaded = Boolean(this.session);
+    return true;
+  },
+
+  // ── Load the selected model once, then reuse its session ───────────────────
+  async load(modelId = this.selectedModelId) {
+    const model = this.MODELS.find(candidate => candidate.id === modelId);
+    if (!model) return false;
+    if (this.sessions[model.id]) {
+      this.session = this.sessions[model.id];
+      this.isLoaded = true;
+      return true;
+    }
+    if (this.loadingPromises[model.id]) return this.loadingPromises[model.id];
     this.isLoading = true;
-    this.loadingPromise = this._load();
+    this.loadingPromise = this._load(model);
+    this.loadingPromises[model.id] = this.loadingPromise;
     return this.loadingPromise;
   },
 
-  async _load() {
+  async _load(model) {
     try {
       // Point ORT to the WASM files bundled in www/
       ort.env.wasm.wasmPaths = this.ASSET_BASE;
       ort.env.wasm.numThreads = 1;
 
-      this.session = await ort.InferenceSession.create(this.ASSET_BASE + this.MODEL_PATH, {
+      const session = await ort.InferenceSession.create(this.ASSET_BASE + model.modelPath, {
         executionProviders: ['wasm'],
         graphOptimizationLevel: 'all',
       });
 
+      this.sessions[model.id] = session;
+      this.session = session;
       this.isLoaded = true;
-      console.log('[ModelInference] YOLOv8n loaded. Inputs:', this.session.inputNames, 'Outputs:', this.session.outputNames);
+      console.log('[ModelInference] ' + model.name + ' loaded. Inputs:', session.inputNames, 'Outputs:', session.outputNames);
     } catch (err) {
       console.error('[ModelInference] Failed to load model:', err);
       this.isLoaded = false;
     }
+    delete this.loadingPromises[model.id];
     this.isLoading = false;
-    return this.isLoaded;
+    return Boolean(this.sessions[model.id]);
   },
 
   // ── Preprocess image → Float32 tensor [1, 3, 640, 640] ───────────────────
-  _preprocess(imgElement) {
-    const S = this.INPUT_SIZE;
+  _preprocess(imgElement, inputSize) {
+    const S = inputSize;
     const canvas = document.createElement('canvas');
     canvas.width  = S;
     canvas.height = S;
@@ -72,13 +108,13 @@ const ModelInference = {
   // YOLOv8n output shape: [1, 4+numClasses, 8400]
   //   dim 0..3  : x_c, y_c, w, h  (normalised to INPUT_SIZE)
   //   dim 4..7  : class scores (Grade A, B, C, Reject)
-  _postprocess(outputTensor) {
+  _postprocess(outputTensor, model) {
     const data  = outputTensor.data;
-    if (outputTensor.dims.length !== 3 || outputTensor.dims[1] !== 4 + this.CLASSES.length) {
+    if (outputTensor.dims.length !== 3 || outputTensor.dims[1] !== 4 + model.classes.length) {
       throw new Error('Unsupported YOLO output shape');
     }
     const nDet  = outputTensor.dims[2];
-    const nCls  = this.CLASSES.length; // 4
+    const nCls  = model.classes.length;
 
     let bestConf = 0;
     let bestCls  = -1;
@@ -100,36 +136,39 @@ const ModelInference = {
 
     return {
       isDragonFruit: true,
-      grade:         this.CLASSES[bestCls],
+      grade:         model.classes[bestCls],
       confidence:    bestConf,
       box: {
-        x: Math.max(0, (data[bestIndex] - data[2 * nDet + bestIndex] / 2) / this.INPUT_SIZE),
-        y: Math.max(0, (data[nDet + bestIndex] - data[3 * nDet + bestIndex] / 2) / this.INPUT_SIZE),
-        right: Math.min(1, (data[bestIndex] + data[2 * nDet + bestIndex] / 2) / this.INPUT_SIZE),
-        bottom: Math.min(1, (data[nDet + bestIndex] + data[3 * nDet + bestIndex] / 2) / this.INPUT_SIZE)
+        x: Math.max(0, (data[bestIndex] - data[2 * nDet + bestIndex] / 2) / model.inputSize),
+        y: Math.max(0, (data[nDet + bestIndex] - data[3 * nDet + bestIndex] / 2) / model.inputSize),
+        right: Math.min(1, (data[bestIndex] + data[2 * nDet + bestIndex] / 2) / model.inputSize),
+        bottom: Math.min(1, (data[nDet + bestIndex] + data[3 * nDet + bestIndex] / 2) / model.inputSize)
       },
     };
   },
 
   // ── Public: run full inference on an image element ────────────────────────
-  async infer(imgElement) {
-    const loaded = await this.load();
-    if (!loaded) return null; // model unavailable — caller should fall back
+  async infer(imgElement, modelId = this.selectedModelId) {
+    const model = this.MODELS.find(candidate => candidate.id === modelId);
+    if (!model || !await this.load(model.id)) return null; // model unavailable — caller should fall back
 
     const t0 = performance.now();
+    const session = this.sessions[model.id];
 
     let inputTensor;
     let results;
     try {
-    inputTensor = this._preprocess(imgElement);
+    inputTensor = this._preprocess(imgElement, model.inputSize);
     const feeds = {};
-    feeds[this.session.inputNames[0]] = inputTensor;
+    feeds[session.inputNames[0]] = inputTensor;
 
-    results  = await this.session.run(feeds);
-    const output   = results[this.session.outputNames[0]];
-    const parsed   = this._postprocess(output);
+    results  = await session.run(feeds);
+    const output   = results[session.outputNames[0]];
+    const parsed   = this._postprocess(output, model);
 
     parsed.inferenceMs = Math.round(performance.now() - t0);
+    parsed.modelId = model.id;
+    parsed.modelName = model.name;
     return parsed;
     } catch (err) {
       console.error('[ModelInference] Inference failed:', err);
