@@ -108,7 +108,7 @@ const ModelInference = {
   // YOLOv8n output shape: [1, 4+numClasses, 8400]
   //   dim 0..3  : x_c, y_c, w, h  (normalised to INPUT_SIZE)
   //   dim 4..7  : class scores (Grade A, B, C, Reject)
-  _postprocess(outputTensor, model) {
+  _postprocess(outputTensor, model = this.getSelectedModel()) {
     const data  = outputTensor.data;
     if (outputTensor.dims.length !== 3 || outputTensor.dims[1] !== 4 + model.classes.length) {
       throw new Error('Unsupported YOLO output shape');
