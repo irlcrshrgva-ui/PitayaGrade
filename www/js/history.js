@@ -42,7 +42,7 @@ const HistoryManager = {
   },
 
   _getFilteredScans() {
-    let scans = JSON.parse(localStorage.getItem('pg_scans') || '[]');
+    let scans = ScanStore.getScans();
 
     // Apply filter
     switch (this.currentFilter) {
@@ -129,7 +129,7 @@ const HistoryManager = {
   },
 
   showDetail(id) {
-    const scans = JSON.parse(localStorage.getItem('pg_scans') || '[]');
+    const scans = ScanStore.getScans();
     const scan = scans.find(s => String(s.id) === String(id));
     if (!scan) return;
 
@@ -240,7 +240,7 @@ const HistoryManager = {
         ` : ''}
       </div>
 
-      ${scan.modelMetrics ? `
+      ${scan.modelMetrics?.validated === true ? `
       <div class="result-section" style="margin-top:16px">
         <div class="result-section-title">Model Performance</div>
         <div class="metrics-card">
@@ -300,6 +300,11 @@ const HistoryManager = {
         </div>
       ` : ''}
 
+      <div class="result-section" style="margin-top:16px">
+        <label class="result-section-title" for="scanNotes">Notes</label>
+        <textarea id="scanNotes" class="search-input" rows="3" maxlength="2000" style="width:100%;padding:12px">${ScanStore.escape(scan.notes)}</textarea>
+        <button class="btn btn-primary btn-full" id="saveNotesBtn" style="margin-top:8px">Save Notes</button>
+      </div>
       <button class="btn btn-outline btn-full" style="margin-top:16px;color:var(--color-error);border-color:var(--color-error)" onclick="HistoryManager.deleteScan('${scan.id}')">
         <svg class="icon-svg" style="width:14px;height:14px;margin-right:6px;color:var(--color-error)" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
         Delete This Record
@@ -308,14 +313,25 @@ const HistoryManager = {
 
     modal.classList.add('open');
     backdrop.classList.add('open');
+    document.getElementById('saveNotesBtn').addEventListener('click', () => {
+      try {
+        ScanStore.updateNotes(id, document.getElementById('scanNotes').value);
+        ToastManager.show('Notes saved', 'success');
+      } catch (error) { ToastManager.show(error.message, 'error'); }
+    });
   },
 
   deleteScan(id) {
     if (!confirm('Delete this scan record?')) return;
     
-    let scans = JSON.parse(localStorage.getItem('pg_scans') || '[]');
+    try {
+    let scans = ScanStore.getScans(true);
     scans = scans.filter(s => String(s.id) !== String(id));
-    localStorage.setItem('pg_scans', JSON.stringify(scans));
+    ScanStore.saveScans(scans);
+    } catch (error) {
+      ToastManager.show('Unable to delete record. ' + error.message, 'error');
+      return;
+    }
 
     // Close modal
     document.getElementById('detailModal').classList.remove('open');

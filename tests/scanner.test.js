@@ -40,7 +40,14 @@ test('postprocessing reads output dimensions and respects rejection threshold', 
   const instance = model('http://localhost/www/js/model-inference.js');
   const output = { dims: [1, 8, 2], data: new Float32Array(16) };
   output.data[12] = 0.9;
+  output.data[0] = output.data[2] = 320;
+  output.data[4] = output.data[6] = 320;
   assert.equal(instance._postprocess(output).grade, 'Grade C');
+  assert.equal(instance._postprocess(output).box.x, 0.25);
+  assert.equal(instance._postprocess(output).box.bottom, 0.75);
+  instance.CONF_THRESHOLD = 0.95;
+  assert.equal(instance._postprocess(output).isDragonFruit, false);
+  instance.CONF_THRESHOLD = 0.30;
   output.data[12] = 0.1;
   assert.equal(instance._postprocess(output).isDragonFruit, false);
   assert.throws(() => instance._postprocess({ dims: [1, 6, 2] }), /Unsupported/);

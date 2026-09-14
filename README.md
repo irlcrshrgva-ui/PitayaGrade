@@ -66,4 +66,11 @@ Model performance must be recalculated using a leakage-free, untouched test set.
 
 ## Documentation
 
+See [CONTINUATION_UPDATE.md](CONTINUATION_UPDATE.md) for the latest module-by-module
+changes, verification results, storage behavior, and remaining implementation gaps.
+
+The active Capacitor app stores scans in `localStorage` under `pg_scans` and
+settings under `pg_settings`. There is no active backend, authentication service,
+or user-role system. The SQLite service in the Flutter prototype is separate.
+
 The capstone manuscript is available in `PitayaGrade_Capstone_Paper.md`. It describes the proposed system and should be revised whenever the implemented architecture or measured results change.

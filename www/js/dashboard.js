@@ -17,7 +17,7 @@ const DashboardManager = {
   },
 
   _getScans() {
-    return JSON.parse(localStorage.getItem('pg_scans') || '[]');
+    return ScanStore.getScans();
   },
 
   _updateStats(scans) {
@@ -29,6 +29,10 @@ const DashboardManager = {
     if (totalEl) this._animateCounter(totalEl, scans.length);
 
     if (scans.length === 0) {
+      const total = document.getElementById('analyticsTotal');
+      const premium = document.getElementById('analyticsPremium');
+      if (total) this._animateCounter(total, 0);
+      if (premium) premium.textContent = '0%';
       if (avgEl) avgEl.textContent = '--';
       if (diseaseEl) diseaseEl.textContent = '0%';
       if (healthyEl) healthyEl.textContent = '0%';
@@ -62,6 +66,7 @@ const DashboardManager = {
   },
 
   _animateCounter(element, target) {
+    if (element.counterFrame) cancelAnimationFrame(element.counterFrame);
     const current = parseInt(element.textContent) || 0;
     if (current === target) return;
     
@@ -73,12 +78,13 @@ const DashboardManager = {
       const progress = Math.min(elapsed / duration, 1);
       const eased = 1 - Math.pow(1 - progress, 3);
       element.textContent = Math.round(current + (target - current) * eased);
-      if (progress < 1) requestAnimationFrame(animate);
+      if (progress < 1) element.counterFrame = requestAnimationFrame(animate);
     };
-    requestAnimationFrame(animate);
+    element.counterFrame = requestAnimationFrame(animate);
   },
 
   _updateGauge(scans) {
+    clearTimeout(this.gaugeTimer);
     const arc = document.getElementById('gaugeArc');
     const valueEl = document.getElementById('gaugeValue');
     if (!arc || !valueEl) return;
@@ -89,14 +95,19 @@ const DashboardManager = {
       return;
     }
 
-    const gradeMap = { 'Grade A': 100, 'Grade B': 75, 'Grade C': 50, 'Reject': 10 };
-    const avgReadiness = scans.reduce((sum, s) => sum + (gradeMap[s.grade.label] || 50), 0) / scans.length;
+    const measured = scans.filter(s => Number.isFinite(s.maturity?.value));
+    if (!measured.length) {
+      arc.style.strokeDashoffset = 188.5;
+      valueEl.textContent = '--%';
+      return;
+    }
+    const avgReadiness = measured.reduce((sum, s) => sum + Math.max(0, Math.min(100, s.maturity.value)), 0) / measured.length;
     const readiness = Math.min(Math.round(avgReadiness), 100);
 
     const maxDash = 188.5;
     const offset = maxDash - (maxDash * readiness / 100);
     
-    setTimeout(() => {
+    this.gaugeTimer = setTimeout(() => {
       arc.style.transition = 'stroke-dashoffset 1.2s ease';
       arc.style.strokeDashoffset = offset;
     }, 200);
@@ -121,6 +132,7 @@ const DashboardManager = {
 
     const w = rect.width;
     const h = 260;
+    if (w < 100) return;
 
     ctx.clearRect(0, 0, w, h);
 
@@ -235,6 +247,7 @@ const DashboardManager = {
   // Analytics charts
   renderAnalytics() {
     const scans = this._getScans();
+    this._updateStats(scans);
     this._renderDiseaseTrend(scans);
     this._renderQualityTrend(scans);
     this._renderDiseaseBreakdown(scans);
@@ -264,7 +277,7 @@ const DashboardManager = {
       const d = new Date();
       d.setDate(d.getDate() - i);
       days.push({
-        date: d.toISOString().split('T')[0],
+        date: ScanStore.localDate(d),
         label: d.toLocaleDateString('en-PH', { weekday: 'short' }),
         healthy: 0,
         diseased: 0
@@ -272,7 +285,7 @@ const DashboardManager = {
     }
 
     scans.forEach(s => {
-      const scanDate = new Date(s.timestamp).toISOString().split('T')[0];
+      const scanDate = ScanStore.localDate(new Date(s.timestamp));
       const day = days.find(d => d.date === scanDate);
       if (day) {
         if (s.disease.isHealthy) day.healthy++;
@@ -359,7 +372,7 @@ const DashboardManager = {
       const d = new Date();
       d.setDate(d.getDate() - i);
       days.push({
-        date: d.toISOString().split('T')[0],
+        date: ScanStore.localDate(d),
         label: d.toLocaleDateString('en-PH', { weekday: 'short' }),
         scores: []
       });
@@ -367,7 +380,7 @@ const DashboardManager = {
 
     const gradeMap = { 'Grade A': 4, 'Grade B': 3, 'Grade C': 2, 'Reject': 1 };
     scans.forEach(s => {
-      const scanDate = new Date(s.timestamp).toISOString().split('T')[0];
+      const scanDate = ScanStore.localDate(new Date(s.timestamp));
       const day = days.find(d => d.date === scanDate);
       if (day) day.scores.push(gradeMap[s.grade.label] || 2);
     });
@@ -396,7 +409,7 @@ const DashboardManager = {
 
     // Draw line
     const validPoints = points.filter(p => p.y !== null);
-    if (validPoints.length > 1) {
+    if (validPoints.length > 0) {
       // Gradient fill
       const gradient = ctx.createLinearGradient(0, padding.top, 0, padding.top + chartH);
       gradient.addColorStop(0, 'rgba(233, 30, 99, 0.2)');
@@ -456,6 +469,8 @@ const DashboardManager = {
   },
 
   _renderDiseaseBreakdown(scans) {
+    const legend = document.getElementById('diseaseLegend');
+    if (legend) legend.innerHTML = '';
     const canvas = document.getElementById('diseaseBreakdownChart');
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -577,7 +592,7 @@ const DashboardManager = {
 
     const isOnline = navigator.onLine;
 
-    if (CLOUD_AI_ENABLED && isOnline) {
+    if (CLOUD_AI_ENABLED && isOnline && !PitayaApp.settings.offlineMode) {
       if (statusEl) {
         statusEl.innerHTML = '⚡ Online AI';
         statusEl.style.color = '#22C55E';
@@ -640,7 +655,7 @@ const DashboardManager = {
 
     // Determine farm health status
     let status = 'healthy';
-    let summary = 'Your dragon fruit farm shows stable health indicators with robust growth parameters.';
+    let summary = 'Most saved scans show no visible disease symptoms. These image-based estimates do not confirm overall farm health.';
     const recommendations = [];
 
     const totalDiseased = Object.values(diseases).reduce((a, b) => a + b, 0);
@@ -648,25 +663,25 @@ const DashboardManager = {
 
     if (diseaseRate > 20) {
       status = 'critical';
-      summary = 'Warning: Active pathogen spread detected. Over 20% of scanned crops exhibit symptomatic infections.';
+      summary = 'Over 20% of saved scans were flagged by the image-based disease analysis. Review these records and inspect the fruit.';
       recommendations.push({
         severity: 'high',
-        action: 'Execute chemical treatment and containment protocol.',
-        rationale: 'High disease prevalence poses a systemic risk to neighboring crop clusters. Isolate affected vines immediately.'
+        action: 'Inspect flagged fruit and seek confirmation.',
+        rationale: 'Image heuristics cannot confirm a pathogen or its spread. Confirm the condition before selecting treatment.'
       });
     } else if (diseaseRate > 5 || premium < 50) {
       status = 'warning';
-      summary = 'Alert: Minor quality drop observed. Monitor developing spots to maintain premium export grades.';
+      summary = 'Saved scans include quality or symptom flags. Review the individual assessments before harvest.';
       recommendations.push({
         severity: 'medium',
-        action: 'Inspect scale spacing and apply structural shading.',
-        rationale: 'Sunburn and minor pest scars are reducing your Grade A premium rate. Address environmental stressors.'
+        action: 'Review lower-grade and flagged records.',
+        rationale: 'The aggregate counts do not identify a cause or establish a trend over time.'
       });
     } else {
       recommendations.push({
         severity: 'low',
         action: 'Continue standard hydration and monitoring cycles.',
-        rationale: 'Crop quality is performing at peak parameters. Premium yield matches optimal target thresholds.'
+        rationale: 'Continue inspecting fruit on the plant alongside the saved image assessments.'
       });
     }
 
@@ -674,8 +689,8 @@ const DashboardManager = {
       summary: summary,
       statusAlert: status,
       keyMetrics: [
-        { label: 'Premium Rate', value: `${premium}%`, trend: premium > 75 ? 'up' : 'neutral' },
-        { label: 'Pathology Index', value: `${diseaseRate.toFixed(0)}%`, trend: diseaseRate > 10 ? 'up' : 'down' }
+        { label: 'Premium Rate', value: `${premium}%`, trend: 'neutral' },
+        { label: 'Flagged Scans', value: `${diseaseRate.toFixed(0)}%`, trend: 'neutral' }
       ],
       recommendations: recommendations
     };

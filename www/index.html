@@ -162,7 +162,7 @@
             </defs>
           </svg>
           <div class="gauge-value" id="gaugeValue">--%</div>
-          <div class="gauge-label">Based on recent scan quality distribution</div>
+          <div class="gauge-label">Average image-based maturity of saved scans</div>
         </div>
       </div>
 
@@ -234,11 +234,11 @@
           <div class="processing-overlay hidden" id="processingOverlay">
             <div class="processing-ring"></div>
             <div class="processing-steps">
-              <div class="processing-step" data-step="resize">&#11036; YOLOv8 grid detection (128x128)...</div>
+              <div class="processing-step" data-step="resize">&#11036; Preparing image for analysis...</div>
               <div class="processing-step" data-step="normalize">&#11036; RGB to HSV color space conversion...</div>
               <div class="processing-step" data-step="segment">&#11036; Region-of-interest segmentation...</div>
-              <div class="processing-step" data-step="grade">&#11036; EfficientNet-B3 compound grading...</div>
-              <div class="processing-step" data-step="disease">&#11036; YOLOv8-Seg disease segmentation...</div>
+              <div class="processing-step" data-step="grade">&#11036; Assessing quality grade...</div>
+              <div class="processing-step" data-step="disease">&#11036; Estimating visible disease symptoms...</div>
               <div class="processing-step" data-step="result">&#11036; Multi-dimensional scoring...</div>
             </div>
           </div>
@@ -483,10 +483,10 @@
             </div>
             <div>
               <div class="settings-item-label">Language</div>
-              <div class="settings-item-sub" id="currentLang">English</div>
+              <div class="settings-item-sub" id="currentLang">English (Filipino translation pending)</div>
             </div>
           </div>
-          <button class="btn btn-sm btn-secondary" id="toggleLangBtn">Switch</button>
+          <button class="btn btn-sm btn-secondary" id="toggleLangBtn" disabled title="Filipino translation is not yet implemented">English</button>
         </div>
         <div class="settings-item">
           <div class="settings-item-left">
@@ -495,10 +495,10 @@
             </div>
             <div>
               <div class="settings-item-label">Offline Mode</div>
-              <div class="settings-item-sub">Use on-device TFLite model</div>
+              <div class="settings-item-sub">Keep analysis on this device</div>
             </div>
           </div>
-          <div class="toggle" id="toggleOffline"></div>
+          <div class="toggle" id="toggleOffline" role="switch" tabindex="0" aria-label="Offline mode" aria-checked="false"></div>
         </div>
       </div>
 
@@ -511,10 +511,10 @@
             </div>
             <div>
               <div class="settings-item-label">Primary Model</div>
-              <div class="settings-item-sub">YOLOv8-Nano v8.1.0</div>
+              <div class="settings-item-sub">YOLOv8-Nano (bundled ONNX)</div>
             </div>
           </div>
-          <span class="settings-item-right" style="color:var(--color-success);font-size:12px;font-weight:600">Active</span>
+          <span class="settings-item-right" style="color:var(--color-success);font-size:12px;font-weight:600">Available</span>
         </div>
         <div class="settings-item">
           <div class="settings-item-left">
@@ -526,7 +526,7 @@
               <div class="settings-item-sub">EfficientNet-B3 (ImageNet)</div>
             </div>
           </div>
-          <span class="settings-item-right" style="color:var(--text-tertiary);font-size:12px;font-weight:600">Standby</span>
+          <span class="settings-item-right" style="color:var(--text-tertiary);font-size:12px;font-weight:600">Not bundled</span>
         </div>
         <div class="settings-item">
           <div class="settings-item-left">
@@ -550,7 +550,7 @@
               <div class="settings-item-sub" id="thresholdValue">65%</div>
             </div>
           </div>
-          <span class="settings-item-right">&#8250;</span>
+          <input id="detectionThreshold" type="range" min="10" max="95" step="1" value="65" aria-label="Detection confidence threshold" style="width:110px;accent-color:var(--color-primary)">
         </div>
       </div>
 
@@ -563,7 +563,7 @@
             </div>
             <div>
               <div class="settings-item-label">Overall Accuracy</div>
-              <div class="settings-item-sub">96.8% on test dataset (12,500 images)</div>
+              <div class="settings-item-sub">Not validated for the deployed pipeline</div>
             </div>
           </div>
         </div>
@@ -574,7 +574,7 @@
             </div>
             <div>
               <div class="settings-item-label">F1-Score / Precision / Recall</div>
-              <div class="settings-item-sub">96.5% / 96.2% / 96.8%</div>
+              <div class="settings-item-sub">Pending linked evaluation results</div>
             </div>
           </div>
         </div>
@@ -585,7 +585,7 @@
             </div>
             <div>
               <div class="settings-item-label">Training Configuration</div>
-              <div class="settings-item-sub">100 epochs, AdamW (lr=0.001), batch 16</div>
+              <div class="settings-item-sub">See retained training experiment outputs</div>
             </div>
           </div>
         </div>
@@ -593,7 +593,7 @@
 
       <div class="settings-group">
         <div class="settings-group-title">Data</div>
-        <div class="settings-item" id="clearDataBtn">
+        <div class="settings-item" id="clearDataBtn" role="button" tabindex="0">
           <div class="settings-item-left">
             <div class="settings-item-icon">
               <svg class="icon-svg" style="color:var(--color-error)" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
@@ -613,7 +613,7 @@
         </div>
         <div style="font-family:var(--font-display);font-size:16px;font-weight:700;margin-bottom:4px">PitayaGrade v1.0.0</div>
         <div style="font-size:12px;color:var(--text-tertiary)">Pre-Harvest Quality Grading &amp; Disease Detection</div>
-        <div style="font-size:11px;color:var(--text-tertiary);margin-top:4px">Dual-Stage DL Pipeline (YOLOv8 + EfficientNet-B3)</div>
+        <div style="font-size:11px;color:var(--text-tertiary);margin-top:4px">YOLOv8 ONNX with image-based disease estimates</div>
         <div style="font-size:11px;color:var(--text-tertiary);margin-top:8px">Capstone Project 2025-2026</div>
       </div>
     </section>
@@ -657,6 +657,7 @@
 
 <!-- Scripts -->
 <script src="ort.min.js"></script>
+<script src="js/storage.js"></script>
 <script src="js/notifications.js"></script>
 <script src="js/model-inference.js"></script>
 <script src="js/scanner.js"></script>

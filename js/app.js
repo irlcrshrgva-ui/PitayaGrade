@@ -13,8 +13,11 @@ const PitayaApp = {
 
   init() {
     // Load settings
-    const saved = localStorage.getItem('pg_settings');
-    if (saved) this.settings = { ...this.settings, ...JSON.parse(saved) };
+    const saved = ScanStore.read('pg_settings', {}, value => value && typeof value === 'object' && !Array.isArray(value));
+    this.settings = { ...this.settings, ...saved };
+    this.settings.threshold = Number.isFinite(Number(this.settings.threshold)) ? Math.max(10, Math.min(95, Number(this.settings.threshold))) : 65;
+    this.settings.offlineMode = this.settings.offlineMode === true;
+    ModelInference.CONF_THRESHOLD = this.settings.threshold / 100;
 
     // Initialize modules
     Scanner.init();
@@ -28,6 +31,30 @@ const PitayaApp = {
     this._bindHeader();
     this._bindModal();
     this._bindSettings();
+    const refreshData = () => {
+      DashboardManager.refresh();
+      HistoryManager.refresh();
+      ReportsManager.invalidate();
+      if (this.currentView === 'analytics') DashboardManager.renderAnalytics();
+    };
+    window.addEventListener('pg:scans-changed', refreshData);
+    window.addEventListener('storage', event => {
+      if (event.key === 'pg_scans' || event.key === null) refreshData();
+    });
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) LiveScanner.cleanup();
+    });
+    window.addEventListener('pagehide', () => LiveScanner.cleanup());
+    window.addEventListener('online', () => this._checkConnectivity());
+    window.addEventListener('offline', () => this._checkConnectivity());
+    window.addEventListener('resize', () => {
+      clearTimeout(this.resizeTimer);
+      this.resizeTimer = setTimeout(() => {
+        if (this.currentView === 'dashboard') DashboardManager.refresh();
+        if (this.currentView === 'analytics') DashboardManager.renderAnalytics();
+      }, 150);
+    });
+    if (ScanStore.warnings.size) ToastManager.show('Some saved data could not be loaded. Original data has been preserved.', 'warning', 8000);
 
     // Handle back button
     window.addEventListener('hashchange', () => {
@@ -78,29 +105,42 @@ const PitayaApp = {
 
     if (closeBtn) closeBtn.addEventListener('click', closeModal);
     if (backdrop) backdrop.addEventListener('click', closeModal);
+    document.addEventListener('keydown', event => { if (event.key === 'Escape') closeModal(); });
   },
 
   _bindSettings() {
-    // Language toggle
-    const langBtn = document.getElementById('toggleLangBtn');
-    if (langBtn) {
-      langBtn.addEventListener('click', () => {
-        this.settings.language = this.settings.language === 'en' ? 'fil' : 'en';
-        this._saveSettings();
-        const langLabel = document.getElementById('currentLang');
-        if (langLabel) langLabel.textContent = this.settings.language === 'en' ? 'English' : 'Filipino';
-        ToastManager.show(`Language set to ${this.settings.language === 'en' ? 'English' : 'Filipino'}`, 'info');
-      });
-    }
+    const threshold = document.getElementById('detectionThreshold');
+    threshold.value = this.settings.threshold;
+    document.getElementById('thresholdValue').textContent = this.settings.threshold + '%';
+    threshold.addEventListener('input', () => {
+      document.getElementById('thresholdValue').textContent = threshold.value + '%';
+    });
+    threshold.addEventListener('change', () => {
+      const previous = this.settings.threshold;
+      this.settings.threshold = Number(threshold.value);
+      if (!this._saveSettings()) this.settings.threshold = previous;
+      threshold.value = this.settings.threshold;
+      document.getElementById('thresholdValue').textContent = this.settings.threshold + '%';
+      ModelInference.CONF_THRESHOLD = this.settings.threshold / 100;
+    });
+    // English is the only implemented translation; the pending option is disabled.
 
     // Offline toggle
     const offlineToggle = document.getElementById('toggleOffline');
     if (offlineToggle) {
       if (this.settings.offlineMode) offlineToggle.classList.add('on');
+      offlineToggle.setAttribute('aria-checked', String(this.settings.offlineMode));
+      offlineToggle.addEventListener('keydown', event => {
+        if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); offlineToggle.click(); }
+      });
       offlineToggle.addEventListener('click', () => {
         this.settings.offlineMode = !this.settings.offlineMode;
-        offlineToggle.classList.toggle('on');
-        this._saveSettings();
+        if (!this._saveSettings()) {
+          this.settings.offlineMode = !this.settings.offlineMode;
+          return;
+        }
+        offlineToggle.classList.toggle('on', this.settings.offlineMode);
+        offlineToggle.setAttribute('aria-checked', String(this.settings.offlineMode));
         this._checkConnectivity();
         ToastManager.show(`Offline mode ${this.settings.offlineMode ? 'enabled' : 'disabled'}`, 'info');
       });
@@ -109,12 +149,17 @@ const PitayaApp = {
     // Clear data
     const clearBtn = document.getElementById('clearDataBtn');
     if (clearBtn) {
+      clearBtn.addEventListener('keydown', event => {
+        if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); clearBtn.click(); }
+      });
       clearBtn.addEventListener('click', () => {
         if (confirm('Are you sure you want to delete all scan records? This cannot be undone.')) {
-          localStorage.removeItem('pg_scans');
-          DashboardManager.refresh();
-          HistoryManager.refresh();
-          ToastManager.show('All data cleared', 'info');
+          try {
+            ScanStore.clear();
+            document.getElementById('detailModal').classList.remove('open');
+            document.getElementById('modalBackdrop').classList.remove('open');
+            ToastManager.show('All scan records cleared', 'info');
+          } catch (error) { ToastManager.show('Unable to clear scan records.', 'error'); }
         }
       });
     }
@@ -161,19 +206,25 @@ const PitayaApp = {
   },
 
   _saveSettings() {
-    localStorage.setItem('pg_settings', JSON.stringify(this.settings));
+    try {
+      localStorage.setItem('pg_settings', JSON.stringify(this.settings));
+      return true;
+    } catch (error) {
+      ToastManager.show('Settings could not be saved.', 'error');
+      return false;
+    }
   },
 
   _checkConnectivity() {
     const dot = document.getElementById('connectionDot');
     if (!dot) return;
 
-    if (this.settings.offlineMode) {
+    if (this.settings.offlineMode || !navigator.onLine) {
       dot.classList.add('offline');
-      dot.title = 'Offline Mode (TFLite)';
+      dot.title = 'Offline — scanning runs on this device';
     } else {
       dot.classList.remove('offline');
-      dot.title = 'Online (Cloud)';
+      dot.title = 'Connected — scanning runs on this device';
     }
   }
 };
@@ -207,7 +258,7 @@ const Tutorial = {
     {
       title: 'Scan a Fruit',
       icon: '&#128247;',
-      desc: 'Tap the Scan button to capture or upload a dragon fruit photo. The AI will grade it and detect any disease in under 2 seconds.',
+      desc: 'Tap Scan to capture or upload a dragon fruit photo. The app grades the image and estimates visible symptoms. Processing time depends on your device.',
       target: '#nav-scan',
       badge: 'Step 2 of 5',
     },
@@ -235,7 +286,7 @@ const Tutorial = {
   ],
 
   init() {
-    if (localStorage.getItem('pg_tutorial_done')) return;
+    try { if (localStorage.getItem('pg_tutorial_done')) return; } catch (error) { return; }
     setTimeout(() => this.show(), 2200);
   },
 
@@ -263,7 +314,7 @@ const Tutorial = {
   done() {
     const overlay = document.getElementById('tutorialOverlay');
     overlay.classList.remove('active', 'spotlight-mode');
-    localStorage.setItem('pg_tutorial_done', 'true');
+    try { localStorage.setItem('pg_tutorial_done', 'true'); } catch (error) { /* Tutorial can still close without storage. */ }
     this._clearSpotlight();
   },
 

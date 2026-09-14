@@ -10,6 +10,7 @@ const Scanner = {
   currentImageData: null,
   currentFileName: '',
   isProcessing: false,
+  imageRequest: 0,
 
   // Dual-Stage Model Configuration
   modelConfig: {
@@ -105,8 +106,14 @@ const Scanner = {
 
   loadImage(file) {
     if (this.isProcessing) return;
+    if (!file.type.startsWith('image/') || file.size > 20 * 1024 * 1024) {
+      ToastManager.show('Choose an image smaller than 20 MB.', 'warning');
+      return;
+    }
+    const request = ++this.imageRequest;
     const reader = new FileReader();
     reader.onload = (e) => {
+      if (request !== this.imageRequest || this.isProcessing) return;
       const dataUrl = e.target.result;
       this.currentImage = dataUrl;
       this.currentFileName = file.name || '';
@@ -130,9 +137,12 @@ const Scanner = {
 
       // Extract pixel data for analysis
       this._extractPixelData(dataUrl).catch(() => {
+        if (request !== this.imageRequest) return;
+        this.resetScanner();
         ToastManager.show('Unable to read this image. Please choose another file.', 'error');
       });
     };
+    reader.onerror = () => ToastManager.show('Unable to read image file.', 'error');
     reader.readAsDataURL(file);
   },
 
@@ -313,6 +323,15 @@ const Scanner = {
     }
 
     return { grid, gridW, gridH };
+  },
+
+  _modelROI(box, gridW, gridH) {
+    if (![box.x, box.y, box.right, box.bottom].every(Number.isFinite) || box.right <= box.x || box.bottom <= box.y) return null;
+    const gx = Math.max(0, Math.min(gridW - 1, Math.floor(box.x * gridW)));
+    const gy = Math.max(0, Math.min(gridH - 1, Math.floor(box.y * gridH)));
+    const gw = Math.max(1, Math.min(gridW, Math.ceil(box.right * gridW)) - gx);
+    const gh = Math.max(1, Math.min(gridH, Math.ceil(box.bottom * gridH)) - gy);
+    return { gx, gy, gw, gh, coverage: gw * gh / (gridW * gridH) };
   },
 
   _findROI(gridData) {
@@ -624,7 +643,7 @@ const Scanner = {
         size: 'Unknown', colorUniformity: 'N/A', colorDescriptor: 'Unrecognized',
         surfaceCondition: 'Unknown', brightness: (brightness * 100).toFixed(0) + '%',
         processingMode: PitayaApp.settings.offlineMode ? 'Offline (TFLite)' : 'Online (Cloud)',
-        processingTime: (0.4 + Math.random() * 0.3).toFixed(1) + 's',
+        processingTime: 'N/A',
         modelUsed: 'YOLOv8-Nano + EfficientNet-B3'
       },
       recommendations: [
@@ -641,22 +660,24 @@ const Scanner = {
   //   Stage 2B: 6-dimensional compound quality grading within ROI
   // All classification decisions are deterministic (no Math.random)
   // ============================================================
-  _generateResult(modelResult) {
+  _generateResult(modelResult, imageData = this.currentImageData) {
     if (modelResult && !modelResult.isDragonFruit) {
       return this._buildRejectionResult(['The model did not detect a dragon fruit above its confidence threshold']);
     }
-    if (!this.currentImageData) {
+    if (!imageData) {
       return this._buildRejectionResult(['No image data available for analysis']);
     }
 
-    const data = this.currentImageData.data;
-    const imgWidth = this.currentImageData.width;
-    const imgHeight = this.currentImageData.height;
+    const data = imageData.data;
+    const imgWidth = imageData.width;
+    const imgHeight = imageData.height;
     const cellSize = 16; // 128 / 8 = 16px per grid cell
 
     // === STAGE 1: YOLOv8-Nano Grid-Based Object Detection ===
     const gridData = this._buildGridAnalysis(data, imgWidth, imgHeight, cellSize);
-    const roi = this._findROI(gridData);
+    const roi = modelResult?.isDragonFruit && modelResult.box
+      ? this._modelROI(modelResult.box, gridData.gridW, gridData.gridH)
+      : this._findROI(gridData);
 
     if (!roi) {
       return this._buildRejectionResult([
@@ -674,22 +695,6 @@ const Scanner = {
     const avgPinkRatio = roiCells.reduce((s, c) => s + c.pinkRatio, 0) / roiCells.length;
     const avgGreenRatio = roiCells.reduce((s, c) => s + c.greenRatio, 0) / roiCells.length;
 
-    // Filename-based impostor check (metadata validation layer)
-    if (this.currentFileName) {
-      const fl = this.currentFileName.toLowerCase();
-      const blacklist = ['apple', 'tomato', 'banana', 'mango', 'orange', 'grape', 'strawberry',
-        'pear', 'shoe', 'cat', 'dog', 'person', 'car', 'wall', 'lemon', 'pineapple',
-        'watermelon', 'pepper', 'carrot', 'potato', 'onion', 'garlic', 'cabbage',
-        'broccoli', 'lettuce', 'cucumber', 'eggplant', 'corn', 'avocado', 'peach',
-        'plum', 'cherry', 'blueberry', 'raspberry', 'blackberry', 'kiwi', 'coconut',
-        'pomegranate', 'fig', 'papaya', 'guava', 'melon'];
-      for (const word of blacklist) {
-        if (fl.includes(word)) {
-          return this._buildRejectionResult([`Metadata tag "${word}" conflicts with dragon fruit classification`]);
-        }
-      }
-    }
-
     // Global image quality validation
     let totalR = 0, totalG = 0, totalB = 0;
     const totalPx = data.length / 4;
@@ -704,20 +709,20 @@ const Scanner = {
     }
     const colorVariance = Math.sqrt(varSum / totalPx / 3) / 255;
 
-    if (colorVariance < 0.03 || colorVariance > 0.92 || brightness < 0.09 || brightness > 0.97) {
+    if (!modelResult && (colorVariance < 0.03 || colorVariance > 0.92 || brightness < 0.09 || brightness > 0.97)) {
       return this._buildRejectionResult(['Flat surface, solid background, or extreme exposure detected']);
     }
 
     // Dragonfruit has both pink skin AND green scale tips — require both
-    if (avgPinkRatio < 0.06) {
+    if (!modelResult && avgPinkRatio < 0.06) {
       return this._buildRejectionResult(['Insufficient pink/magenta skin color detected — not a dragon fruit']);
     }
-    if (avgGreenRatio < 0.02) {
+    if (!modelResult && avgGreenRatio < 0.02) {
       return this._buildRejectionResult(['No green scale tips detected — not a dragon fruit']);
     }
     // Pink-to-green ratio must be within the biological range of pitaya (3:1 to 20:1)
     const pinkToGreen = avgGreenRatio > 0 ? avgPinkRatio / avgGreenRatio : 999;
-    if (pinkToGreen < 1.5 || pinkToGreen > 25) {
+    if (!modelResult && (pinkToGreen < 1.5 || pinkToGreen > 25)) {
       return this._buildRejectionResult(['Pink-to-green color ratio outside dragon fruit biological range']);
     }
 
@@ -898,39 +903,9 @@ const Scanner = {
     return symptomMap[diseaseName] || ['Unidentified symptoms present'];
   },
 
-  _getModelMetrics(gradeLabel, diseaseName) {
-    // Simulated validation metrics from dual-stage pipeline training
-    // These represent the model's performance on the test dataset
-
-    const gradeMetrics = {
-      'Grade A': { accuracy: 97.4, precision: 97.1, recall: 97.6, f1Score: 97.3 },
-      'Grade B': { accuracy: 95.8, precision: 95.2, recall: 96.1, f1Score: 95.6 },
-      'Grade C': { accuracy: 94.2, precision: 93.5, recall: 94.6, f1Score: 94.0 },
-      'Reject':  { accuracy: 98.2, precision: 97.9, recall: 98.4, f1Score: 98.1 }
-    };
-
-    const diseaseMetrics = {
-      'Healthy':       { accuracy: 98.5, precision: 98.8, recall: 98.2, f1Score: 98.5 },
-      'Anthracnose':   { accuracy: 95.1, precision: 94.5, recall: 95.8, f1Score: 95.1 },
-      'Stem Canker':   { accuracy: 93.4, precision: 92.8, recall: 94.1, f1Score: 93.4 },
-      'Soft Rot':      { accuracy: 94.7, precision: 93.9, recall: 95.5, f1Score: 94.7 },
-      'Pest Damage':   { accuracy: 92.3, precision: 91.6, recall: 93.0, f1Score: 92.3 },
-      'Sunburn':       { accuracy: 96.5, precision: 95.8, recall: 97.2, f1Score: 96.5 },
-      'Fungal Spots':  { accuracy: 93.8, precision: 93.2, recall: 94.4, f1Score: 93.8 }
-    };
-
-    return {
-      grade: gradeMetrics[gradeLabel] || gradeMetrics['Grade B'],
-      disease: diseaseMetrics[diseaseName] || diseaseMetrics['Healthy'],
-      overall: {
-        accuracy: 96.8,
-        precision: 96.2,
-        recall: 96.8,
-        f1Score: 96.5,
-        datasetSize: 12500,
-        trainingSplit: '80/10/10'
-      }
-    };
+  _getModelMetrics() {
+    // No validated evaluation is linked to the deployed model.
+    return null;
   },
 
   _gradeClass(label) {
@@ -944,7 +919,7 @@ const Scanner = {
     if (maturity === 'Harvestable') {
       recs.push({ type: 'green', icon: '<svg class="icon-svg" viewBox="0 0 24 24" style="width:16px;height:16px"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="m9 11 3 3 3-3"/></svg>', text: 'Fruit is at peak maturity. Ready for harvest and immediate distribution.' });
     } else {
-      recs.push({ type: 'yellow', icon: '<svg class="icon-svg" viewBox="0 0 24 24" style="width:16px;height:16px"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>', text: 'Fruit is still developing. Recommended harvest in 3-5 days for optimal sweetness.' });
+      recs.push({ type: 'yellow', icon: '<svg class="icon-svg" viewBox="0 0 24 24" style="width:16px;height:16px"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>', text: 'Image analysis suggests the fruit is developing. Check maturity on the plant before scheduling harvest.' });
     }
 
     if (grade === 'Grade A') {
@@ -978,7 +953,7 @@ const Scanner = {
             <div class="result-section">
               <div class="result-section-title">Detection Diagnostics</div>
               <div style="font-size:13px;color:var(--text-secondary);line-height:1.5;margin-bottom:12px">
-                The dual-stage detection pipeline (YOLOv8 + EfficientNet-B3) failed to verify a matching dragon fruit color signature or surface texture profile in the captured image frame.
+                The assessment could not verify a dragon fruit in this image. Check the image and detection threshold, then try again.
               </div>
               <div class="symptoms-list">
                 ${result.disease.symptoms.map(sym => `
@@ -1011,9 +986,6 @@ const Scanner = {
 
     const confidenceClass = result.grade.confidence > 0.85 ? 'high' : result.grade.confidence > 0.7 ? 'medium' : 'low';
     const diseaseConfClass = result.disease.confidence > 0.85 ? 'high' : result.disease.confidence > 0.7 ? 'medium' : 'low';
-    const gm = result.modelMetrics.grade;
-    const dm = result.modelMetrics.disease;
-    const om = result.modelMetrics.overall;
 
     area.innerHTML = `
       <div class="result-card">
@@ -1130,64 +1102,9 @@ const Scanner = {
             </div>
           </div>
 
-          <!-- Model Performance Metrics -->
           <div class="result-section">
-            <div class="result-section-title">Model Performance Metrics</div>
-            <div class="metrics-card">
-              <div class="metrics-subtitle">Grade Classification (${result.grade.label})</div>
-              <div class="metrics-grid">
-                <div class="metric-item">
-                  <div class="metric-value">${gm.accuracy}%</div>
-                  <div class="metric-label">Accuracy</div>
-                </div>
-                <div class="metric-item">
-                  <div class="metric-value">${gm.precision}%</div>
-                  <div class="metric-label">Precision</div>
-                </div>
-                <div class="metric-item">
-                  <div class="metric-value">${gm.recall}%</div>
-                  <div class="metric-label">Recall</div>
-                </div>
-                <div class="metric-item">
-                  <div class="metric-value">${gm.f1Score}%</div>
-                  <div class="metric-label">F1-Score</div>
-                </div>
-              </div>
-            </div>
-            <div class="metrics-card" style="margin-top:8px">
-              <div class="metrics-subtitle">Disease Detection (${result.disease.name})</div>
-              <div class="metrics-grid">
-                <div class="metric-item">
-                  <div class="metric-value">${dm.accuracy}%</div>
-                  <div class="metric-label">Accuracy</div>
-                </div>
-                <div class="metric-item">
-                  <div class="metric-value">${dm.precision}%</div>
-                  <div class="metric-label">Precision</div>
-                </div>
-                <div class="metric-item">
-                  <div class="metric-value">${dm.recall}%</div>
-                  <div class="metric-label">Recall</div>
-                </div>
-                <div class="metric-item">
-                  <div class="metric-value">${dm.f1Score}%</div>
-                  <div class="metric-label">F1-Score</div>
-                </div>
-              </div>
-            </div>
-            <div class="metrics-overall">
-              <div class="metrics-overall-title">Overall Model Performance</div>
-              <div class="metrics-overall-row">
-                <span>Accuracy: <strong>${om.accuracy}%</strong></span>
-                <span>F1: <strong>${om.f1Score}%</strong></span>
-                <span>Dataset: <strong>${om.datasetSize}</strong></span>
-              </div>
-              <div class="metrics-overall-row">
-                <span>Precision: <strong>${om.precision}%</strong></span>
-                <span>Recall: <strong>${om.recall}%</strong></span>
-                <span>Split: <strong>${om.trainingSplit}</strong></span>
-              </div>
-            </div>
+            <div class="result-section-title">Assessment Limitations</div>
+            <p style="font-size:12px;color:var(--text-secondary)">Disease and maturity results are image-based estimates. Size is estimated from framing, not measured weight. Validated performance metrics for this deployed pipeline are not available.</p>
           </div>
 
           <!-- Recommendations -->
@@ -1218,7 +1135,7 @@ const Scanner = {
 
   _saveScan(result) {
     if (result.isDragonFruit === false) return; // Skip saving unrecognized scans to keep history clean
-    const scans = JSON.parse(localStorage.getItem('pg_scans') || '[]');
+    const scans = ScanStore.getScans(true);
     // Store thumbnail instead of full image to save space
     const thumbCanvas = document.createElement('canvas');
     thumbCanvas.width = 80;
@@ -1243,7 +1160,7 @@ const Scanner = {
     scans.unshift(scanRecord);
     // Keep max 500 scans
     if (scans.length > 500) scans.length = 500;
-    localStorage.setItem('pg_scans', JSON.stringify(scans));
+    ScanStore.saveScans(scans);
 
     // Update dashboard
     if (typeof DashboardManager !== 'undefined') {
@@ -1255,6 +1172,8 @@ const Scanner = {
   },
 
   resetScanner() {
+    if (this.isProcessing) return;
+    this.imageRequest++;
     this.currentImage = null;
     this.currentImageData = null;
 

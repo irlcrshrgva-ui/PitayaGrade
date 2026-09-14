@@ -82,6 +82,7 @@ const ModelInference = {
 
     let bestConf = 0;
     let bestCls  = -1;
+    let bestIndex = -1;
 
     for (let i = 0; i < nDet; i++) {
       let maxCls  = 0;
@@ -90,7 +91,7 @@ const ModelInference = {
         const score = data[(4 + c) * nDet + i];
         if (score > maxConf) { maxConf = score; maxCls = c; }
       }
-      if (maxConf > bestConf) { bestConf = maxConf; bestCls = maxCls; }
+      if (maxConf > bestConf) { bestConf = maxConf; bestCls = maxCls; bestIndex = i; }
     }
 
     if (bestCls === -1 || bestConf < this.CONF_THRESHOLD) {
@@ -101,6 +102,12 @@ const ModelInference = {
       isDragonFruit: true,
       grade:         this.CLASSES[bestCls],
       confidence:    bestConf,
+      box: {
+        x: Math.max(0, (data[bestIndex] - data[2 * nDet + bestIndex] / 2) / this.INPUT_SIZE),
+        y: Math.max(0, (data[nDet + bestIndex] - data[3 * nDet + bestIndex] / 2) / this.INPUT_SIZE),
+        right: Math.min(1, (data[bestIndex] + data[2 * nDet + bestIndex] / 2) / this.INPUT_SIZE),
+        bottom: Math.min(1, (data[nDet + bestIndex] + data[3 * nDet + bestIndex] / 2) / this.INPUT_SIZE)
+      },
     };
   },
 

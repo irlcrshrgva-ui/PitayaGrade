@@ -16,6 +16,7 @@ const LiveScanner = {
   lastFpsTime: 0,
   currentFacing: 'environment',
   currentMode: 'photo', // 'photo' or 'live'
+  cameraRequest: 0,
 
   // Smoothed results for display stability
   smoothedResult: {
@@ -92,9 +93,9 @@ const LiveScanner = {
   },
 
   async startCamera() {
+    this.stopCamera();
+    const request = this.cameraRequest;
     try {
-      // Stop any existing stream
-      this.stopCamera();
 
       const constraints = {
         video: {
@@ -106,15 +107,15 @@ const LiveScanner = {
         audio: false
       };
 
-      this.stream = await navigator.mediaDevices.getUserMedia(constraints);
-      this.video.srcObject = this.stream;
-      
-      await new Promise((resolve) => {
-        this.video.onloadedmetadata = () => {
-          this.video.play();
-          resolve();
-        };
-      });
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      if (request !== this.cameraRequest) {
+        stream.getTracks().forEach(track => track.stop());
+        return;
+      }
+      this.stream = stream;
+      this.video.srcObject = stream;
+      await this.video.play();
+      if (request !== this.cameraRequest) return;
 
       // Set canvas to match video
       this.canvas.width = 64;
@@ -147,6 +148,8 @@ const LiveScanner = {
 
       ToastManager.show('Live scanner activated', 'success');
     } catch (err) {
+      if (request !== this.cameraRequest) return;
+      this.stopCamera();
       console.error('Camera access failed:', err);
       ToastManager.show('Camera access denied or unavailable', 'error');
       // Fall back to photo mode
@@ -156,6 +159,7 @@ const LiveScanner = {
   },
 
   stopCamera() {
+    this.cameraRequest++;
     this.isActive = false;
 
     if (this.analysisInterval) {
@@ -193,57 +197,31 @@ const LiveScanner = {
     }
   },
 
-  _analyzeFrame() {
-    if (!this.video || !this.ctx || this.video.readyState < 2 || this.inferencePending) return;
-
-    this.frameCount++;
-
-    // Capture at 64x64 for HSV fallback, full-res for model
-    this.ctx.drawImage(this.video, 0, 0, 64, 64);
-    const imageData = this.ctx.getImageData(0, 0, 64, 64);
-
-    if (typeof ModelInference !== 'undefined' && ModelInference.isLoaded) {
-      // Use real YOLOv8 model — capture higher-res frame for accuracy
-      const cap = document.createElement('canvas');
-      cap.width = 320; cap.height = 320;
-      cap.getContext('2d').drawImage(this.video, 0, 0, 320, 320);
-      const img = new Image();
-      this.inferencePending = true;
-      img.onerror = () => { this.inferencePending = false; };
-      img.onload = () => {
-        ModelInference.infer(img).then(mr => {
-          if (!this.isActive) return;
-          if (!mr) { this._smoothResult(this._analyzePixels(imageData)); this._updateHud(); return; }
-          const hsvResult = this._analyzePixels(imageData);
-          const merged = mr.isDragonFruit ? {
-            isDragonFruit: true,
-            detectedObject: mr.grade === 'Grade A' ? 'Pitaya Premium' :
-                            mr.grade === 'Grade B' ? 'Pitaya Standard' :
-                            mr.grade === 'Grade C' ? 'Pitaya Economy' : 'Pitaya Reject',
-            grade:   { label: mr.grade, confidence: mr.confidence, class: Scanner._gradeClass(mr.grade) },
-            disease: hsvResult.isDragonFruit ? hsvResult.disease : { name: 'Healthy', confidence: 0.9, isHealthy: true },
-            maturity: hsvResult.isDragonFruit ? hsvResult.maturity : { status: 'Harvestable', value: 75 }
-          } : { isDragonFruit: false, detectedObject: 'Unknown Object',
-                grade: { label: 'Unrecognized', confidence: 0, class: 'grade-reject' },
-                disease: { name: 'N/A', confidence: 0, isHealthy: true },
-                maturity: { status: 'N/A', value: 0 } };
-          this._smoothResult(merged);
-          this._updateHud();
-        }).catch(err => console.error('Live inference failed:', err))
-          .finally(() => { this.inferencePending = false; });
-      };
-      img.src = cap.toDataURL('image/jpeg', 0.8);
-      return; // HUD updated in the promise above
+  async _analyzeFrame() {
+    if (!this.isActive || !this.video || !this.ctx || this.video.readyState < 2 || this.inferencePending) return;
+    const request = this.cameraRequest;
+    this.inferencePending = true;
+    try {
+      const frame = document.createElement('canvas');
+      frame.width = this.video.videoWidth;
+      frame.height = this.video.videoHeight;
+      frame.getContext('2d').drawImage(this.video, 0, 0);
+      this.canvas.width = this.canvas.height = 128;
+      this.ctx.drawImage(frame, 0, 0, 128, 128);
+      const pixels = this.ctx.getImageData(0, 0, 128, 128);
+      const model = await ModelInference.infer(frame);
+      if (!this.isActive || request !== this.cameraRequest) return;
+      const result = Scanner._generateResult(model, pixels);
+      result.detectedObject = result.isDragonFruit ? 'Dragon Fruit' + (model ? '' : ' (heuristic)') : 'Unrecognized';
+      this._smoothResult(result);
+      this._updateHud();
+      this.frameCount++;
+    } catch (error) {
+      console.error('Live analysis failed:', error);
+      if (request === this.cameraRequest) this._resetHud();
+    } finally {
+      this.inferencePending = false;
     }
-
-    // HSV fallback when model not loaded
-    const result = this._analyzePixels(imageData);
-
-    // Smooth the results for stable HUD display
-    this._smoothResult(result);
-
-    // Update the HUD overlay
-    this._updateHud();
   },
 
   _rgbToHsv(r, g, b) {
@@ -772,6 +750,7 @@ const LiveScanner = {
   },
 
   captureAndAnalyze() {
+    if (Scanner.isProcessing) return;
     if (!this.video || this.video.readyState < 2) {
       ToastManager.show('Camera not ready', 'warning');
       return;
@@ -802,6 +781,7 @@ const LiveScanner = {
 
     // Load into the photo scanner and auto-analyze
     Scanner.currentImage = dataUrl;
+    Scanner.imageRequest++;
     Scanner.currentFileName = '';
 
     const preview = document.getElementById('scannerPreview');
@@ -825,9 +805,7 @@ const LiveScanner = {
 
   // Clean up when navigating away from scan view
   cleanup() {
-    if (this.isActive) {
-      this.stopCamera();
-    }
+    this.stopCamera();
     if (this.currentMode === 'live') document.getElementById('modePhotoBtn').click();
   }
 };
