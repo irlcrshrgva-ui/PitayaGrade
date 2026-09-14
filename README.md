@@ -44,6 +44,12 @@ npm install
 npx cap sync android
 ```
 
+After editing `index.html`, `js/`, or `css/`, run `npm run build` to update
+`www/`, or `npm run sync:android` to also synchronize the Android project.
+Run `npm test` for asset wiring and inference regression checks.
+Both web entry points use the bundled ONNX runtime and model without a CDN.
+Photo scans report model fallback explicitly; disease analysis remains heuristic.
+
 Open the Android project:
 
 ```bash
@@ -61,4 +67,3 @@ Model performance must be recalculated using a leakage-free, untouched test set.
 ## Documentation
 
 The capstone manuscript is available in `PitayaGrade_Capstone_Paper.md`. It describes the proposed system and should be revised whenever the implemented architecture or measured results change.
-

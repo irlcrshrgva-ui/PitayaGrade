@@ -5,110 +5,6 @@
    Color, size, surface condition, disease symptoms
    ============================================= */
 
-// ============================================================
-// YOLOv8 Local ONNX Web Engine
-// Runs real-time offline machine learning inference directly
-// inside the mobile phone webview using ONNX Runtime Web WebGL GPU
-// ============================================================
-const YOLOv8LocalEngine = {
-  session: null,
-  inputWidth: 640,
-  inputHeight: 640,
-
-  async loadModel() {
-    if (this.session) return;
-    try {
-      this.session = await ort.InferenceSession.create('assets/models/best.onnx', {
-        executionProviders: ['webgl']
-      });
-      console.log("Real YOLOv8 local ONNX model loaded successfully!");
-    } catch (err) {
-      console.warn("Local ONNX model not found or WebGL not initialized yet. Using simulated heuristics fallback.", err);
-    }
-  },
-
-  preprocess(canvas) {
-    const tempCanvas = document.createElement('canvas');
-    tempCanvas.width = this.inputWidth;
-    tempCanvas.height = this.inputHeight;
-    const ctx = tempCanvas.getContext('2d');
-    ctx.drawImage(canvas, 0, 0, this.inputWidth, this.inputHeight);
-    
-    const imgData = ctx.getImageData(0, 0, this.inputWidth, this.inputHeight);
-    const pixels = imgData.data;
-
-    const rChannel = new Float32Array(this.inputWidth * this.inputHeight);
-    const jChannel = new Float32Array(this.inputWidth * this.inputHeight);
-    const bChannel = new Float32Array(this.inputWidth * this.inputHeight);
-
-    for (let i = 0, j = 0; i < pixels.length; i += 4, j++) {
-      rChannel[j] = pixels[i] / 255.0;
-      jChannel[j] = pixels[i + 1] / 255.0;
-      bChannel[j] = pixels[i + 2] / 255.0;
-    }
-
-    const float32Data = new Float32Array(3 * this.inputWidth * this.inputHeight);
-    float32Data.set(rChannel, 0);
-    float32Data.set(jChannel, rChannel.length);
-    float32Data.set(bChannel, rChannel.length + jChannel.length);
-
-    return float32Data;
-  },
-
-  async detect(canvasElement) {
-    try {
-      await this.loadModel();
-      if (!this.session) return null;
-
-      const float32Data = this.preprocess(canvasElement);
-      const inputTensor = new ort.Tensor('float32', float32Data, [1, 3, 640, 640]);
-
-      const outputs = await this.session.run({ images: inputTensor });
-      const outputName = this.session.outputNames[0];
-      const outputTensor = outputs[outputName];
-
-      return this.postProcess(outputTensor.data, canvasElement.width, canvasElement.height);
-    } catch (err) {
-      console.warn("WebGL execution failed or model was not fed. Falling back to pixel processing.", err);
-      return null;
-    }
-  },
-
-  postProcess(tensorData, originalWidth, originalHeight) {
-    const numCandidates = 8400;
-    const confidenceThreshold = 0.50;
-    let bestBox = null;
-    let highestConf = 0;
-
-    for (let i = 0; i < numCandidates; i++) {
-      const xc = tensorData[0 * numCandidates + i];
-      const yc = tensorData[1 * numCandidates + i];
-      const w  = tensorData[2 * numCandidates + i];
-      const h  = tensorData[3 * numCandidates + i];
-      const confidence = tensorData[4 * numCandidates + i];
-
-      if (confidence > confidenceThreshold && confidence > highestConf) {
-        highestConf = confidence;
-        const xFactor = originalWidth / this.inputWidth;
-        const yFactor = originalHeight / this.inputHeight;
-        
-        const xmin = Math.max(0, (xc - w / 2) * xFactor);
-        const ymin = Math.max(0, (yc - h / 2) * yFactor);
-        const xmax = Math.min(originalWidth, (xc + w / 2) * xFactor);
-        const ymax = Math.min(originalHeight, (yc + h / 2) * yFactor);
-
-        bestBox = {
-          bbox: [xmin, ymin, xmax, ymax],
-          confidence: confidence,
-          class: "dragon_fruit"
-        };
-      }
-    }
-
-    return bestBox;
-  }
-};
-
 const Scanner = {
   currentImage: null,
   currentImageData: null,
@@ -208,6 +104,7 @@ const Scanner = {
   },
 
   loadImage(file) {
+    if (this.isProcessing) return;
     const reader = new FileReader();
     reader.onload = (e) => {
       const dataUrl = e.target.result;
@@ -232,23 +129,33 @@ const Scanner = {
       document.getElementById('scannerZone').classList.add('has-image');
 
       // Extract pixel data for analysis
-      this._extractPixelData(dataUrl);
+      this._extractPixelData(dataUrl).catch(() => {
+        ToastManager.show('Unable to read this image. Please choose another file.', 'error');
+      });
     };
     reader.readAsDataURL(file);
   },
 
   _extractPixelData(dataUrl) {
+    this.currentImageData = null;
+    return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => {
+      try {
       const canvas = document.createElement('canvas');
       const size = 128; // Sample at 128x128 for YOLOv8 grid scanning
       canvas.width = size;
       canvas.height = size;
       const ctx = canvas.getContext('2d');
       ctx.drawImage(img, 0, 0, size, size);
-      this.currentImageData = ctx.getImageData(0, 0, size, size);
+      const pixels = ctx.getImageData(0, 0, size, size);
+      if (this.currentImage === dataUrl) this.currentImageData = pixels;
+      resolve(pixels);
+      } catch (err) { reject(err); }
     };
+    img.onerror = () => reject(new Error('Image decoding failed'));
     img.src = dataUrl;
+    });
   },
 
   async analyze() {
@@ -261,39 +168,64 @@ const Scanner = {
     overlay.style.display = 'none';
 
     const steps = processingOverlay.querySelectorAll('.processing-step');
+    const started = performance.now();
 
-    // Simulate dual-stage YOLOv8 + EfficientNet-B3 pipeline
-    const stepNames = ['resize', 'normalize', 'segment', 'grade', 'disease', 'result'];
-    for (let i = 0; i < stepNames.length; i++) {
-      steps[i].classList.add('active');
-      steps[i].innerHTML = `\u23F3 ${steps[i].textContent.replace('\u2B1C ', '').replace('\u2705 ', '').replace('\u23F3 ', '').replace('⬜ ', '').replace('✅ ', '').replace('⏳ ', '')}`;
-      await this._delay(300 + Math.random() * 400);
-      steps[i].classList.remove('active');
-      steps[i].classList.add('done');
-      steps[i].innerHTML = `\u2705 ${steps[i].textContent.replace('\u2B1C ', '').replace('\u2705 ', '').replace('\u23F3 ', '').replace('⬜ ', '').replace('✅ ', '').replace('⏳ ', '')}`;
-    }
+    const stepLabel = (el) => el.textContent.replace(/^\S+\s/, '').trim();
+    const markStep = (i, state) => {
+      steps[i].classList.remove('active', 'done');
+      if (state === 'active') steps[i].classList.add('active');
+      if (state === 'done')   steps[i].classList.add('done');
+      const icon = state === 'done' ? '\u2705' : state === 'active' ? '\u23F3' : '\u2B1C';
+      steps[i].innerHTML = icon + ' ' + stepLabel(steps[i]);
+    };
 
-    // Generate results based on dual-stage pipeline analysis
-    const result = await this._generateResult();
+    try {
+    await this._extractPixelData(this.currentImage);
+    await document.getElementById('scannerPreview').decode();
+    // Animate processing stages
+    for (let i = 0; i < 4; i++) { markStep(i, 'active'); await this._delay(250); }
 
-    await this._delay(300);
+    const imgEl = document.getElementById('scannerPreview');
+    const modelPromise = (typeof ModelInference !== 'undefined' && imgEl)
+      ? ModelInference.infer(imgEl)
+      : Promise.resolve(null);
 
-    // Hide processing
+    for (let i = 0; i < 4; i++) markStep(i, 'done');
+    markStep(4, 'active'); await this._delay(200);
+
+    const modelResult = await modelPromise;
+
+    markStep(4, 'done');
+    markStep(5, 'active'); await this._delay(150);
+
+    const result = this._generateResult(modelResult);
+    result.details.processingTime = ((performance.now() - started) / 1000).toFixed(1) + 's';
+    result.details.processingMode = 'Local (ONNX / image analysis)';
+    result.details.modelUsed = modelResult ? 'YOLOv8n ONNX + HSV disease heuristics' : 'HSV image heuristics (model unavailable)';
+    if (!modelResult) ToastManager.show('Model unavailable. Using image heuristics.', 'warning');
+
+    markStep(5, 'done');
+    await this._delay(200);
+
     processingOverlay.classList.add('hidden');
-    // Reset step icons
-    steps.forEach(s => {
-      s.classList.remove('active', 'done');
-      const text = s.textContent.replace('\u2705 ', '').replace('\u23F3 ', '').replace('\u2B1C ', '').replace('⬜ ', '').replace('✅ ', '').replace('⏳ ', '');
-      s.innerHTML = `\u2B1C ${text}`;
-    });
+    steps.forEach((s, i) => markStep(i, 'idle'));
 
-    // Display results
     this._displayResult(result);
-
-    // Save scan
-    this._saveScan(result);
-
+    try {
+      this._saveScan(result);
+    } catch (err) {
+      console.error('Unable to save scan:', err);
+      ToastManager.show('Assessment displayed but could not be saved. Check available storage.', 'error');
+    }
+    } catch (err) {
+      console.error('Scan failed:', err);
+      ToastManager.show('Analysis failed. Please try again or choose another image.', 'error');
+    } finally {
+    processingOverlay.classList.add('hidden');
+    overlay.style.display = 'flex';
+    steps.forEach((s, i) => markStep(i, 'idle'));
     this.isProcessing = false;
+    }
   },
 
   // ============================================================
@@ -344,11 +276,11 @@ const Scanner = {
             cellBrightness += hsv.v;
 
             // Dragon fruit pink/magenta skin (H wraps around 360)
-            if ((hsv.h >= 280 || hsv.h <= 25) && hsv.s > 25 && hsv.v > 30) {
+            if ((hsv.h >= 270 || hsv.h <= 30) && hsv.s > 15 && hsv.v > 25) {
               pinkCount++;
             }
             // Dragon fruit green scale tips
-            else if (hsv.h >= 60 && hsv.h <= 170 && hsv.s > 18 && hsv.v > 22) {
+            else if (hsv.h >= 55 && hsv.h <= 175 && hsv.s > 15 && hsv.v > 20) {
               greenCount++;
             }
             // Very dark pixels (potential disease lesions)
@@ -430,9 +362,9 @@ const Scanner = {
   // ============================================================
   _classifyPixelDisease(h, s, v, gradient) {
     // Healthy pink/magenta skin
-    if ((h >= 280 || h <= 25) && s > 25 && v > 30) return 'healthy_skin';
+    if ((h >= 270 || h <= 30) && s > 15 && v > 25) return 'healthy_skin';
     // Healthy green scale tips
-    if (h >= 60 && h <= 170 && s > 18 && v > 22) return 'healthy_scale';
+    if (h >= 55 && h <= 175 && s > 15 && v > 20) return 'healthy_scale';
     // White flesh (cut fruit)
     if (s < 12 && v > 78) return 'white_flesh';
     // Sunburn - bleached/whitened patches
@@ -569,8 +501,8 @@ const Scanner = {
         totalPixels++;
 
         // Pink skin classification
-        if ((hsv.h >= 280 || hsv.h <= 25) && hsv.s > 25 && hsv.v > 30) pinkPixels++;
-        else if (hsv.h >= 60 && hsv.h <= 170 && hsv.s > 18 && hsv.v > 22) greenPixels++;
+        if ((hsv.h >= 270 || hsv.h <= 30) && hsv.s > 15 && hsv.v > 25) pinkPixels++;
+        else if (hsv.h >= 55 && hsv.h <= 175 && hsv.s > 15 && hsv.v > 20) greenPixels++;
 
         // Sobel edge detection (horizontal gradient)
         if (x > x0 && x < x1 - 1) {
@@ -592,7 +524,7 @@ const Scanner = {
     // === SCORE 1: Color Uniformity (H-channel std dev among pink pixels) ===
     const pinkHues = [];
     for (let i = 0; i < hValues.length; i++) {
-      if ((hValues[i] >= 280 || hValues[i] <= 25) && sValues[i] > 25 && vValues[i] > 30) {
+      if ((hValues[i] >= 270 || hValues[i] <= 30) && sValues[i] > 15 && vValues[i] > 25) {
         pinkHues.push(hValues[i] > 180 ? hValues[i] - 360 : hValues[i]);
       }
     }
@@ -709,7 +641,10 @@ const Scanner = {
   //   Stage 2B: 6-dimensional compound quality grading within ROI
   // All classification decisions are deterministic (no Math.random)
   // ============================================================
-  async _generateResult() {
+  _generateResult(modelResult) {
+    if (modelResult && !modelResult.isDragonFruit) {
+      return this._buildRejectionResult(['The model did not detect a dragon fruit above its confidence threshold']);
+    }
     if (!this.currentImageData) {
       return this._buildRejectionResult(['No image data available for analysis']);
     }
@@ -719,48 +654,9 @@ const Scanner = {
     const imgHeight = this.currentImageData.height;
     const cellSize = 16; // 128 / 8 = 16px per grid cell
 
-    let roi = null;
-    let gridData = this._buildGridAnalysis(data, imgWidth, imgHeight, cellSize);
-    let usedRealYolo = false;
-    let yoloConfidence = 0.0;
-
-    // Check if the local YOLOv8 ONNX model is available and run it locally
-    const tempCanvas = document.createElement('canvas');
-    tempCanvas.width = imgWidth;
-    tempCanvas.height = imgHeight;
-    const tempCtx = tempCanvas.getContext('2d');
-
-    try {
-      const img = new Image();
-      img.src = this.currentImage;
-      await new Promise((resolve, reject) => {
-        img.onload = resolve;
-        img.onerror = reject;
-      });
-      tempCtx.drawImage(img, 0, 0, imgWidth, imgHeight);
-
-      const realDetection = await YOLOv8LocalEngine.detect(tempCanvas);
-      if (realDetection) {
-        // Map pixel bbox coordinates back to cell indices for Stage 2 processing
-        const [xmin, ymin, xmax, ymax] = realDetection.bbox;
-        const gx = Math.max(0, Math.floor(xmin / cellSize));
-        const gy = Math.max(0, Math.floor(ymin / cellSize));
-        const gw = Math.max(1, Math.ceil((xmax - xmin) / cellSize));
-        const gh = Math.max(1, Math.ceil((ymax - ymin) / cellSize));
-        
-        roi = { gx, gy, gw, gh, matchingCells: gw * gh };
-        usedRealYolo = true;
-        yoloConfidence = realDetection.confidence;
-        console.log("Real offline YOLOv8 ONNX detected dragon fruit at bbox:", realDetection.bbox, "Confidence:", yoloConfidence);
-      }
-    } catch (err) {
-      console.warn("Could not draw or load image for local YOLOv8 engine. Using heuristics fallback.", err);
-    }
-
-    // Fallback to color-grid heuristic if YOLOv8 is not loaded or didn't detect
-    if (!roi) {
-      roi = this._findROI(gridData);
-    }
+    // === STAGE 1: YOLOv8-Nano Grid-Based Object Detection ===
+    const gridData = this._buildGridAnalysis(data, imgWidth, imgHeight, cellSize);
+    const roi = this._findROI(gridData);
 
     if (!roi) {
       return this._buildRejectionResult([
@@ -808,22 +704,21 @@ const Scanner = {
     }
     const colorVariance = Math.sqrt(varSum / totalPx / 3) / 255;
 
-    if (colorVariance < 0.04 || colorVariance > 0.9 || brightness < 0.12 || brightness > 0.95) {
+    if (colorVariance < 0.03 || colorVariance > 0.92 || brightness < 0.09 || brightness > 0.97) {
       return this._buildRejectionResult(['Flat surface, solid background, or extreme exposure detected']);
     }
 
-    // Require a minimum percentage of both pink skin and green scale tips for pre-harvest dragon fruit validation.
-    // A dragon fruit uniquely possesses BOTH a vibrant pink body and green scales.
-    // Enforcing both filters instantly separates dragon fruit from red tomatoes/apples (which have 0% green scales)
-    // and green leaves/weeds (which have 0% pink skin).
-    const hasEnoughPink = avgPinkRatio >= 0.06;
-    const hasEnoughGreen = avgGreenRatio >= 0.015;
-
-    if (!hasEnoughPink || !hasEnoughGreen) {
-      return this._buildRejectionResult([
-        'ROI pixel distribution does not match Pitaya surface color signature',
-        'Could not detect the characteristic pink skin and green scale tips of a dragon fruit.'
-      ]);
+    // Dragonfruit has both pink skin AND green scale tips — require both
+    if (avgPinkRatio < 0.06) {
+      return this._buildRejectionResult(['Insufficient pink/magenta skin color detected — not a dragon fruit']);
+    }
+    if (avgGreenRatio < 0.02) {
+      return this._buildRejectionResult(['No green scale tips detected — not a dragon fruit']);
+    }
+    // Pink-to-green ratio must be within the biological range of pitaya (3:1 to 20:1)
+    const pinkToGreen = avgGreenRatio > 0 ? avgPinkRatio / avgGreenRatio : 999;
+    if (pinkToGreen < 1.5 || pinkToGreen > 25) {
+      return this._buildRejectionResult(['Pink-to-green color ratio outside dragon fruit biological range']);
     }
 
     // === STAGE 2A: YOLOv8-Seg Disease Segmentation ===
@@ -831,6 +726,57 @@ const Scanner = {
 
     // === STAGE 2B: EfficientNet-B3 Compound Quality Grading ===
     const gradeResult = this._computeCompoundGrade(data, imgWidth, imgHeight, roi, cellSize);
+    // ── YOLOv8 grade override (real model result takes priority) ─────────
+    if (modelResult && modelResult.isDragonFruit && modelResult.grade) {
+      const gl  = modelResult.grade;
+      const gc  = Math.round(modelResult.confidence * 1000) / 1000;
+      const diseaseOvr = this._segmentDiseases(data, imgWidth, imgHeight, roi, cellSize);
+      const mr = gradeResult.metrics.maturityRatio;
+      const matOvr = mr > 0.85
+        ? { status: 'Harvestable', value: Math.min(100, Math.round(75 + mr * 25)), isHarvestable: true }
+        : mr > 0.60
+        ? { status: 'Harvestable', value: Math.round(55 + mr * 30), isHarvestable: true }
+        : { status: 'Developing',  value: Math.round(25 + mr * 40), isHarvestable: false };
+      const cov = gradeResult.metrics.sizeCoverage;
+      const ed  = gradeResult.metrics.edgeDensity;
+      const pr  = gradeResult.metrics.pinkPixels / (gradeResult.metrics.totalPixels + 1);
+      let tR = 0, tG = 0, tB = 0;
+      const tPx = data.length / 4;
+      for (let ii = 0; ii < data.length; ii += 4) { tR += data[ii]; tG += data[ii+1]; tB += data[ii+2]; }
+      const br = (tR/tPx*0.299 + tG/tPx*0.587 + tB/tPx*0.114) / 255;
+      const sizes = this.featureParams.sizes;
+      const surfs = this.featureParams.surfaceOptions;
+      const cols  = this.featureParams.colorDescriptors;
+      const si = cov > 0.55 ? 3 : cov > 0.35 ? 2 : cov > 0.20 ? 1 : 0;
+      const ui = ed < 0.08 ? 0 : ed < 0.15 ? 1 : ed < 0.25 ? 2 : ed < 0.35 ? 3 : 4;
+      const ci = pr > 0.5 && br > 0.4 ? 0 : pr > 0.4 ? 1 : pr > 0.3 ? 2 : 3;
+      const sym = diseaseOvr.isHealthy
+        ? ['No visible symptoms detected', 'Uniform skin texture confirmed', 'Normal coloration verified']
+        : this._getDiseaseSymptoms(diseaseOvr.name);
+      return {
+        id: Date.now(), timestamp: new Date().toISOString(), image: this.currentImage,
+        isDragonFruit: true,
+        grade: { label: gl, confidence: gc, class: this._gradeClass(gl) },
+        disease: { name: diseaseOvr.name, confidence: diseaseOvr.confidence,
+                   isHealthy: diseaseOvr.isHealthy, symptoms: sym, areaPercent: diseaseOvr.areaPercent },
+        maturity: matOvr,
+        details: {
+          size: sizes[si],
+          colorUniformity: (gradeResult.scores.colorUniformity * 100).toFixed(1) + '%',
+          colorDescriptor: cols[ci], surfaceCondition: surfs[ui],
+          brightness: (br * 100).toFixed(0) + '%',
+          processingMode: PitayaApp.settings.offlineMode ? 'Offline (TFLite)' : 'Online (YOLOv8n ONNX)',
+          processingTime: (modelResult.inferenceMs / 1000).toFixed(2) + 's',
+          modelUsed: 'YOLOv8n ONNX + HSV Disease Segmentation'
+        },
+        compoundScore: gradeResult.score,
+        featureScores: gradeResult.scores,
+        modelMetrics: this._getModelMetrics(gl, diseaseOvr.name),
+        recommendations: this._getRecommendations(gl, diseaseOvr.name, matOvr.status)
+      };
+    }
+    // ── End YOLOv8 override ───────────────────────────────────────────────
+
 
     // Determine grade label from compound score
     let gradeLabel;

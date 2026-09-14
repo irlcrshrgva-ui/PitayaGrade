@@ -104,6 +104,7 @@ const Scanner = {
   },
 
   loadImage(file) {
+    if (this.isProcessing) return;
     const reader = new FileReader();
     reader.onload = (e) => {
       const dataUrl = e.target.result;
@@ -128,23 +129,33 @@ const Scanner = {
       document.getElementById('scannerZone').classList.add('has-image');
 
       // Extract pixel data for analysis
-      this._extractPixelData(dataUrl);
+      this._extractPixelData(dataUrl).catch(() => {
+        ToastManager.show('Unable to read this image. Please choose another file.', 'error');
+      });
     };
     reader.readAsDataURL(file);
   },
 
   _extractPixelData(dataUrl) {
+    this.currentImageData = null;
+    return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => {
+      try {
       const canvas = document.createElement('canvas');
       const size = 128; // Sample at 128x128 for YOLOv8 grid scanning
       canvas.width = size;
       canvas.height = size;
       const ctx = canvas.getContext('2d');
       ctx.drawImage(img, 0, 0, size, size);
-      this.currentImageData = ctx.getImageData(0, 0, size, size);
+      const pixels = ctx.getImageData(0, 0, size, size);
+      if (this.currentImage === dataUrl) this.currentImageData = pixels;
+      resolve(pixels);
+      } catch (err) { reject(err); }
     };
+    img.onerror = () => reject(new Error('Image decoding failed'));
     img.src = dataUrl;
+    });
   },
 
   async analyze() {
@@ -157,6 +168,7 @@ const Scanner = {
     overlay.style.display = 'none';
 
     const steps = processingOverlay.querySelectorAll('.processing-step');
+    const started = performance.now();
 
     const stepLabel = (el) => el.textContent.replace(/^\S+\s/, '').trim();
     const markStep = (i, state) => {
@@ -167,7 +179,10 @@ const Scanner = {
       steps[i].innerHTML = icon + ' ' + stepLabel(steps[i]);
     };
 
-    // Animate steps 0-3 while real YOLOv8 inference runs in parallel
+    try {
+    await this._extractPixelData(this.currentImage);
+    await document.getElementById('scannerPreview').decode();
+    // Animate processing stages
     for (let i = 0; i < 4; i++) { markStep(i, 'active'); await this._delay(250); }
 
     const imgEl = document.getElementById('scannerPreview');
@@ -184,6 +199,10 @@ const Scanner = {
     markStep(5, 'active'); await this._delay(150);
 
     const result = this._generateResult(modelResult);
+    result.details.processingTime = ((performance.now() - started) / 1000).toFixed(1) + 's';
+    result.details.processingMode = 'Local (ONNX / image analysis)';
+    result.details.modelUsed = modelResult ? 'YOLOv8n ONNX + HSV disease heuristics' : 'HSV image heuristics (model unavailable)';
+    if (!modelResult) ToastManager.show('Model unavailable. Using image heuristics.', 'warning');
 
     markStep(5, 'done');
     await this._delay(200);
@@ -192,9 +211,21 @@ const Scanner = {
     steps.forEach((s, i) => markStep(i, 'idle'));
 
     this._displayResult(result);
-    this._saveScan(result);
-
+    try {
+      this._saveScan(result);
+    } catch (err) {
+      console.error('Unable to save scan:', err);
+      ToastManager.show('Assessment displayed but could not be saved. Check available storage.', 'error');
+    }
+    } catch (err) {
+      console.error('Scan failed:', err);
+      ToastManager.show('Analysis failed. Please try again or choose another image.', 'error');
+    } finally {
+    processingOverlay.classList.add('hidden');
+    overlay.style.display = 'flex';
+    steps.forEach((s, i) => markStep(i, 'idle'));
     this.isProcessing = false;
+    }
   },
 
   // ============================================================
@@ -611,6 +642,9 @@ const Scanner = {
   // All classification decisions are deterministic (no Math.random)
   // ============================================================
   _generateResult(modelResult) {
+    if (modelResult && !modelResult.isDragonFruit) {
+      return this._buildRejectionResult(['The model did not detect a dragon fruit above its confidence threshold']);
+    }
     if (!this.currentImageData) {
       return this._buildRejectionResult(['No image data available for analysis']);
     }

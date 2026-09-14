@@ -121,6 +121,7 @@ const LiveScanner = {
       this.canvas.height = 64;
 
       this.isActive = true;
+      if (typeof ModelInference !== 'undefined') ModelInference.load();
       this.lastFpsTime = performance.now();
       this.frameCount = 0;
 
@@ -193,7 +194,7 @@ const LiveScanner = {
   },
 
   _analyzeFrame() {
-    if (!this.video || !this.ctx || this.video.readyState < 2) return;
+    if (!this.video || !this.ctx || this.video.readyState < 2 || this.inferencePending) return;
 
     this.frameCount++;
 
@@ -207,8 +208,11 @@ const LiveScanner = {
       cap.width = 320; cap.height = 320;
       cap.getContext('2d').drawImage(this.video, 0, 0, 320, 320);
       const img = new Image();
+      this.inferencePending = true;
+      img.onerror = () => { this.inferencePending = false; };
       img.onload = () => {
         ModelInference.infer(img).then(mr => {
+          if (!this.isActive) return;
           if (!mr) { this._smoothResult(this._analyzePixels(imageData)); this._updateHud(); return; }
           const hsvResult = this._analyzePixels(imageData);
           const merged = mr.isDragonFruit ? {
@@ -225,7 +229,8 @@ const LiveScanner = {
                 maturity: { status: 'N/A', value: 0 } };
           this._smoothResult(merged);
           this._updateHud();
-        });
+        }).catch(err => console.error('Live inference failed:', err))
+          .finally(() => { this.inferencePending = false; });
       };
       img.src = cap.toDataURL('image/jpeg', 0.8);
       return; // HUD updated in the promise above
@@ -797,6 +802,7 @@ const LiveScanner = {
 
     // Load into the photo scanner and auto-analyze
     Scanner.currentImage = dataUrl;
+    Scanner.currentFileName = '';
 
     const preview = document.getElementById('scannerPreview');
     const placeholder = document.getElementById('scanPlaceholder');
@@ -812,10 +818,7 @@ const LiveScanner = {
     if (zone) zone.classList.add('has-image');
 
     // Extract pixel data then auto-analyze
-    Scanner._extractPixelData(dataUrl);
-    setTimeout(() => {
-      Scanner.analyze();
-    }, 300);
+    Scanner.analyze();
 
     ToastManager.show('Frame captured. Analyzing...', 'info');
   },
@@ -825,5 +828,6 @@ const LiveScanner = {
     if (this.isActive) {
       this.stopCamera();
     }
+    if (this.currentMode === 'live') document.getElementById('modePhotoBtn').click();
   }
 };

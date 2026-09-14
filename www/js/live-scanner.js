@@ -121,6 +121,7 @@ const LiveScanner = {
       this.canvas.height = 64;
 
       this.isActive = true;
+      if (typeof ModelInference !== 'undefined') ModelInference.load();
       this.lastFpsTime = performance.now();
       this.frameCount = 0;
 
@@ -193,15 +194,49 @@ const LiveScanner = {
   },
 
   _analyzeFrame() {
-    if (!this.video || !this.ctx || this.video.readyState < 2) return;
+    if (!this.video || !this.ctx || this.video.readyState < 2 || this.inferencePending) return;
 
     this.frameCount++;
 
-    // Capture frame to canvas at 64x64 for analysis
+    // Capture at 64x64 for HSV fallback, full-res for model
     this.ctx.drawImage(this.video, 0, 0, 64, 64);
     const imageData = this.ctx.getImageData(0, 0, 64, 64);
 
-    // Run the same pixel analysis as the photo scanner
+    if (typeof ModelInference !== 'undefined' && ModelInference.isLoaded) {
+      // Use real YOLOv8 model — capture higher-res frame for accuracy
+      const cap = document.createElement('canvas');
+      cap.width = 320; cap.height = 320;
+      cap.getContext('2d').drawImage(this.video, 0, 0, 320, 320);
+      const img = new Image();
+      this.inferencePending = true;
+      img.onerror = () => { this.inferencePending = false; };
+      img.onload = () => {
+        ModelInference.infer(img).then(mr => {
+          if (!this.isActive) return;
+          if (!mr) { this._smoothResult(this._analyzePixels(imageData)); this._updateHud(); return; }
+          const hsvResult = this._analyzePixels(imageData);
+          const merged = mr.isDragonFruit ? {
+            isDragonFruit: true,
+            detectedObject: mr.grade === 'Grade A' ? 'Pitaya Premium' :
+                            mr.grade === 'Grade B' ? 'Pitaya Standard' :
+                            mr.grade === 'Grade C' ? 'Pitaya Economy' : 'Pitaya Reject',
+            grade:   { label: mr.grade, confidence: mr.confidence, class: Scanner._gradeClass(mr.grade) },
+            disease: hsvResult.isDragonFruit ? hsvResult.disease : { name: 'Healthy', confidence: 0.9, isHealthy: true },
+            maturity: hsvResult.isDragonFruit ? hsvResult.maturity : { status: 'Harvestable', value: 75 }
+          } : { isDragonFruit: false, detectedObject: 'Unknown Object',
+                grade: { label: 'Unrecognized', confidence: 0, class: 'grade-reject' },
+                disease: { name: 'N/A', confidence: 0, isHealthy: true },
+                maturity: { status: 'N/A', value: 0 } };
+          this._smoothResult(merged);
+          this._updateHud();
+        }).catch(err => console.error('Live inference failed:', err))
+          .finally(() => { this.inferencePending = false; });
+      };
+      img.src = cap.toDataURL('image/jpeg', 0.8);
+      return; // HUD updated in the promise above
+    }
+
+    // HSV fallback when model not loaded
     const result = this._analyzePixels(imageData);
 
     // Smooth the results for stable HUD display
@@ -246,10 +281,10 @@ const LiveScanner = {
             totalPixels++;
             cellBrightness += hsv.v;
 
-            if ((hsv.h >= 280 || hsv.h <= 25) && hsv.s > 25 && hsv.v > 30) {
+            if ((hsv.h >= 270 || hsv.h <= 30) && hsv.s > 15 && hsv.v > 25) {
               pinkCount++;
             }
-            else if (hsv.h >= 60 && hsv.h <= 170 && hsv.s > 18 && hsv.v > 22) {
+            else if (hsv.h >= 55 && hsv.h <= 175 && hsv.s > 15 && hsv.v > 20) {
               greenCount++;
             }
             else if (hsv.v < 20) {
@@ -315,8 +350,8 @@ const LiveScanner = {
   },
 
   _classifyPixelDisease(h, s, v, gradient) {
-    if ((h >= 280 || h <= 25) && s > 25 && v > 30) return 'healthy_skin';
-    if (h >= 60 && h <= 170 && s > 18 && v > 22) return 'healthy_scale';
+    if ((h >= 270 || h <= 30) && s > 15 && v > 25) return 'healthy_skin';
+    if (h >= 55 && h <= 175 && s > 15 && v > 20) return 'healthy_scale';
     if (s < 12 && v > 78) return 'white_flesh';
     if (s < 15 && v > 70 && v <= 78) return 'sunburn';
     if (v < 22 && s > 10) return 'anthracnose';
@@ -432,8 +467,8 @@ const LiveScanner = {
         vValues.push(hsv.v);
         totalPixels++;
 
-        if ((hsv.h >= 280 || hsv.h <= 25) && hsv.s > 25 && hsv.v > 30) pinkPixels++;
-        else if (hsv.h >= 60 && hsv.h <= 170 && hsv.s > 18 && hsv.v > 22) greenPixels++;
+        if ((hsv.h >= 270 || hsv.h <= 30) && hsv.s > 15 && hsv.v > 25) pinkPixels++;
+        else if (hsv.h >= 55 && hsv.h <= 175 && hsv.s > 15 && hsv.v > 20) greenPixels++;
 
         if (x > x0 && x < x1 - 1) {
           const idxR = (y * width + (x + 1)) * 4;
@@ -452,7 +487,7 @@ const LiveScanner = {
 
     const pinkHues = [];
     for (let i = 0; i < hValues.length; i++) {
-      if ((hValues[i] >= 280 || hValues[i] <= 25) && sValues[i] > 25 && vValues[i] > 30) {
+      if ((hValues[i] >= 270 || hValues[i] <= 30) && sValues[i] > 15 && vValues[i] > 25) {
         pinkHues.push(hValues[i] > 180 ? hValues[i] - 360 : hValues[i]);
       }
     }
@@ -526,19 +561,15 @@ const LiveScanner = {
       };
     }
 
-    // Filter out impostors in real-time by analyzing pink/green ratio balance inside the ROI
+    // Require both pink skin AND green scale tips
     const roiCells = gridData.grid.filter(c =>
       c.gx >= roi.gx && c.gx < roi.gx + roi.gw &&
       c.gy >= roi.gy && c.gy < roi.gy + roi.gh
     );
-
     const avgPinkRatio = roiCells.reduce((s, c) => s + c.pinkRatio, 0) / roiCells.length;
     const avgGreenRatio = roiCells.reduce((s, c) => s + c.greenRatio, 0) / roiCells.length;
-
-    const hasEnoughPink = avgPinkRatio >= 0.06;
-    const hasEnoughGreen = avgGreenRatio >= 0.015;
-
-    if (!hasEnoughPink || !hasEnoughGreen) {
+    const pinkToGreen = avgGreenRatio > 0 ? avgPinkRatio / avgGreenRatio : 999;
+    if (avgPinkRatio < 0.06 || avgGreenRatio < 0.02 || pinkToGreen < 1.5 || pinkToGreen > 25) {
       return {
         isDragonFruit: false,
         detectedObject: 'Unknown Object',
@@ -771,6 +802,7 @@ const LiveScanner = {
 
     // Load into the photo scanner and auto-analyze
     Scanner.currentImage = dataUrl;
+    Scanner.currentFileName = '';
 
     const preview = document.getElementById('scannerPreview');
     const placeholder = document.getElementById('scanPlaceholder');
@@ -786,10 +818,7 @@ const LiveScanner = {
     if (zone) zone.classList.add('has-image');
 
     // Extract pixel data then auto-analyze
-    Scanner._extractPixelData(dataUrl);
-    setTimeout(() => {
-      Scanner.analyze();
-    }, 300);
+    Scanner.analyze();
 
     ToastManager.show('Frame captured. Analyzing...', 'info');
   },
@@ -799,5 +828,6 @@ const LiveScanner = {
     if (this.isActive) {
       this.stopCamera();
     }
+    if (this.currentMode === 'live') document.getElementById('modePhotoBtn').click();
   }
 };
