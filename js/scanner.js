@@ -197,7 +197,7 @@ const Scanner = {
 
     const imgEl = document.getElementById('scannerPreview');
     const modelPromise = (typeof ModelInference !== 'undefined' && imgEl)
-      ? ModelInference.infer(imgEl)
+      ? ModelInference.infer(imgEl, PitayaApp.settings.selectedModel)
       : Promise.resolve(null);
 
     for (let i = 0; i < 4; i++) markStep(i, 'done');
@@ -211,7 +211,7 @@ const Scanner = {
     const result = this._generateResult(modelResult);
     result.details.processingTime = ((performance.now() - started) / 1000).toFixed(1) + 's';
     result.details.processingMode = 'Local (ONNX / image analysis)';
-    result.details.modelUsed = modelResult ? 'YOLOv8n ONNX + HSV disease heuristics' : 'HSV image heuristics (model unavailable)';
+    result.details.modelUsed = modelResult ? modelResult.modelName + ' ONNX + HSV disease heuristics' : 'HSV image heuristics (model unavailable)';
     if (!modelResult) ToastManager.show('Model unavailable. Using image heuristics.', 'warning');
 
     markStep(5, 'done');
