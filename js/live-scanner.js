@@ -122,7 +122,7 @@ const LiveScanner = {
       this.canvas.height = 64;
 
       this.isActive = true;
-      if (typeof ModelInference !== 'undefined') ModelInference.load();
+      if (typeof ModelInference !== 'undefined') ModelInference.load(PitayaApp.settings.selectedModel);
       this.lastFpsTime = performance.now();
       this.frameCount = 0;
 
@@ -209,7 +209,7 @@ const LiveScanner = {
       this.canvas.width = this.canvas.height = 128;
       this.ctx.drawImage(frame, 0, 0, 128, 128);
       const pixels = this.ctx.getImageData(0, 0, 128, 128);
-      const model = await ModelInference.infer(frame);
+      const model = await ModelInference.infer(frame, PitayaApp.settings.selectedModel);
       if (!this.isActive || request !== this.cameraRequest) return;
       const result = Scanner._generateResult(model, pixels);
       result.detectedObject = result.isDragonFruit ? 'Dragon Fruit' + (model ? '' : ' (heuristic)') : 'Unrecognized';

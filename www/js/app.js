@@ -8,8 +8,13 @@ const PitayaApp = {
   settings: {
     language: 'en',
     offlineMode: false,
+<<<<<<< HEAD
     scanAlerts: true,
     threshold: 65
+=======
+    threshold: 65,
+    selectedModel: 'yolov8-nano'
+>>>>>>> origin/main
   },
 
   init() {
@@ -22,6 +27,9 @@ const PitayaApp = {
     this.settings.language = this.settings.language === 'fil' ? 'fil' : 'en';
     LanguageManager.init(this.settings.language);
     ModelInference.CONF_THRESHOLD = this.settings.threshold / 100;
+    if (!ModelInference.selectModel(this.settings.selectedModel)) {
+      this.settings.selectedModel = ModelInference.getSelectedModel().id;
+    }
 
     // Initialize modules
     NotificationManager.init();
@@ -114,6 +122,7 @@ const PitayaApp = {
   },
 
   _bindSettings() {
+<<<<<<< HEAD
     const scanAlerts = document.getElementById('scanAlerts');
     scanAlerts.checked = this.settings.scanAlerts;
     scanAlerts.addEventListener('change', () => {
@@ -123,6 +132,40 @@ const PitayaApp = {
       scanAlerts.checked = this.settings.scanAlerts;
       NotificationManager.scheduleSessionSummary();
     });
+=======
+    const modelSelect = document.getElementById('modelSelect');
+    const selectedModelName = document.getElementById('selectedModelName');
+    if (modelSelect && selectedModelName && typeof ModelInference !== 'undefined') {
+      const models = ModelInference.getAvailableModels();
+      modelSelect.innerHTML = '';
+      models.forEach(model => {
+        const option = document.createElement('option');
+        option.value = model.id;
+        option.textContent = model.name;
+        modelSelect.appendChild(option);
+      });
+      const updateSelectedModel = () => {
+        const model = ModelInference.getSelectedModel();
+        modelSelect.value = model.id;
+        selectedModelName.textContent = model.name + ' (bundled ONNX)';
+      };
+      updateSelectedModel();
+      modelSelect.addEventListener('change', () => {
+        const previous = this.settings.selectedModel;
+        if (!ModelInference.selectModel(modelSelect.value)) {
+          modelSelect.value = previous;
+          return;
+        }
+        this.settings.selectedModel = ModelInference.getSelectedModel().id;
+        if (!this._saveSettings()) {
+          this.settings.selectedModel = previous;
+          ModelInference.selectModel(previous);
+        }
+        updateSelectedModel();
+      });
+    }
+
+>>>>>>> origin/main
     const threshold = document.getElementById('detectionThreshold');
     threshold.value = this.settings.threshold;
     document.getElementById('thresholdValue').textContent = this.settings.threshold + '%';

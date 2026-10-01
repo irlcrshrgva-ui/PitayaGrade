@@ -20,6 +20,9 @@
 - Owner requested autonomous continuation and a Git push without routine
   confirmation prompts. Missing research evidence is a technical dependency,
   not a request for another scope confirmation.
+- Integrated the newer GitHub model-registry/settings changes, retaining both
+  model selection and notification preferences. The registry currently contains
+  only the bundled YOLOv8-Nano model; additional trained models were not invented.
 
 ## 2026-09-21 continuation: preprocessing research preview
 
