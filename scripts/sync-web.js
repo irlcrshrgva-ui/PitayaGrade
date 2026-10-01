@@ -1,6 +1,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const root = path.resolve(__dirname, '..');
+require('./verify-runtime').verifyRuntime(path.join(root, 'www'));
 for (const directory of ['js', 'css']) {
   fs.cpSync(path.join(root, directory), path.join(root, 'www', directory), { recursive: true });
 }

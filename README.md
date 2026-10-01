@@ -24,6 +24,15 @@ PitayaGrade is a capstone project for AI-assisted pre-harvest quality grading an
 
 ## Run the web application
 
+```bash
+npm ci
+npm start
+```
+
+Open `http://127.0.0.1:4173`. The local server serves only packaged assets,
+sets JavaScript-module/WASM content types and disables caching for development.
+Use the `PORT` environment variable if that port is occupied.
+
 Serve the repository root or `www/` through a local HTTP server. Opening the HTML directly through `file://` may prevent ONNX Runtime from loading model assets correctly.
 
 ## Android development
@@ -46,6 +55,25 @@ After editing `index.html`, `js/`, or `css/`, run `npm run build` to update
 Run `npm test` for asset wiring and inference regression checks.
 Both web entry points use the bundled ONNX runtime and model without a CDN.
 Photo scans report model fallback explicitly; disease analysis remains heuristic.
+New scans retain their analysis methods and report physical size as not measured.
+Existing records are preserved, including earlier framing-based size estimates.
+Symptom guidance describes possible signs to inspect, not confirmed findings.
+
+The test suite executes the actual shipped detector with its WASM backend as
+well as checking application workflows. This is a runtime test, not an accuracy
+evaluation. `npm run test:inference` runs that check on its own.
+
+The pinned ONNX Runtime Web 1.19.0 bundle includes its JavaScript loader,
+`ort-wasm-simd-threaded.mjs` and matching WASM binary. Builds verify all three
+against `www/runtime-assets.json` so missing/mismatched runtime files cannot be
+packaged silently. To regenerate it, install `onnxruntime-web@1.19.0` separately
+and run `python setup_onnx.py --runtime-dir <installed-package-directory>`.
+That command does not replace model weights. Runtime requirements are documented
+by [ONNX Runtime](https://onnxruntime.ai/docs/tutorials/web/deploy.html).
+
+GitHub Actions runs app and lightweight research checks, builds the debug APK,
+and retains the APK/lint reports as workflow artifacts. ML runtime checks still
+run separately in the pinned research environment; CI does not train research models.
 
 Open the Android project:
 

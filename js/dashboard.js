@@ -580,13 +580,6 @@ const DashboardManager = {
       return;
     }
 
-    // --- Cloud AI API Configuration ---
-    // Toggle cloud LLM analysis (requires an API Key from Groq or Google Gemini)
-    const CLOUD_AI_ENABLED = false; // Set to true once you configure your key and endpoint below
-    const API_KEY = "YOUR_API_KEY_HERE";
-    const API_URL = "https://api.groq.com/openai/v1/chat/completions"; 
-    const MODEL_NAME = "llama3-8b-8192";
-
     // Extract aggregated statistics
     const totalScans = scans.length;
     const premiumCount = scans.filter(s => s.grade.label === 'Grade A').length;
@@ -598,60 +591,7 @@ const DashboardManager = {
       }
     });
 
-    const isOnline = navigator.onLine;
-
-    if (CLOUD_AI_ENABLED && isOnline && !PitayaApp.settings.offlineMode) {
-      if (statusEl) {
-        statusEl.innerHTML = '⚡ Online AI';
-        statusEl.style.color = '#22C55E';
-      }
-      try {
-        const insights = await this._fetchCloudAI(totalScans, premiumRate, diseaseCounts, API_KEY, API_URL, MODEL_NAME);
-        this._renderAIWidget(insights, contentEl);
-      } catch (e) {
-        console.error('Cloud AI failed, falling back to Local Heuristics', e);
-        this._renderOfflineInsights(totalScans, premiumRate, diseaseCounts, contentEl, statusEl);
-      }
-    } else {
-      this._renderOfflineInsights(totalScans, premiumRate, diseaseCounts, contentEl, statusEl);
-    }
-  },
-
-  // Calls the cloud LLM using OpenAI-compatible SDK
-  async _fetchCloudAI(totalScans, premiumRate, diseaseCounts, apiKey, apiUrl, modelName) {
-    const diseaseSummary = Object.entries(diseaseCounts).map(([name, count]) => `${name}: ${count} cases`).join(', ');
-
-    const prompt = `Analyze this dragon fruit farm data:
-    Total Scans: ${totalScans} fruits
-    Premium Grade A Rate: ${premiumRate}%
-    Diseases detected: [${diseaseSummary || 'None'}]
-    
-    Provide strategic, growth-focused agronomic advice in JSON format matching the schema below.
-    CRITICAL RULE: Do not use any em dash or — in your output text.
-    
-    JSON Schema:
-    {
-      "summary": "A concise 2-sentence summary of the farm health status.",
-      "statusAlert": "healthy" | "warning" | "critical",
-      "keyMetrics": [{"label": "string", "value": "string", "trend": "up"|"down"|"neutral"}],
-      "recommendations": [{"severity": "high"|"medium"|"low", "action": "string", "rationale": "string"}]
-    }`;
-
-    const response = await fetch(apiUrl, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: modelName,
-        messages: [{ role: 'user', content: prompt }],
-        response_format: { type: 'json_object' }
-      })
-    });
-
-    const data = await response.json();
-    return JSON.parse(data.choices[0].message.content);
+    this._renderOfflineInsights(totalScans, premiumRate, diseaseCounts, contentEl, statusEl);
   },
 
   // Generates on-device rules when the user has no network connection or cloud is disabled

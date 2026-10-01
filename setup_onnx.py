@@ -1,89 +1,48 @@
-"""
-PitayaGrade - ONNX Runtime Web Setup
-Run this AFTER training completes.
-Copies:
-  yolo_results/best.onnx        → www/model/best.onnx
-  onnxruntime-web/ort.min.js    → www/ort.min.js
-  onnxruntime-web/ort-wasm*.wasm → www/  (WASM backend files)
-"""
-
-import subprocess, sys, shutil, os
+"""Bundle the complete pinned ONNX web runtime without replacing model weights."""
+import argparse
+import hashlib
+import json
 from pathlib import Path
 
-PROJECT = Path(__file__).parent
-WWW     = PROJECT / "www"
+VERSION = '1.19.0'
+FILES = ('ort.min.js', 'ort-wasm-simd-threaded.mjs', 'ort-wasm-simd-threaded.wasm')
+ROOT = Path(__file__).resolve().parent
 
-# ── 1. Check model exists ────────────────────────────────────────────────────
-model_src = PROJECT / "yolo_results" / "train" / "weights" / "best.onnx"
-if not model_src.exists():
-    # Try the exported copy
-    model_src = PROJECT / "yolo_results" / "best.onnx"
-if not model_src.exists():
-    print("ERROR: best.onnx not found. Make sure training + export completed.")
-    print("  Expected: yolo_results/train/weights/best.onnx")
-    sys.exit(1)
 
-model_dst = WWW / "model" / "best.onnx"
-model_dst.parent.mkdir(parents=True, exist_ok=True)
-shutil.copy2(model_src, model_dst)
-print(f"OK: model copied ({model_dst.stat().st_size / 1e6:.1f} MB)")
+def bundle_runtime(package_dir, output_dir):
+    package_dir, output_dir = Path(package_dir), Path(output_dir)
+    package = json.loads((package_dir / 'package.json').read_text(encoding='utf-8'))
+    if package.get('name') != 'onnxruntime-web' or package.get('version') != VERSION:
+        raise ValueError(f'Use the complete onnxruntime-web@{VERSION} package')
+    contents = {name: (package_dir / 'dist' / name).read_bytes() for name in FILES}
+    contents['onnxruntime-LICENSE'] = (ROOT / 'www' / 'onnxruntime-LICENSE').read_bytes()
+    if f'ONNX Runtime Web v{VERSION}'.encode() not in contents['ort.min.js'][:200]:
+        raise ValueError('JavaScript runtime version mismatch')
+    if contents['ort-wasm-simd-threaded.wasm'][:8] != b'\x00asm\x01\x00\x00\x00':
+        raise ValueError('Invalid WebAssembly runtime')
+    output_dir.mkdir(parents=True, exist_ok=True)
+    for name, data in contents.items():
+        (output_dir / name).write_bytes(data)
+    record = {'package': f'onnxruntime-web@{VERSION}', 'version': VERSION,
+              'source': 'https://www.npmjs.com/package/onnxruntime-web/v/' + VERSION,
+              'license': 'MIT', 'backend': 'wasm', 'numThreads': 1,
+              'files': {name: hashlib.sha256(data).hexdigest() for name, data in contents.items()}}
+    (output_dir / 'runtime-assets.json').write_text(json.dumps(record, indent=2) + '\n', encoding='utf-8')
+    return record
 
-# ── 2. Install onnxruntime-web if not present ────────────────────────────────
-try:
-    import importlib.util
-    ort_path = None
-    result = subprocess.run(
-        [sys.executable, "-m", "pip", "show", "onnxruntime-web"],
-        capture_output=True, text=True
-    )
-    # onnxruntime-web is a JS package, not Python — use npm instead
-except Exception:
-    pass
 
-# Use npm to get the JS files
-print("Fetching onnxruntime-web JS files via npm...")
-npm_result = subprocess.run(
-    ["npm", "install", "--prefix", str(PROJECT / "_ort_tmp"), "onnxruntime-web@1.19.0"],
-    capture_output=True, text=True, cwd=str(PROJECT)
-)
-if npm_result.returncode != 0:
-    print("npm failed:", npm_result.stderr[:300])
-    print("Trying alternative: downloading from unpkg...")
-    import urllib.request
-    urls = [
-        ("https://unpkg.com/onnxruntime-web@1.19.0/dist/ort.min.js",      WWW / "ort.min.js"),
-        ("https://unpkg.com/onnxruntime-web@1.19.0/dist/ort-wasm.wasm",    WWW / "ort-wasm.wasm"),
-        ("https://unpkg.com/onnxruntime-web@1.19.0/dist/ort-wasm-simd.wasm", WWW / "ort-wasm-simd.wasm"),
-    ]
-    for url, dst in urls:
-        print(f"  Downloading {dst.name}...")
-        urllib.request.urlretrieve(url, str(dst))
-        print(f"  OK: {dst.stat().st_size / 1e6:.1f} MB")
-else:
-    # Copy from node_modules
-    ort_dist = PROJECT / "_ort_tmp" / "node_modules" / "onnxruntime-web" / "dist"
-    files_to_copy = [
-        ("ort.min.js",           WWW / "ort.min.js"),
-        ("ort-wasm.wasm",        WWW / "ort-wasm.wasm"),
-        ("ort-wasm-simd.wasm",   WWW / "ort-wasm-simd.wasm"),
-    ]
-    for src_name, dst_path in files_to_copy:
-        src_f = ort_dist / src_name
-        if src_f.exists():
-            shutil.copy2(src_f, dst_path)
-            print(f"OK: {src_name} → www/ ({dst_path.stat().st_size / 1e6:.1f} MB)")
-        else:
-            print(f"WARNING: {src_name} not found in npm dist")
-    # Cleanup tmp install
-    shutil.rmtree(PROJECT / "_ort_tmp", ignore_errors=True)
+def main(argv=None):
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--runtime-dir', required=True, type=Path,
+                        help='Installed onnxruntime-web package directory, including package.json and dist/.')
+    parser.add_argument('--output-dir', type=Path, default=ROOT / 'www')
+    args = parser.parse_args(argv)
+    try:
+        bundle_runtime(args.runtime_dir, args.output_dir)
+    except (ValueError, OSError) as error:
+        parser.error(str(error))
+    print('Bundled all three matching runtime files. Model weights were not changed.')
 
-# ── 3. Verify www/ has everything ────────────────────────────────────────────
-print("\nVerifying www/ contents:")
-for f in ["ort.min.js", "ort-wasm.wasm", "model/best.onnx"]:
-    p = WWW / f
-    if p.exists():
-        print(f"  OK  {f} ({p.stat().st_size / 1e6:.1f} MB)")
-    else:
-        print(f"  MISSING  {f}")
 
-print("\nSetup complete. Run: npx cap sync android && gradlew assembleDebug")
+if __name__ == '__main__':
+    main()

@@ -163,7 +163,31 @@ test('trained detection supplies ROI and is not rejected by color or filename he
   assert.equal(result.grade.label, 'Grade B');
   assert.equal(result.isDragonFruit, true);
   assert.equal(result.modelMetrics, null);
+  assert.equal(result.details.size, 'Not measured');
+  assert.equal(result.details.imageCoveragePercent, 25);
+  assert.equal(result.grade.analysisMethod, 'ONNX grade detector');
+  assert.equal(result.disease.analysisMethod, 'HSV color heuristic');
+  assert.match(result.details.processingMode, /^Local/);
+  assert.doesNotMatch(result.details.modelUsed, /EfficientNet|TFLite|Cloud/);
+  assert.ok(result.disease.symptoms.every(text => !/confirmed|verified/.test(text)));
   assert.equal(a.Scanner._modelROI({ x: 0, y: 0, right: 0, bottom: 0 }, 8, 8), null);
+});
+test('scan metadata stays local regardless of the offline preference', () => {
+  const a = app();
+  const pixels = { width: 128, height: 128, data: new Uint8ClampedArray(128 * 128 * 4).fill(100) };
+  const detection = { isDragonFruit: true, grade: 'Grade A', confidence: .9,
+    box: { x: .1, y: .1, right: .9, bottom: .9 }, inferenceMs: 20, modelName: 'YOLOv8-Nano' };
+  for (const offlineMode of [false, true]) {
+    a.PitayaApp.settings.offlineMode = offlineMode;
+    const result = a.Scanner._generateResult(detection, pixels);
+    assert.match(result.details.processingMode, /^Local/);
+    assert.equal(result.details.size, 'Not measured');
+    const rejected = a.Scanner._buildRejectionResult([]);
+    assert.match(rejected.details.processingMode, /^Local/);
+    assert.equal(rejected.details.modelUsed, 'No grade assigned');
+  }
+  const advice = a.Scanner._getRecommendations('Grade A', 'Healthy', 'Developing', false);
+  assert.ok(advice.some(item => item.text.startsWith('The image heuristic assigned')));
 });
 test('camera stream arriving after navigation is immediately released', async () => {
   const a = app(); let resolve, stopped = false;

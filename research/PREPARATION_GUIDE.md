@@ -173,6 +173,45 @@ or an explicitly reviewed Healthy empty list. Keep inherited source groups and
 partitions together; do not treat crops as independent source photographs.
 Physical measurements for grade criteria still require genuine evidence.
 
+Crop provenance can now be independently reproduced:
+
+```text
+python -m scripts.verify_crop_provenance --manifest dataset/reviewed-crops/run-001/crop-review-manifest.json
+```
+
+New exports retain a workspace-relative `sourceManifest` path and its SHA-256
+inside each `cropProvenance`. Keep that snapshot and original source images with
+derived review manifests. The verifier reconstructs EXIF-corrected crop pixels
+from the retained box and checks identifiers, bounds, dimensions, review evidence,
+source/crop hashes and inherited groups/partitions. Editing downstream grade/mask
+review fields does not invalidate pixel provenance. Replacing a crop and updating
+its hashes does: the reproduced pixels must still match its source box.
+
+Quality/disease validation verifies any supplied `cropProvenance` before preparing
+training data. Older generated crops without the snapshot pointer must be
+re-exported from retained reviewed sources; do not invent snapshot fields. Inputs
+without generated provenance retain the existing review contract, and their crop
+origin still requires independent review. Pixel verification cannot prove the box
+identifies a fruit, labels are true, or source grouping is complete.
+
+## Visible symptom coverage
+
+`python -m scripts.disease_coverage --manifest <mask-manifest.json> --output <new-result.json>`
+measures aligned upright binary masks of the same fruit ROI. Its manifest requires
+`coordinateSpace: "upright-roi"`, a `fruitMask` file and an explicit `regions` list
+of `{ "label": "Sunburn", "mask": "symptom.png" }` records (use `[]` when no
+regions are present). Labels use the six segmentation symptoms. Masks must contain
+only 0/1/255; explicitly threshold model probabilities upstream. Relative mask
+paths resolve beside the manifest. Original inputs and existing outputs are preserved.
+
+The denominator is the nonzero fruit mask; overlapping symptom instances count
+once in the total union. Per-class areas may overlap. Output records hashes,
+outside-fruit symptom pixels and limitations. This is visible two-dimensional
+coverage, not whole-fruit surface severity or a diagnosis. Zero area does not
+establish Healthy status, and an unvalidated fruit mask is not a ground-truth
+denominator. The software measurement exists; mask validation and calibrated
+clinical/agronomic severity still need research evidence.
+
 ## Reviewed disease-region segmentation
 
 `train_segmentation.py` prepares reviewed fruit crops for YOLOv8n-seg. Use a

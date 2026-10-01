@@ -207,7 +207,7 @@ const HistoryManager = {
 
       ${scan.disease.symptoms && scan.disease.symptoms.length > 0 ? `
       <div class="result-section" style="margin-bottom:16px">
-        <div class="result-section-title">Detected Symptoms</div>
+        <div class="result-section-title">Signs to Inspect</div>
         <div class="symptoms-list">
           ${scan.disease.symptoms.map(s => `
             <div class="symptom-item ${scan.disease.isHealthy ? 'healthy' : 'alert'}">

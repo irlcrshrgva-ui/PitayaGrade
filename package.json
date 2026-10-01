@@ -4,8 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "start": "npm run build && node scripts/serve.js",
     "build": "node scripts/sync-web.js",
     "sync:android": "npm run build && cap sync android",
+    "test:inference": "node scripts/smoke-inference.js",
     "test": "node --test tests/*.test.js"
   },
   "keywords": [],

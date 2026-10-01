@@ -5,7 +5,27 @@ project owner on 2026-09-19. Features beyond that document require an explicit
 owner request and approval. This audit does not revise the manuscript or approve
 changes to the research design.
 
-## Current status — 2026-09-21
+## Current status — 2026-10-01
+
+The deployed YOLO model now executes through the complete pinned WASM runtime.
+Browser verification found and fixed the previously missing MJS backend module;
+actual runtime execution is now a regression test. New scan metadata no longer
+claims cloud/TFLite/EfficientNet execution or measured physical size. Disease and
+maturity remain heuristic estimates; possible symptom guidance is not confirmation.
+
+Generated crop provenance now links a hashed source snapshot and can be verified
+by reproducing crop pixels, geometry and inherited group/split. Validation checks
+any supplied generated provenance before training. The mask-based coverage tool
+computes union area inside an aligned fruit mask without claiming whole-fruit
+severity or diagnosis. See the preparation guide for both commands and limitations.
+
+Local verification: 50 JavaScript checks, 63 lightweight Python checks and Android
+build/lint pass (0 errors, 25 warnings). GitHub automation now builds debug artifacts.
+No Android hardware is connected. The public review manifest has 3,050 images and
+zero reviewed target-grade labels; training/evaluation and field/UAT remain blocked
+by missing genuine research evidence. Earlier status descriptions below are history.
+
+### Previous implementation status — 2026-09-21
 
 An explicit-config research preview now implements HSV/GrabCut background
 segmentation, LAB-luminance CLAHE and conditional 3x3 Gaussian blur. Eight

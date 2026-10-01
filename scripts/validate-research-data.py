@@ -65,6 +65,9 @@ def validate(rows, target, root=ROOT, check_files=True, require_class_coverage=T
         else:
             pixels[row['pixelSha256']].add(split)
         if check_files:
+            if 'cropProvenance' in row:
+                from scripts.verify_crop_provenance import verify_crop
+                errors.extend(verify_crop(row, root))
             file = (root / (row.get('image') or '')).resolve()
             if not file.is_relative_to(root.resolve()) or not file.is_file():
                 errors.append(f'{ident}: missing image or path outside workspace')

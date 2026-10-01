@@ -2,13 +2,13 @@
 import argparse
 import hashlib
 import json
-import math
 from io import BytesIO
 from pathlib import Path
 
 from PIL import Image
 
 from scripts.image_orientation import orientation_of, orient_box, upright_rgb
+from scripts.crop_geometry import crop_bounds, ROUNDING
 from scripts.reviewed_detection import read_detection_manifest, validate_detection
 from scripts.reviewed_training import ROOT
 
@@ -22,6 +22,9 @@ def prepare_crops(rows, run_dir, root=ROOT):
     if errors:
         raise ValueError('\n'.join(errors[:20]))
     run_dir.mkdir(parents=True, exist_ok=False)
+    snapshot = run_dir / 'source-manifest.json'
+    snapshot.write_text(json.dumps(rows, indent=2) + '\n', encoding='utf-8')
+    snapshot_hash = hashlib.sha256(snapshot.read_bytes()).hexdigest()
     crops = []
     for row in rows:
         data = (root / row['image']).read_bytes()
@@ -32,12 +35,8 @@ def prepare_crops(rows, run_dir, root=ROOT):
             image = upright_rgb(original)
         for index, original_box in enumerate(row['boundingBoxes']):
             box = orient_box(original_box, orientation) if row.get('boxCoordinateSpace') == 'raw' else original_box
-            x, y, width, height = box
             # Enclose the entire reviewed box; Pillow uses an exclusive right/bottom.
-            bounds = (max(0, math.floor((x - width / 2) * image.width)),
-                      max(0, math.floor((y - height / 2) * image.height)),
-                      min(image.width, math.ceil((x + width / 2) * image.width)),
-                      min(image.height, math.ceil((y + height / 2) * image.height)))
+            bounds = crop_bounds(box, image.size)
             crop = image.crop(bounds)
             ident = hashlib.sha256(json.dumps([row['id'], index]).encode()).hexdigest()
             output = run_dir / 'images' / row['candidateSplit'] / (ident + '.png')
@@ -57,16 +56,17 @@ def prepare_crops(rows, run_dir, root=ROOT):
                 'annotationReviewedAt': None, 'maskCoordinateSpace': 'upright',
                 'regions': None,
                 'cropProvenance': {
+                    'sourceManifest': snapshot.relative_to(root).as_posix(),
+                    'sourceManifestSha256': snapshot_hash,
                     'sourceImage': row['image'], 'sourceFileSha256': row['fileSha256'],
                     'sourceOrientation': orientation, 'sourceBoxIndex': index,
                     'uprightBox': box, 'uprightSourceSize': list(image.size),
                     'pixelBounds': list(bounds), 'cropSize': list(clean.size),
-                    'rounding': 'floor left/top, ceil right/bottom; exclusive right/bottom',
+                    'rounding': ROUNDING,
                     'boxReviewer': row['annotationReviewer'],
                     'boxReviewedAt': row['annotationReviewedAt'],
                 },
             })
-    (run_dir / 'source-manifest.json').write_text(json.dumps(rows, indent=2) + '\n', encoding='utf-8')
     manifest = run_dir / 'crop-review-manifest.json'
     manifest.write_text(json.dumps(crops, indent=2) + '\n', encoding='utf-8')
     return manifest

@@ -1,8 +1,7 @@
 /* =============================================
    PitayaGrade - Scanner Module
-   Dual-Stage YOLOv8 + EfficientNet-B3 pipeline simulation
-   YOLOv8 + EfficientNet-B3 inference
-   Color, size, surface condition, disease symptoms
+   Bundled YOLOv8 ONNX grade detector with image heuristics
+   Color, surface condition and possible symptom estimates
    ============================================= */
 
 const Scanner = {
@@ -12,27 +11,8 @@ const Scanner = {
   isProcessing: false,
   imageRequest: 0,
 
-  // Dual-Stage Model Configuration
-  modelConfig: {
-    name: 'YOLOv8-Nano',
-    version: '8.1.0',
-    altModel: 'EfficientNet-B3',
-    inputSize: 128,
-    classes: ['Grade A', 'Grade B', 'Grade C', 'Reject'],
-    diseaseClasses: ['Healthy', 'Anthracnose', 'Stem Canker', 'Soft Rot', 'Pest Damage', 'Sunburn', 'Fungal Spots'],
-    transferLearning: {
-      backbone: 'COCO + ImageNet pre-trained',
-      fineTunedLayers: 'Full pipeline optimization',
-      optimizer: 'AdamW (lr=0.001)',
-      epochs: 100,
-      batchSize: 16,
-      augmentation: ['rotation', 'flip', 'zoom', 'brightness', 'contrast', 'mosaic', 'mixup']
-    }
-  },
-
   // Feature extraction parameters
   featureParams: {
-    sizes: ['Small (150-250g)', 'Medium (250-400g)', 'Large (400-550g)', 'Extra Large (550g+)'],
     surfaceOptions: ['Smooth', 'Slightly Rough', 'Minor Blemishes', 'Cracked', 'Scarred', 'Spotted'],
     colorDescriptors: ['Vibrant Pink', 'Deep Magenta', 'Light Pink', 'Green-Pink', 'Pale', 'Dark Reddish']
   },
@@ -211,7 +191,7 @@ const Scanner = {
     const result = this._generateResult(modelResult);
     result.details.processingTime = ((performance.now() - started) / 1000).toFixed(1) + 's';
     result.details.processingMode = 'Local (ONNX / image analysis)';
-    result.details.modelUsed = modelResult ? modelResult.modelName + ' ONNX + HSV disease heuristics' : 'HSV image heuristics (model unavailable)';
+    result.details.modelUsed = modelResult ? (modelResult.modelName || 'YOLOv8-Nano') + ' ONNX + HSV disease heuristics' : 'HSV image heuristics (model unavailable)';
     if (!modelResult) ToastManager.show('Model unavailable. Using image heuristics.', 'warning');
 
     markStep(5, 'done');
@@ -642,9 +622,9 @@ const Scanner = {
       details: {
         size: 'Unknown', colorUniformity: 'N/A', colorDescriptor: 'Unrecognized',
         surfaceCondition: 'Unknown', brightness: (brightness * 100).toFixed(0) + '%',
-        processingMode: PitayaApp.settings.offlineMode ? 'Offline (TFLite)' : 'Online (Cloud)',
+        processingMode: 'Local (ONNX / image analysis)',
         processingTime: 'N/A',
-        modelUsed: 'YOLOv8-Nano + EfficientNet-B3'
+        modelUsed: 'No grade assigned'
       },
       recommendations: [
         { type: 'red', icon: '<svg class="icon-svg" viewBox="0 0 24 24" style="width:16px;height:16px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>', text: 'No dragon fruit detected. Please reposition the camera and capture a clear, centered shot of a white-fleshed or red-fleshed dragon fruit.' }
@@ -749,30 +729,29 @@ const Scanner = {
       const tPx = data.length / 4;
       for (let ii = 0; ii < data.length; ii += 4) { tR += data[ii]; tG += data[ii+1]; tB += data[ii+2]; }
       const br = (tR/tPx*0.299 + tG/tPx*0.587 + tB/tPx*0.114) / 255;
-      const sizes = this.featureParams.sizes;
       const surfs = this.featureParams.surfaceOptions;
       const cols  = this.featureParams.colorDescriptors;
-      const si = cov > 0.55 ? 3 : cov > 0.35 ? 2 : cov > 0.20 ? 1 : 0;
       const ui = ed < 0.08 ? 0 : ed < 0.15 ? 1 : ed < 0.25 ? 2 : ed < 0.35 ? 3 : 4;
       const ci = pr > 0.5 && br > 0.4 ? 0 : pr > 0.4 ? 1 : pr > 0.3 ? 2 : 3;
       const sym = diseaseOvr.isHealthy
-        ? ['No visible symptoms detected', 'Uniform skin texture confirmed', 'Normal coloration verified']
+        ? ['No visible symptoms flagged by color analysis', 'Inspect the fruit to confirm its condition']
         : this._getDiseaseSymptoms(diseaseOvr.name);
       return {
         id: Date.now(), timestamp: new Date().toISOString(), image: this.currentImage,
         isDragonFruit: true,
-        grade: { label: gl, confidence: gc, class: this._gradeClass(gl) },
+        grade: { label: gl, confidence: gc, class: this._gradeClass(gl), analysisMethod: 'ONNX grade detector' },
         disease: { name: diseaseOvr.name, confidence: diseaseOvr.confidence,
-                   isHealthy: diseaseOvr.isHealthy, symptoms: sym, areaPercent: diseaseOvr.areaPercent },
+                   isHealthy: diseaseOvr.isHealthy, symptoms: sym, areaPercent: diseaseOvr.areaPercent,
+                   analysisMethod: 'HSV color heuristic' },
         maturity: matOvr,
         details: {
-          size: sizes[si],
+          size: 'Not measured', imageCoveragePercent: Math.round(cov * 1000) / 10,
           colorUniformity: (gradeResult.scores.colorUniformity * 100).toFixed(1) + '%',
           colorDescriptor: cols[ci], surfaceCondition: surfs[ui],
           brightness: (br * 100).toFixed(0) + '%',
-          processingMode: PitayaApp.settings.offlineMode ? 'Offline (TFLite)' : 'Online (YOLOv8n ONNX)',
+          processingMode: 'Local (ONNX / image analysis)',
           processingTime: (modelResult.inferenceMs / 1000).toFixed(2) + 's',
-          modelUsed: 'YOLOv8n ONNX + HSV Disease Segmentation'
+          modelUsed: (modelResult.modelName || 'YOLOv8-Nano') + ' ONNX + HSV disease heuristics'
         },
         compoundScore: gradeResult.score,
         featureScores: gradeResult.scores,
@@ -820,10 +799,8 @@ const Scanner = {
       maturityValue = Math.round(10 + maturityRatio * 30);
     }
 
-    // Size estimation from ROI coverage
+    // Image coverage is a framing measure; physical size requires a scale reference.
     const coverage = gradeResult.metrics.sizeCoverage;
-    const sizes = this.featureParams.sizes;
-    const sizeIdx = coverage > 0.55 ? 3 : coverage > 0.35 ? 2 : coverage > 0.20 ? 1 : 0;
 
     // Surface condition from edge density
     const edgeDensity = gradeResult.metrics.edgeDensity;
@@ -846,7 +823,7 @@ const Scanner = {
 
     // Disease symptoms
     const diseaseSymptoms = diseaseResult.isHealthy
-      ? ['No visible symptoms detected', 'Uniform skin texture confirmed', 'Normal coloration verified']
+      ? ['No visible symptoms flagged by color analysis', 'Inspect the fruit to confirm its condition']
       : this._getDiseaseSymptoms(diseaseResult.name);
 
     // Model metrics
@@ -860,14 +837,14 @@ const Scanner = {
       grade: {
         label: gradeLabel,
         confidence: gradeConfidence,
-        class: this._gradeClass(gradeLabel)
+        class: this._gradeClass(gradeLabel), analysisMethod: 'Image heuristic'
       },
       disease: {
         name: diseaseResult.name,
         confidence: diseaseResult.confidence,
         isHealthy: diseaseResult.isHealthy,
         symptoms: diseaseSymptoms,
-        areaPercent: diseaseResult.areaPercent
+        areaPercent: diseaseResult.areaPercent, analysisMethod: 'HSV color heuristic'
       },
       maturity: {
         status: maturityStatus,
@@ -875,19 +852,19 @@ const Scanner = {
         isHarvestable: maturityStatus === 'Harvestable'
       },
       details: {
-        size: sizes[sizeIdx],
+        size: 'Not measured', imageCoveragePercent: Math.round(coverage * 1000) / 10,
         colorUniformity: (uniformity * 100).toFixed(1) + '%',
         colorDescriptor: colorDescriptors[colorIdx],
         surfaceCondition: surfaceOptions[surfaceIdx],
         brightness: (brightness * 100).toFixed(0) + '%',
-        processingMode: PitayaApp.settings.offlineMode ? 'Offline (TFLite)' : 'Online (Cloud)',
-        processingTime: (1.0 + gradeResult.score * 0.8).toFixed(1) + 's',
-        modelUsed: 'YOLOv8-Nano + EfficientNet-B3'
+        processingMode: 'Local (image analysis)',
+        processingTime: 'N/A',
+        modelUsed: 'HSV image heuristics (model unavailable)'
       },
       compoundScore: gradeResult.score,
       featureScores: gradeResult.scores,
       modelMetrics: modelMetrics,
-      recommendations: this._getRecommendations(gradeLabel, diseaseResult.name, maturityStatus)
+        recommendations: this._getRecommendations(gradeLabel, diseaseResult.name, maturityStatus, false)
     };
   },
 
@@ -913,7 +890,7 @@ const Scanner = {
     return map[label] || 'grade-c';
   },
 
-  _getRecommendations(grade, disease, maturity) {
+  _getRecommendations(grade, disease, maturity, modelGraded = true) {
     const recs = [];
 
     if (maturity === 'Harvestable') {
@@ -923,7 +900,7 @@ const Scanner = {
     }
 
     if (grade === 'Grade A') {
-      recs.push({ type: 'green', icon: '<svg class="icon-svg" viewBox="0 0 24 24" style="width:16px;height:16px"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>', text: 'The model assigned Grade A. Verify physical grading criteria before making market or export decisions.' });
+      recs.push({ type: 'green', icon: '<svg class="icon-svg" viewBox="0 0 24 24" style="width:16px;height:16px"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>', text: modelGraded ? 'The model assigned Grade A. Verify physical grading criteria before making market or export decisions.' : 'The image heuristic assigned Grade A. Verify physical grading criteria before making market or export decisions.' });
     }
 
     if (disease !== 'Healthy') {
@@ -1036,7 +1013,7 @@ const Scanner = {
           <!-- Disease Symptoms -->
           ${result.disease.symptoms && result.disease.symptoms.length > 0 ? `
           <div class="result-section">
-            <div class="result-section-title">Detected Symptoms</div>
+            <div class="result-section-title">Signs to Inspect</div>
             <div class="symptoms-list">
               ${result.disease.symptoms.map(s => `
                 <div class="symptom-item ${result.disease.isHealthy ? 'healthy' : 'alert'}">
@@ -1104,7 +1081,7 @@ const Scanner = {
 
           <div class="result-section">
             <div class="result-section-title">Assessment Limitations</div>
-            <p style="font-size:12px;color:var(--text-secondary)">Disease and maturity results are image-based estimates. Size is estimated from framing, not measured weight. Validated performance metrics for this deployed pipeline are not available.</p>
+            <p style="font-size:12px;color:var(--text-secondary)">Disease and maturity results are image-based estimates. Physical size and weight are not measured. Symptom guidance describes signs to inspect, not confirmed findings. Validated performance metrics for this deployed pipeline are not available.</p>
           </div>
 
           <!-- Recommendations -->

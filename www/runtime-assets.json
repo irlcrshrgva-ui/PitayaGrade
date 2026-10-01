@@ -1,0 +1,14 @@
+{
+  "package": "onnxruntime-web@1.19.0",
+  "version": "1.19.0",
+  "source": "https://www.npmjs.com/package/onnxruntime-web/v/1.19.0",
+  "license": "MIT",
+  "backend": "wasm",
+  "numThreads": 1,
+  "files": {
+    "ort.min.js": "0641104d078d583c9377265be82e0fab07cba83a944aa2cf0ec49a95042a4c18",
+    "ort-wasm-simd-threaded.mjs": "2d4b5930f1f1789a0f4c0812956091138b99195b671263c437e2ff210d03895a",
+    "ort-wasm-simd-threaded.wasm": "9a5219201ef1b107170a042bfe91ae128f9d6736b7b061a3eef299a23d813569",
+    "onnxruntime-LICENSE": "2f07c72751aed99790b8a4869cf2311df85a860b22ded05fa22803587a48922c"
+  }
+}

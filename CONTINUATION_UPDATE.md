@@ -1,5 +1,40 @@
 # Project continuation update
 
+## 2026-10-01 continuation: actual runtime repair and crop verification
+
+- Browser testing exposed a missing `ort-wasm-simd-threaded.mjs`: model loading
+  failed and photo scans fell back to heuristics. Added the matching 1.19.0 module
+  from the retained npm package; existing JavaScript/WASM bytes matched that package.
+  Included Microsoft's MIT license and SHA-256 runtime manifest. Git attributes
+  preserve runtime bytes across Windows/Linux clones.
+- Build synchronization now rejects missing or mismatched runtime assets. Added
+  real WASM inference to the regression suite: the shipped model executes with
+  `[1,3,640,640]` input and `[1,8,8400]` output. This proves runtime compatibility,
+  not model accuracy. Repeated root and packaged browser scans used ONNX successfully.
+- Added `npm start` to serve packaged assets on loopback with module/WASM MIME
+  types and no development cache. Removed dormant cloud-insight/API-key code;
+  aggregate insight rules run locally.
+- New scan records identify ONNX grading versus heuristic analysis, retain framing
+  coverage separately, and report physical size/weight as unmeasured. Corrected
+  cloud/TFLite/EfficientNet metadata and symptom wording. Historical records are
+  preserved. English/Filipino presentation covers the new wording.
+- Crop exports retain source-manifest checksums. The new provenance verifier
+  reconstructs upright crop pixels and checks retained boxes, review evidence,
+  source IDs, bounds, dimensions and inherited split/group. Training validation
+  rejects corrupted/forged supplied provenance even if crop hashes are updated.
+- Local verification: 50 JavaScript tests (including actual WASM model execution),
+  63 lightweight Python tests, Android assembly and lint pass. Lint has 0 errors
+  and 25 warnings. Existing 23 ML runtime tests passed in the preceding continuation;
+  no trainer changes in this continuation require rerunning those expensive checks.
+- Added GitHub Actions for software checks, Android assembly/lint and debug-APK
+  artifacts. Hosted workflow results must be checked after pushing.
+- Final research release remains incomplete: the public manifest contains 3,050
+  images, zero reviewed target-grade labels and 6,103 quality metadata errors.
+  Reviewed detector boxes, symptom polygons, calibrated preprocessing/coverage,
+  evaluated exports for the manuscript pipeline, Android hardware checks and UAT
+  evidence are still required. Source code and synthetic tests cannot create that
+  evidence. Historical checkpoints were not installed as validated models.
+
 ## 2026-10-01 continuation: verified Android and Git handoff
 
 - Consolidated the pending app, native report export, localization, notifications,
