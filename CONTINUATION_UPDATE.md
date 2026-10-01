@@ -27,7 +27,10 @@
   and 25 warnings. Existing 23 ML runtime tests passed in the preceding continuation;
   no trainer changes in this continuation require rerunning those expensive checks.
 - Added GitHub Actions for software checks, Android assembly/lint and debug-APK
-  artifacts. Hosted workflow results must be checked after pushing.
+  artifacts. Provisioned Android SDK tools explicitly after the first hosted run
+  exposed missing `sdkmanager`. Updated three compatible transitive CLI dependencies;
+  npm audit reports zero vulnerabilities. CI now checks dependency advisories too.
+  Hosted workflow results must be checked after pushing.
 - Final research release remains incomplete: the public manifest contains 3,050
   images, zero reviewed target-grade labels and 6,103 quality metadata errors.
   Reviewed detector boxes, symptom polygons, calibrated preprocessing/coverage,

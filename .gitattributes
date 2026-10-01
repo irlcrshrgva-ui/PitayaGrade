@@ -1,6 +1,6 @@
 # Runtime fingerprints must remain identical on Windows and Linux checkouts.
 www/ort.min.js -text
-www/ort-wasm-simd-threaded.mjs -text
+www/ort-wasm-simd-threaded.mjs -text -whitespace
 www/ort-wasm-simd-threaded.wasm binary
 www/onnxruntime-LICENSE -text
 www/model/*.onnx binary
