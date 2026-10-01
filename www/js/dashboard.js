@@ -4,6 +4,14 @@
    ============================================= */
 
 const DashboardManager = {
+  _text(value) {
+    return typeof LanguageManager === 'undefined' ? value : LanguageManager.translate(value);
+  },
+
+  _locale() {
+    return typeof LanguageManager !== 'undefined' && LanguageManager.language === 'fil' ? 'fil-PH' : 'en-PH';
+  },
+
   init() {
     this.refresh();
   },
@@ -140,7 +148,7 @@ const DashboardManager = {
       ctx.fillStyle = '#64748B';
       ctx.font = '14px Inter, sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText('No data yet. Start scanning!', w / 2, h / 2);
+      ctx.fillText(this._text('No data yet. Start scanning!'), w / 2, h / 2);
       return;
     }
 
@@ -202,7 +210,7 @@ const DashboardManager = {
 
     ctx.fillStyle = '#94A3B8';
     ctx.font = '12px Inter, sans-serif';
-    ctx.fillText('Total', cx, cy + 14);
+    ctx.fillText(this._text('Total'), cx, cy + 14);
   },
 
   _renderRecentScans(scans) {
@@ -227,17 +235,17 @@ const DashboardManager = {
                       date.toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' });
       return `
         <div class="scan-item" onclick="HistoryManager.showDetail('${s.id}')">
-          <img class="scan-thumb" src="${s.thumbnail}" alt="Scan ${s.id}">
+          <img class="scan-thumb" src="${ScanStore.escape(s.thumbnail)}" alt="Scan ${s.id}">
           <div class="scan-info">
-            <div class="scan-info-title">${s.grade.label} ${s.disease.isHealthy ? '' : '- ' + s.disease.name}</div>
+            <div class="scan-info-title"><span>${s.grade.label}</span>${s.disease.isHealthy ? '' : ' - <span>' + ScanStore.escape(s.disease.name) + '</span>'}</div>
             <div class="scan-info-meta">
               <span>${timeStr}</span>
               <span>|</span>
-              <span>${s.details.processingTime}</span>
+              <span>${ScanStore.escape(s.details.processingTime)}</span>
             </div>
           </div>
           <div class="scan-grade">
-            <span class="grade-badge ${s.grade.class}">${s.grade.label.replace('Grade ', '')}</span>
+            <span class="grade-badge ${{'Grade A':'grade-a','Grade B':'grade-b','Grade C':'grade-c',Reject:'grade-reject'}[s.grade.label]}">${s.grade.label.replace('Grade ', '')}</span>
           </div>
         </div>
       `;
@@ -278,7 +286,7 @@ const DashboardManager = {
       d.setDate(d.getDate() - i);
       days.push({
         date: ScanStore.localDate(d),
-        label: d.toLocaleDateString('en-PH', { weekday: 'short' }),
+        label: d.toLocaleDateString(this._locale(), { weekday: 'short' }),
         healthy: 0,
         diseased: 0
       });
@@ -373,7 +381,7 @@ const DashboardManager = {
       d.setDate(d.getDate() - i);
       days.push({
         date: ScanStore.localDate(d),
-        label: d.toLocaleDateString('en-PH', { weekday: 'short' }),
+        label: d.toLocaleDateString(this._locale(), { weekday: 'short' }),
         scores: []
       });
     }
@@ -464,7 +472,7 @@ const DashboardManager = {
       ctx.fillStyle = '#64748B';
       ctx.font = '14px Inter, sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText('No quality data yet', w / 2, h / 2);
+      ctx.fillText(this._text('No quality data yet'), w / 2, h / 2);
     }
   },
 
@@ -514,7 +522,7 @@ const DashboardManager = {
       ctx.fillStyle = '#64748B';
       ctx.font = '14px Inter, sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText('No disease data yet', w / 2, h / 2);
+      ctx.fillText(this._text('No disease data yet'), w / 2, h / 2);
       return;
     }
 
@@ -539,7 +547,7 @@ const DashboardManager = {
       ctx.font = '12px Inter, sans-serif';
       ctx.textAlign = 'right';
       ctx.textBaseline = 'middle';
-      ctx.fillText(d.label, padding.left - 8, y + barHeight / 2);
+      ctx.fillText(this._text(d.label), padding.left - 8, y + barHeight / 2);
 
       // Value
       ctx.fillStyle = '#F1F5F9';

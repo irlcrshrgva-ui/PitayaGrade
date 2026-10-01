@@ -1,0 +1,10 @@
+{
+  "repository": "Project-AgML/dragonfruit_quality_classification",
+  "source": "https://data.mendeley.com/datasets/2jpzbx8tm6/1",
+  "license": "CC BY 4.0",
+  "sourcePath": "raw/train-00000-of-00001.parquet",
+  "bytes": 188877742,
+  "sha256": "65da195e8080e3adff2624755a1ed04b1236781b887ee8342b4c8b245dc5012a",
+  "downloadedAt": "2026-09-19T15:52:04.816Z",
+  "status": "Downloaded for inspection; not approved ground-truth grades or diagnoses"
+}

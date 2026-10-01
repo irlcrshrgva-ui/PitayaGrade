@@ -6,11 +6,65 @@ const NotificationManager = {
   notifications: [],
 
   init() {
-    this.notifications = JSON.parse(localStorage.getItem('pg_notifications') || '[]');
+    this.load();
+    const dialog = document.getElementById('notificationDialog');
+    document.getElementById('notificationsBtn')?.addEventListener('click', () => {
+      this.load();
+      this.renderList();
+      dialog.showModal();
+    });
+    document.getElementById('notificationsClose')?.addEventListener('click', () => dialog.close());
+    document.getElementById('notificationsRead')?.addEventListener('click', () => this.markAllRead());
+    document.getElementById('notificationsClear')?.addEventListener('click', () => {
+      const message = 'Clear all saved notifications?';
+      if (typeof LanguageManager !== 'undefined' ? LanguageManager.confirm(message) : confirm(message)) this.clearAll();
+    });
+    window.addEventListener('storage', event => {
+      if (event.key === 'pg_notifications' || event.key === null) this.load();
+    });
+    window.addEventListener('pg:scans-changed', () => this.scheduleSessionSummary());
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) this.scheduleSessionSummary();
+    });
+    this.scheduleSessionSummary();
+  },
+
+  load() {
+    this.storageReadable = true;
+    try {
+      const value = JSON.parse(localStorage.getItem('pg_notifications') || '[]');
+      if (!Array.isArray(value) || !value.every(n => n && Number.isFinite(n.id) &&
+        typeof n.title === 'string' && typeof n.body === 'string' &&
+        ['low', 'medium', 'high', 'success'].includes(n.severity) &&
+        typeof n.icon === 'string' && typeof n.read === 'boolean' &&
+        Number.isFinite(Date.parse(n.time)))) throw new Error('Invalid notifications');
+      this.notifications = value;
+    } catch {
+      this.notifications = [];
+      this.storageReadable = false;
+    }
     this.updateBadge();
+    this.renderList();
+  },
+
+  _commit(next) {
+    if (!this.storageReadable) {
+      ToastManager.show('Saved notifications could not be read. Original data has been preserved.', 'warning');
+      return false;
+    }
+    try { localStorage.setItem('pg_notifications', JSON.stringify(next)); }
+    catch {
+      ToastManager.show('Notifications could not be saved. Existing alerts are unchanged.', 'warning');
+      return false;
+    }
+    this.notifications = next;
+    this.updateBadge();
+    this.renderList();
+    return true;
   },
 
   add(notification) {
+    this.load();
     const notif = {
       id: Date.now() + Math.random(),
       title: notification.title,
@@ -20,44 +74,32 @@ const NotificationManager = {
       time: new Date().toISOString(),
       read: false
     };
-    this.notifications.unshift(notif);
-    if (this.notifications.length > 50) this.notifications.pop();
-    this.save();
-    this.updateBadge();
-    this.renderList();
+    if (notification.sessionKey) notif.sessionKey = notification.sessionKey;
+    const saved = this._commit([notif, ...this.notifications].slice(0, 50));
     
     // Show toast
     ToastManager.show(notif.title, notif.severity === 'high' ? 'error' : notif.severity === 'medium' ? 'warning' : 'success');
     
-    return notif;
+    return saved ? notif : null;
   },
 
   remove(id) {
-    this.notifications = this.notifications.filter(n => n.id !== id);
-    this.save();
-    this.updateBadge();
-    this.renderList();
+    this.load();
+    return this._commit(this.notifications.filter(n => n.id !== id));
   },
 
   clearAll() {
-    this.notifications = [];
-    this.save();
-    this.updateBadge();
-    this.renderList();
+    this.load();
+    return this._commit([]);
   },
 
   markAllRead() {
-    this.notifications.forEach(n => n.read = true);
-    this.save();
-    this.updateBadge();
+    this.load();
+    return this._commit(this.notifications.map(n => ({ ...n, read: true })));
   },
 
   getUnreadCount() {
     return this.notifications.filter(n => !n.read).length;
-  },
-
-  save() {
-    localStorage.setItem('pg_notifications', JSON.stringify(this.notifications));
   },
 
   updateBadge() {
@@ -77,6 +119,11 @@ const NotificationManager = {
     const empty = document.getElementById('notifEmpty');
     if (!list) return;
 
+    if (!this.storageReadable) {
+      list.textContent = 'Saved notifications could not be read. Original data has been preserved.';
+      return;
+    }
+
     if (this.notifications.length === 0) {
       list.innerHTML = '';
       list.appendChild(empty || this._createEmptyState());
@@ -87,15 +134,62 @@ const NotificationManager = {
       const timeAgo = this._timeAgo(n.time);
       return `
         <div class="notif-item severity-${n.severity}" data-id="${n.id}">
-          <div class="notif-icon">${n.icon}</div>
+          <div class="notif-icon">${this._escape(n.icon)}</div>
           <div class="notif-content">
-            <div class="notif-title">${n.title}</div>
-            <div class="notif-body">${n.body}</div>
+            <div class="notif-title">${n.read ? '' : '<span aria-hidden="true">● </span>'}<span>${this._escape(n.title)}</span></div>
+            <div class="notif-body">${this._escape(n.body)}</div>
             <div class="notif-time">${timeAgo}</div>
           </div>
         </div>
       `;
     }).join('');
+  },
+
+  _escape(value) {
+    return String(value).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  },
+
+  // Sessions use fixed 60-minute windows anchored at their first saved scan.
+  _latestSession(scans) {
+    let session = [];
+    const sorted = [...scans].sort((a, b) => Date.parse(a.timestamp) - Date.parse(b.timestamp));
+    for (const scan of sorted) {
+      if (!session.length || Date.parse(scan.timestamp) - Date.parse(session[0].timestamp) >= 3600000) session = [];
+      session.push(scan);
+    }
+    return session;
+  },
+
+  scheduleSessionSummary(now = Date.now()) {
+    clearTimeout(this.sessionTimer);
+    if (typeof PitayaApp !== 'undefined' && PitayaApp.settings.scanAlerts === false) return;
+    const session = this._latestSession(ScanStore.getScans());
+    if (!session.length) return;
+    const start = Date.parse(session[0].timestamp);
+    if (!Number.isFinite(start) || start > now) return;
+    const remaining = start + 3600000 - now;
+    if (remaining > 0) {
+      this.sessionTimer = setTimeout(() => this.scheduleSessionSummary(), remaining);
+      return;
+    }
+    const key = String(session[0].id) + ':' + session[0].timestamp;
+    this.load();
+    try {
+      if (localStorage.getItem('pg_last_session_summary') === key) return;
+      if (!this.notifications.some(n => n.sessionKey === key)) {
+        const counts = ['Grade A', 'Grade B', 'Grade C', 'Reject'].map(label =>
+          `${label}: ${session.filter(s => s.grade.label === label).length}`).join(', ');
+        const flagged = session.filter(s => s.disease && s.disease.name !== 'Healthy').length;
+        const saved = this.add({ title: 'Session Summary',
+          body: `${session.length} scans saved. ${counts}. ${flagged} with image-based disease flags; these are estimates.`,
+          severity: flagged ? 'medium' : 'success', icon: '📊', sessionKey: key });
+        if (!saved) return;
+      }
+      localStorage.setItem('pg_last_session_summary', key);
+    } catch {
+      // Saved notification itself is a duplicate guard if writing the marker fails.
+      ToastManager.show('Session summary state could not be saved.', 'warning');
+    }
   },
 
   _createEmptyState() {
@@ -122,14 +216,15 @@ const NotificationManager = {
 
   // Generate notifications based on scan results
   generateScanAlert(scanResult) {
+    if (typeof PitayaApp !== 'undefined' && PitayaApp.settings.scanAlerts === false) return;
     const { grade, disease, confidence } = scanResult;
 
     // Disease alert
     if (disease && disease.name !== 'Healthy') {
       const severity = disease.confidence > 0.85 ? 'high' : disease.confidence > 0.65 ? 'medium' : 'low';
       this.add({
-        title: `${disease.name} Detected`,
-        body: `Disease detected with ${(disease.confidence * 100).toFixed(1)}% confidence. ${this._getDiseaseAdvice(disease.name)}`,
+        title: `Possible ${disease.name}`,
+        body: 'Image-based estimate, not a confirmed diagnosis. Inspect the fruit and consult an agricultural officer for confirmation.',
         severity: severity,
         icon: severity === 'high' ? '🚨' : '⚠️'
       });
@@ -139,7 +234,7 @@ const NotificationManager = {
     if (grade.label === 'Reject') {
       this.add({
         title: 'Fruit Rejected',
-        body: `Fruit classified as Reject with ${(grade.confidence * 100).toFixed(1)}% confidence. Remove from harvest batch.`,
+        body: `Fruit classified as Reject with ${(grade.confidence * 100).toFixed(1)}% confidence. Verify the fruit against grading criteria before deciding its use.`,
         severity: 'high',
         icon: '❌'
       });
@@ -149,7 +244,7 @@ const NotificationManager = {
     if (grade.label === 'Grade A' && grade.confidence > 0.9) {
       this.add({
         title: 'Premium Quality Detected',
-        body: `Excellent! Grade A fruit with ${(grade.confidence * 100).toFixed(1)}% confidence. Ready for premium market.`,
+        body: `Grade A fruit with ${(grade.confidence * 100).toFixed(1)}% confidence. Verify physical grading criteria before making market decisions.`,
         severity: 'success',
         icon: '🌟'
       });
@@ -194,7 +289,7 @@ const ToastManager = {
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
     const icons = { success: '✅', warning: '⚠️', error: '🚨', info: 'ℹ️' };
-    toast.innerHTML = `<span>${icons[type] || ''}</span><span>${message}</span>`;
+    toast.innerHTML = `<span>${icons[type] || ''}</span><span>${NotificationManager._escape(message)}</span>`;
     container.appendChild(toast);
 
     setTimeout(() => {

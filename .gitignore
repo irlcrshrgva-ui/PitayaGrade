@@ -23,12 +23,18 @@ yolo_dataset/labels/
 
 # Training checkpoints and duplicate exported models
 training_results/*.pth
+training_results/**/dataset/
+training_results/**/*.pth
+yolo_results/**/dataset/
+yolo_results/**/weights/
 yolo_results/train/weights/
 yolo_results/best.onnx
 yolov8n.pt
+yolov8n-seg.pt
 
 # Python and editor artifacts
 __pycache__/
+Ultralytics/
 *.py[cod]
 .venv/
 venv/
@@ -39,4 +45,3 @@ venv/
 .DS_Store
 Thumbs.db
 ~$*
-

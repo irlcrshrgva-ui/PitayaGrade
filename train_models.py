@@ -1,6 +1,6 @@
 """
 PitayaGrade - Real CNN Model Training & Comparison
-Trains MobileNetV2, EfficientNet-B3, and ResNet50V2 on the PH DragonFruit Dataset.
+Trains manuscript EfficientNet-B3 only from a validated review manifest.
 
 Uses PyTorch with CUDA GPU acceleration.
 Follows methodology from the capstone paper:
@@ -10,12 +10,17 @@ Follows methodology from the capstone paper:
 
 import os
 import json
-import sys
-import shutil
 import time
+from importlib.metadata import version
+from scripts.reviewed_training import training_arguments, prepare_reviewed_dataset
+from scripts.training_policy import LossMonitor
+from scripts.image_orientation import load_upright_rgb
+
+# Validate before importing ML frameworks or downloading weights.
+TRAINING_ARGS = training_arguments() if __name__ == "__main__" else None
+
 import numpy as np
 from pathlib import Path
-from collections import Counter
 
 import torch
 import torch.nn as nn
@@ -23,7 +28,6 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms, models
 from sklearn.metrics import classification_report, confusion_matrix, precision_recall_fscore_support
-from sklearn.model_selection import train_test_split
 
 # ── Configuration ────────────────────────────────────────────────────────────
 IMG_SIZE = 224
@@ -35,19 +39,9 @@ SEED = 42
 NUM_WORKERS = 2
 
 PROJECT_DIR = Path(os.path.dirname(os.path.abspath(__file__)))
-DATASET_DIR = PROJECT_DIR / "dataset"
 RESULTS_DIR = PROJECT_DIR / "training_results"
-RESULTS_DIR.mkdir(exist_ok=True)
 
 GRADE_CLASSES = ["Grade A", "Grade B", "Grade C", "Reject"]
-
-# PH DragonFruit Dataset mapping
-CLASS_MAPPING = {
-    "Ripe_frames": "Grade A",
-    "Ripe2_frames": "Grade B",
-    "Overripe_frames": "Grade C",
-    "Rotten_frames": "Reject",
-}
 
 torch.manual_seed(SEED)
 np.random.seed(SEED)
@@ -57,84 +51,15 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Device: {device}")
 if torch.cuda.is_available():
     print(f"GPU: {torch.cuda.get_device_name(0)}")
-    print(f"VRAM: {torch.cuda.get_device_properties(0).total_mem / 1e9:.1f} GB")
+    print(f"VRAM: {torch.cuda.get_device_properties(0).total_memory / 1e9:.1f} GB")
 
 
 # ── Dataset Preparation ─────────────────────────────────────────────────────
 def prepare_dataset():
-    """Create train/val/test directories mapped to 4 grades."""
-    prepared_dir = PROJECT_DIR / "dataset_prepared"
-
-    if prepared_dir.exists() and (prepared_dir / "train").exists():
-        train_count = sum(1 for _ in (prepared_dir / "train").rglob("*.*")
-                         if _.suffix.lower() in ('.jpg', '.jpeg', '.png'))
-        if train_count > 100:
-            print(f"Dataset already prepared ({train_count} train images). Skipping.")
-            return prepared_dir
-
-    # Find dataset root
-    dataset_root = None
-    for root, dirs, files in os.walk(DATASET_DIR):
-        if any(d in CLASS_MAPPING for d in dirs):
-            dataset_root = Path(root)
-            break
-
-    if dataset_root is None:
-        print("ERROR: Could not find dataset. Contents of dataset dir:")
-        for root, dirs, files in os.walk(DATASET_DIR):
-            if dirs:
-                print(f"  {root}: {dirs}")
-        sys.exit(1)
-
-    print(f"Dataset root: {dataset_root}")
-
-    # Collect images
-    all_images = []
-    for folder_name, grade in CLASS_MAPPING.items():
-        folder_path = dataset_root / folder_name
-        if not folder_path.exists():
-            print(f"WARNING: {folder_path} not found!")
-            continue
-        for ext in ("*.jpg", "*.jpeg", "*.png", "*.bmp", "*.webp"):
-            for img_path in folder_path.glob(ext):
-                all_images.append((str(img_path), grade))
-
-    print(f"Total images: {len(all_images)}")
-    for grade in GRADE_CLASSES:
-        count = sum(1 for _, l in all_images if l == grade)
-        print(f"  {grade}: {count}")
-
-    # Stratified split 70/15/15
-    paths = [p for p, _ in all_images]
-    labels = [l for _, l in all_images]
-
-    train_paths, temp_paths, train_labels, temp_labels = train_test_split(
-        paths, labels, test_size=0.30, stratify=labels, random_state=SEED
-    )
-    val_paths, test_paths, val_labels, test_labels = train_test_split(
-        temp_paths, temp_labels, test_size=0.50, stratify=temp_labels, random_state=SEED
-    )
-
-    print(f"Split: Train={len(train_paths)}, Val={len(val_paths)}, Test={len(test_paths)}")
-
-    # Copy files
-    for split, s_paths, s_labels in [
-        ("train", train_paths, train_labels),
-        ("val", val_paths, val_labels),
-        ("test", test_paths, test_labels),
-    ]:
-        for grade in GRADE_CLASSES:
-            (prepared_dir / split / grade).mkdir(parents=True, exist_ok=True)
-        for img_path, label in zip(s_paths, s_labels):
-            src = Path(img_path)
-            dst = prepared_dir / split / label / src.name
-            if dst.exists():
-                dst = prepared_dir / split / label / f"{src.stem}_{hash(img_path) % 10000}{src.suffix}"
-            if not dst.exists():
-                shutil.copy2(src, dst)
-
-    print("Dataset preparation complete!")
-    return prepared_dir
+    """Use reviewed labels and partitions; reject legacy folder mappings."""
+    if TRAINING_ARGS is None:
+        raise ValueError("A reviewed manifest and new run directory are required")
+    return prepare_reviewed_dataset(TRAINING_ARGS.rows, TRAINING_ARGS.run_dir)
 
 
 # ── Data Loaders ─────────────────────────────────────────────────────────────
@@ -160,9 +85,9 @@ def create_dataloaders(prepared_dir):
         normalize,
     ])
 
-    train_dataset = datasets.ImageFolder(str(prepared_dir / "train"), transform=train_transform)
-    val_dataset = datasets.ImageFolder(str(prepared_dir / "val"), transform=val_transform)
-    test_dataset = datasets.ImageFolder(str(prepared_dir / "test"), transform=val_transform)
+    train_dataset = datasets.ImageFolder(str(prepared_dir / "train"), transform=train_transform, loader=load_upright_rgb)
+    val_dataset = datasets.ImageFolder(str(prepared_dir / "val"), transform=val_transform, loader=load_upright_rgb)
+    test_dataset = datasets.ImageFolder(str(prepared_dir / "test"), transform=val_transform, loader=load_upright_rgb)
 
     # Ensure class order matches GRADE_CLASSES
     print(f"Class to idx: {train_dataset.class_to_idx}")
@@ -240,14 +165,23 @@ def freeze_backbone(model):
 
 
 def unfreeze_backbone(model):
-    """Unfreeze backbone for Phase 2."""
-    for param in model.backbone.parameters():
-        param.requires_grad = True
+    """Fine-tune the upper three EfficientNet feature blocks, retaining lower features."""
+    freeze_backbone(model)
+    for block in list(model.backbone.features.children())[-3:]:
+        for param in block.parameters():
+            param.requires_grad = True
 
 
 # ── Training Loop ────────────────────────────────────────────────────────────
 def train_one_epoch(model, loader, criterion, optimizer):
     model.train()
+    # Frozen parameters must also preserve BatchNorm running statistics.
+    if not any(p.requires_grad for p in model.backbone.parameters()):
+        model.backbone.eval()
+    else:
+        for module in model.backbone.modules():
+            if isinstance(module, nn.modules.batchnorm._BatchNorm) and not any(p.requires_grad for p in module.parameters()):
+                module.eval()
     running_loss = 0.0
     correct = 0
     total = 0
@@ -289,119 +223,52 @@ def validate(model, loader, criterion):
 
 
 def train_model(model_name, model, train_loader, val_loader):
-    """Two-phase transfer learning (paper Section 3.5.3)."""
-    print(f"\n{'='*70}")
-    print(f"TRAINING: {model_name}")
-    print(f"{'='*70}")
-
+    """Two-phase transfer learning; selection and stopping use validation loss."""
     model = model.to(device)
     criterion = nn.CrossEntropyLoss()
-
-    history = {
-        "model": model_name,
-        "phase1_epochs": [],
-        "phase2_epochs": [],
-        "train_acc": [],
-        "val_acc": [],
-        "train_loss": [],
-        "val_loss": [],
-    }
-
-    # ── Phase 1: Frozen backbone ──
-    print(f"\n--- Phase 1: Feature Extraction ({PHASE1_EPOCHS} epochs, LR=1e-3) ---")
-    freeze_backbone(model)
-
-    trainable = sum(p.numel() for p in model.parameters() if p.requires_grad)
-    print(f"  Trainable params: {trainable:,}")
-
-    optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=1e-3)
-
-    t0 = time.time()
-    for epoch in range(PHASE1_EPOCHS):
-        train_loss, train_acc = train_one_epoch(model, train_loader, criterion, optimizer)
-        val_loss, val_acc = validate(model, val_loader, criterion)
-
-        history["train_acc"].append(train_acc)
-        history["val_acc"].append(val_acc)
-        history["train_loss"].append(train_loss)
-        history["val_loss"].append(val_loss)
-        history["phase1_epochs"].append(epoch + 1)
-
-        print(f"  Epoch {epoch+1:2d}/{PHASE1_EPOCHS} | "
-              f"Train Loss: {train_loss:.4f} Acc: {train_acc:.4f} | "
-              f"Val Loss: {val_loss:.4f} Acc: {val_acc:.4f}")
-
-    phase1_time = time.time() - t0
-    print(f"Phase 1 done in {phase1_time:.0f}s")
-
-    # ── Phase 2: Fine-tune all ──
-    print(f"\n--- Phase 2: Fine-tuning ({PHASE2_EPOCHS} epochs, LR=1e-5, patience={PATIENCE}) ---")
-    unfreeze_backbone(model)
-
-    trainable = sum(p.numel() for p in model.parameters() if p.requires_grad)
-    print(f"  Trainable params: {trainable:,}")
-
-    optimizer = optim.Adam(model.parameters(), lr=1e-5)
-    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=5, min_lr=1e-7)
-
-    best_val_loss = float('inf')
-    best_val_acc = 0.0
-    patience_counter = 0
+    history = dict(model=model_name, phase1_epochs=[], phase2_epochs=[],
+                   train_acc=[], val_acc=[], train_loss=[], val_loss=[], learning_rate=[],
+                   selection_metric="val_loss", fine_tuning="upper three feature blocks")
+    overall = LossMonitor(PATIENCE)
     best_state = None
-
-    t0 = time.time()
-    for epoch in range(PHASE2_EPOCHS):
-        train_loss, train_acc = train_one_epoch(model, train_loader, criterion, optimizer)
-        val_loss, val_acc = validate(model, val_loader, criterion)
-
-        history["train_acc"].append(train_acc)
-        history["val_acc"].append(val_acc)
-        history["train_loss"].append(train_loss)
-        history["val_loss"].append(val_loss)
-        history["phase2_epochs"].append(PHASE1_EPOCHS + epoch + 1)
-
-        # Learning rate scheduling
-        scheduler.step(val_loss)
-        current_lr = optimizer.param_groups[0]['lr']
-
-        print(f"  Epoch {PHASE1_EPOCHS+epoch+1:2d} | "
-              f"Train Loss: {train_loss:.4f} Acc: {train_acc:.4f} | "
-              f"Val Loss: {val_loss:.4f} Acc: {val_acc:.4f} | LR: {current_lr:.1e}")
-
-        # Checkpointing
-        if val_acc > best_val_acc:
-            best_val_acc = val_acc
-            best_val_loss = val_loss
-            best_state = {k: v.cpu().clone() for k, v in model.state_dict().items()}
-            patience_counter = 0
-            print(f"    ** New best val_acc: {best_val_acc:.4f} **")
+    started = time.time()
+    for phase, epochs, lr in ((1, PHASE1_EPOCHS, 1e-3), (2, PHASE2_EPOCHS, 1e-5)):
+        if phase == 1:
+            freeze_backbone(model)
         else:
-            patience_counter += 1
-
-        # Early stopping
-        if patience_counter >= PATIENCE:
-            print(f"  Early stopping at epoch {PHASE1_EPOCHS+epoch+1} (patience={PATIENCE})")
-            break
-
-    phase2_time = time.time() - t0
-    actual_p2 = len(history["phase2_epochs"])
-    print(f"Phase 2 done in {phase2_time:.0f}s ({actual_p2} epochs)")
-
-    # Restore best weights
-    if best_state is not None:
-        model.load_state_dict(best_state)
-        print(f"Restored best weights (val_acc={best_val_acc:.4f})")
-
-    history["total_epochs"] = PHASE1_EPOCHS + actual_p2
-    history["total_time_seconds"] = phase1_time + phase2_time
-
-    # Save history
-    with open(RESULTS_DIR / f"{model_name}_history.json", "w") as f:
-        json.dump(history, f, indent=2)
-
-    # Save model weights
+            model.load_state_dict(best_state)
+            unfreeze_backbone(model)
+        optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()),
+                               lr=lr, weight_decay=1e-4)
+        scheduler = optim.lr_scheduler.ReduceLROnPlateau(
+            optimizer, mode='min', factor=0.5, patience=5, threshold=0, min_lr=1e-7)
+        phase_monitor = LossMonitor(PATIENCE)
+        for _ in range(epochs):
+            current_lr = optimizer.param_groups[0]['lr']
+            train_loss, train_acc = train_one_epoch(model, train_loader, criterion, optimizer)
+            val_loss, val_acc = validate(model, val_loader, criterion)
+            epoch = len(history['val_loss']) + 1
+            phase_monitor.update(val_loss, epoch)
+            if overall.update(val_loss, epoch):
+                best_state = {k: v.cpu().clone() for k, v in model.state_dict().items()}
+                history['best_val_accuracy'] = val_acc
+            scheduler.step(val_loss)
+            for key, value in (('train_loss', train_loss), ('train_acc', train_acc),
+                               ('val_loss', val_loss), ('val_acc', val_acc),
+                               ('learning_rate', current_lr)):
+                history[key].append(value)
+            history[f'phase{phase}_epochs'].append(epoch)
+            print(f'Phase {phase} epoch {epoch}: val_loss={val_loss:.4f}, val_acc={val_acc:.4f}, lr={current_lr:.1e}')
+            if phase_monitor.should_stop:
+                break
+    if best_state is None:
+        raise RuntimeError('No finite validation-loss checkpoint was produced')
+    model.load_state_dict(best_state)
+    history.update(best_val_loss=overall.best, best_epoch=overall.best_epoch,
+                   total_epochs=len(history['val_loss']), total_time_seconds=time.time() - started)
+    with open(RESULTS_DIR / f"{model_name}_history.json", "w") as output:
+        json.dump(history, output, indent=2)
     torch.save(model.state_dict(), str(RESULTS_DIR / f"{model_name}_best.pth"))
-
     return model, history
 
 
@@ -479,7 +346,7 @@ def generate_visualizations(all_histories, all_metrics, model_names):
 
     # ── 6-panel training curves ──
     print("\nGenerating training curves...")
-    fig, axes = plt.subplots(2, 3, figsize=(15, 7))
+    fig, axes = plt.subplots(2, len(model_names), figsize=(5 * len(model_names), 7), squeeze=False)
     fig.suptitle("CNN Model Training Curves - Dragon Fruit Quality Grading (PitayaGrade)",
                  fontsize=13, fontweight="bold", y=1.01)
 
@@ -515,7 +382,7 @@ def generate_visualizations(all_histories, all_metrics, model_names):
                 ax.spines[s].set_visible(False)
 
     plt.tight_layout()
-    plt.savefig(str(PROJECT_DIR / "comparison_training_curves.png"), dpi=180, bbox_inches="tight")
+    plt.savefig(str(RESULTS_DIR / "comparison_training_curves.png"), dpi=180, bbox_inches="tight")
     plt.close()
     print("  Saved: comparison_training_curves.png")
 
@@ -604,7 +471,7 @@ def generate_visualizations(all_histories, all_metrics, model_names):
             fontsize=7.5, color="#757575", style="italic", transform=ax.transAxes)
 
     plt.tight_layout(rect=[0, 0.02, 1, 0.96])
-    plt.savefig(str(PROJECT_DIR / "comparison_table.png"), dpi=180, bbox_inches="tight")
+    plt.savefig(str(RESULTS_DIR / "comparison_table.png"), dpi=180, bbox_inches="tight")
     plt.close()
     print("  Saved: comparison_table.png")
 
@@ -643,7 +510,7 @@ def generate_visualizations(all_histories, all_metrics, model_names):
     for i in range(len(rows)):
         tbl[(i+1, -1)].set_text_props(fontweight="bold")
 
-    gs_c = gs[1].subgridspec(2, 3, hspace=0.42, wspace=0.35)
+    gs_c = gs[1].subgridspec(2, len(model_names), hspace=0.42, wspace=0.35)
     fig.text(0.5, 0.485, "Training Curves - Accuracy & Loss per Model",
              ha="center", va="top", fontsize=12, fontweight="bold")
 
@@ -673,7 +540,7 @@ def generate_visualizations(all_histories, all_metrics, model_names):
             ax.tick_params(labelsize=7)
             ax.set_title(f"{name}\n{ts}" if ax == ax_a else ts, fontsize=9, fontweight="bold")
 
-    plt.savefig(str(PROJECT_DIR / "comparison_combined.png"), dpi=180, bbox_inches="tight")
+    plt.savefig(str(RESULTS_DIR / "comparison_combined.png"), dpi=180, bbox_inches="tight")
     plt.close()
     print("  Saved: comparison_combined.png")
 
@@ -695,16 +562,32 @@ def generate_visualizations(all_histories, all_metrics, model_names):
 
 # ── Main ─────────────────────────────────────────────────────────────────────
 def main():
+    global RESULTS_DIR
+    RESULTS_DIR = TRAINING_ARGS.run_dir
     print("=" * 70)
     print("PitayaGrade - Real CNN Model Training")
-    print("MobileNetV2 | EfficientNet-B3 | ResNet50V2")
+    print("EfficientNet-B3 | reviewed manuscript quality labels")
     print("=" * 70)
 
     # Prepare dataset
     prepared_dir = prepare_dataset()
     train_loader, val_loader, test_loader, class_to_idx = create_dataloaders(prepared_dir)
 
-    model_names = ["MobileNetV2", "EfficientNetB3", "ResNet50V2"]
+    (RESULTS_DIR / 'training-context.json').write_text(json.dumps({
+        'task': 'manuscript-quality', 'model': 'EfficientNetB3',
+        'frameworks': {name: version(name) for name in ('torch', 'torchvision', 'scikit-learn')},
+        'classToIndex': class_to_idx, 'imageSize': IMG_SIZE, 'batchSize': BATCH_SIZE, 'seed': SEED,
+        'orientation': 'EXIF-transpose to upright RGB before resize and augmentation',
+        'phase1': {'epochs': PHASE1_EPOCHS, 'lr': 1e-3, 'backbone': 'frozen'},
+        'phase2': {'epochs': PHASE2_EPOCHS, 'lr': 1e-5, 'backbone': 'upper three feature blocks'},
+        'optimizer': {'name': 'Adam', 'weightDecay': 1e-4, 'betas': [0.9, 0.999]},
+        'scheduler': {'name': 'ReduceLROnPlateau', 'patience': 5, 'factor': 0.5},
+        'selectionMetric': 'val_loss', 'earlyStoppingPatience': PATIENCE,
+        'methodologyLimitations': ['Reviewed fruit-crop provenance and full preprocessing alignment still need verification.',
+                                  'No metadata check establishes expert-label truth or field accuracy.']
+    }, indent=2) + '\n', encoding='utf-8')
+
+    model_names = ["EfficientNetB3"]
     all_histories = {}
     all_metrics = {}
 
@@ -712,17 +595,6 @@ def main():
         print(f"\n{'#'*70}")
         print(f"# {model_name}")
         print(f"{'#'*70}")
-
-        # Resume support
-        hist_path = RESULTS_DIR / f"{model_name}_history.json"
-        met_path = RESULTS_DIR / f"{model_name}_metrics.json"
-        if hist_path.exists() and met_path.exists():
-            print(f"{model_name} already done. Loading results...")
-            with open(hist_path) as f:
-                all_histories[model_name] = json.load(f)
-            with open(met_path) as f:
-                all_metrics[model_name] = json.load(f)
-            continue
 
         try:
             model = build_model(model_name)
@@ -740,6 +612,7 @@ def main():
             print(f"ERROR with {model_name}: {e}")
             import traceback
             traceback.print_exc()
+            raise
 
     # Generate all visualizations
     if all_histories and all_metrics:

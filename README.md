@@ -6,14 +6,11 @@ PitayaGrade is a capstone project for AI-assisted pre-harvest quality grading an
 
 1. Capture or upload a dragon-fruit image.
 2. Use YOLOv8-Nano to detect and crop the fruit.
-3. Grade the crop using a user-selected classifier:
-   - MobileNetV2
-   - ResNet50
-   - EfficientNet-B3
-4. Analyze the crop using a separate disease classifier.
+3. Grade the crop using manuscript EfficientNet-B3.
+4. Analyze reviewed disease/defect regions using YOLOv8-Nano segmentation.
 5. Display confidence, recommendations, history, analytics, and reports.
 
-> The selectable classifiers and genuine disease model are planned features. The current deployed application contains the YOLOv8 ONNX model, while portions of disease analysis still use image heuristics.
+> This is the manuscript pipeline awaiting evaluated models and integration. The current deployed application contains the YOLOv8 ONNX model, while portions of disease analysis still use image heuristics. Selectable classifiers require explicit scope approval.
 
 ## Main directories
 
@@ -56,7 +53,34 @@ Open the Android project:
 npx cap open android
 ```
 
+On Windows, build and run the regression/lint checks together:
+
+```powershell
+./scripts/build-android.ps1 -JavaHome D:/Android/jbr
+```
+
+Use your own Java 21 path if Android Studio is installed elsewhere. The script
+uses `ANDROID_HOME` or the current user's `AppData/Local/Android/Sdk`; pass
+`-SdkRoot` to override. SDK platform 36 must be installed and its licenses
+accepted. Output: `android/app/build/outputs/apk/debug/app-debug.apk`.
+This is a debug build, not proof of model accuracy or device validation.
+
 ## Machine-learning assets
+
+The supported quality-training command requires a reviewed manifest and a fresh
+run directory. See [the preparation guide](research/PREPARATION_GUIDE.md).
+It trains manuscript EfficientNet-B3; historical model comparisons do not approve
+adding selectable classifiers to the app.
+
+YOLO dataset preparation likewise requires reviewed fruit boxes. The Colab entry
+point uses the reviewed quality-training workflow. See the preparation guide for
+commands and remaining methodology gaps; a new one-class detector cannot directly
+replace the app's existing four-grade model.
+
+`train_segmentation.py` prepares reviewed disease-region polygons on fruit crops
+and supports YOLOv8n-seg training. See the preparation guide for its separate
+manifest contract and Healthy negative samples. This research workflow does not
+replace the app's heuristic disease output or establish model accuracy.
 
 The deployed web model is stored under `www/model/`. Large training datasets and framework checkpoints are intentionally excluded from Git because the local project is several gigabytes. Dataset sources, licenses, splitting procedures, preprocessing, and final evaluation results should be documented before the capstone release.
 

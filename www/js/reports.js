@@ -4,6 +4,15 @@
    ============================================= */
 
 const ReportsManager = {
+  exporting: false,
+  _nativePlugin() {
+    const capacitor = window.Capacitor;
+    if (!capacitor?.isNativePlatform?.() || capacitor.getPlatform() !== 'android') return null;
+    if (!capacitor.isPluginAvailable('ReportExport')) throw new Error('Native report plugin unavailable');
+    const plugin = capacitor.Plugins?.ReportExport || capacitor.registerPlugin?.('ReportExport');
+    if (!plugin) throw new Error('Native report plugin unavailable');
+    return plugin;
+  },
   init() {
     this.bindEvents();
     this._setDefaultDates();
@@ -110,7 +119,7 @@ const ReportsManager = {
           <tr><td>Total Scans</td><td><strong>${total}</strong></td></tr>
           <tr><td>Average Confidence</td><td>${avgConfidence}%</td></tr>
           <tr><td>Healthy Fruits</td><td>${healthy} (${((healthy/total)*100).toFixed(1)}%)</td></tr>
-          <tr><td>Diseased Fruits</td><td>${total - healthy} (${(((total-healthy)/total)*100).toFixed(1)}%)</td></tr>
+          <tr><td>Fruits with estimated disease symptoms</td><td>${total - healthy} (${(((total-healthy)/total)*100).toFixed(1)}%)</td></tr>
         </table>
 
         <h3 style="font-size:14px;margin:16px 0 8px;color:#333;border-bottom:2px solid #E91E63;padding-bottom:4px">Quality Grade Distribution</h3>
@@ -131,13 +140,13 @@ const ReportsManager = {
             <tr><th>Disease</th><th>Count</th><th>Percentage</th></tr>
             ${Object.entries(diseases).sort((a,b) => b[1]-a[1]).map(([d, c]) => `
               <tr>
-                <td>${d}</td>
+                <td>${ScanStore.escape(d)}</td>
                 <td>${c}</td>
                 <td>${((c/total)*100).toFixed(1)}%</td>
               </tr>
             `).join('')}
           </table>
-        ` : '<p style="font-size:13px;color:#22C55E;margin:12px 0"><strong>No diseases detected in this period.</strong></p>'}
+        ` : '<p style="font-size:13px;color:#22C55E;margin:12px 0"><strong>No image-based disease flags in this period.</strong></p>'}
 
         <h3 style="font-size:14px;margin:16px 0 8px;color:#333;border-bottom:2px solid #E91E63;padding-bottom:4px">Recent Scan Log</h3>
         <table>
@@ -149,9 +158,9 @@ const ReportsManager = {
                 <td>${d.toLocaleDateString('en-PH', {month:'short',day:'numeric'})} ${d.toLocaleTimeString('en-PH',{hour:'2-digit',minute:'2-digit'})}</td>
                 <td>${s.grade.label}</td>
                 <td>${(s.grade.confidence*100).toFixed(1)}%</td>
-                <td>${s.disease.name}</td>
-                <td>${s.details.size}</td>
-                <td>${ScanStore.escape(s.notes)}</td>
+                <td>${ScanStore.escape(s.disease.name)}</td>
+                <td>${ScanStore.escape(s.details.size)}</td>
+                <td data-no-translate>${ScanStore.escape(s.notes)}</td>
               </tr>
             `;
           }).join('')}
@@ -174,7 +183,8 @@ const ReportsManager = {
     ToastManager.show('Report generated successfully', 'success');
   },
 
-  exportCSV() {
+  async exportCSV() {
+    if (this.exporting) return;
     const scans = this._getFilteredScans();
     if (!scans) return;
     if (scans.length === 0) {
@@ -207,17 +217,36 @@ const ReportsManager = {
       csv += row.map(cell => this._csvCell(cell)).join(',') + '\r\n';
     });
 
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `PitayaGrade_Report_${new Date().toISOString().split('T')[0]}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-
-    ToastManager.show('CSV exported successfully', 'success');
+    this.exporting = true;
+    const button = document.getElementById('exportCSVBtn');
+    if (button) button.disabled = true;
+    try {
+      const filename = `PitayaGrade_Report_${ScanStore.localDate()}.csv`;
+      const native = this._nativePlugin();
+      if (native) {
+        const result = await native.saveCsv({ data: csv, filename });
+        if (!result.cancelled) ToastManager.show('CSV exported successfully', 'success');
+        return;
+      }
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      try {
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        ToastManager.show('CSV download requested', 'success');
+      } finally {
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      }
+    } catch (error) {
+      ToastManager.show('Report could not be exported. Please try again.', 'error');
+    } finally {
+      this.exporting = false;
+      if (button) button.disabled = false;
+    }
   },
 
   _csvCell(value) {
@@ -226,18 +255,25 @@ const ReportsManager = {
     return '"' + text.replace(/"/g, '""') + '"';
   },
 
-  printReport() {
+  async printReport() {
     const reportEl = document.getElementById('printableReport');
     if (!reportEl) return;
 
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) {
+    if (typeof LanguageManager !== 'undefined') LanguageManager.apply();
+    let native;
+    try { native = this._nativePlugin(); }
+    catch (error) {
       ToastManager.show('Printing is unavailable or blocked. Export CSV instead.', 'warning');
       return;
     }
-    printWindow.document.write(`
+    const printWindow = native ? null : window.open('', '_blank');
+    if (!native && !printWindow) {
+      ToastManager.show('Printing is unavailable or blocked. Export CSV instead.', 'warning');
+      return;
+    }
+    const html = `
       <!DOCTYPE html>
-      <html>
+      <html lang="${typeof LanguageManager !== 'undefined' && LanguageManager.language === 'fil' ? 'fil' : 'en'}">
       <head>
         <title>PitayaGrade Farm Report</title>
         <style>
@@ -253,7 +289,13 @@ const ReportsManager = {
         ${reportEl.innerHTML}
       </body>
       </html>
-    `);
+    `;
+    if (native) {
+      try { await native.printHtml({ html }); }
+      catch (error) { ToastManager.show('Printing is unavailable or blocked. Export CSV instead.', 'warning'); }
+      return;
+    }
+    printWindow.document.write(html);
     printWindow.document.close();
     printWindow.print();
   }

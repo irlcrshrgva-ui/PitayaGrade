@@ -7,6 +7,26 @@ const HistoryManager = {
   currentFilter: 'all',
   searchQuery: '',
 
+  // Escape a presentation copy; keep raw records available for editing/export.
+  _forDisplay(scan) {
+    const escapeValues = value => {
+      if (typeof value === 'string') return ScanStore.escape(value);
+      if (Array.isArray(value)) return value.map(escapeValues);
+      if (value && typeof value === 'object') return Object.fromEntries(
+        Object.entries(value).map(([key, item]) => [key, escapeValues(item)]));
+      return value;
+    };
+    const display = escapeValues(scan);
+    display.notes = scan.notes; // Escaped at the textarea boundary below.
+    display.grade.class = { 'Grade A': 'grade-a', 'Grade B': 'grade-b', 'Grade C': 'grade-c', Reject: 'grade-reject' }[scan.grade.label];
+    display.recommendations = scan.recommendations?.map(recommendation => ({
+      text: ScanStore.escape(recommendation.text),
+      type: ['green', 'yellow', 'red'].includes(recommendation.type) ? recommendation.type : 'yellow',
+      icon: recommendation.type === 'green' ? '✓' : '!'
+    }));
+    return display;
+  },
+
   init() {
     this.bindEvents();
     this.refresh();
@@ -104,13 +124,14 @@ const HistoryManager = {
     let html = '';
     Object.entries(grouped).forEach(([date, items]) => {
       html += `<div style="font-size:12px;font-weight:600;color:var(--text-tertiary);padding:12px 0 8px;text-transform:uppercase;letter-spacing:0.5px">${date}</div>`;
-      items.forEach(s => {
+      items.forEach(record => {
+        const s = this._forDisplay(record);
         const time = new Date(s.timestamp).toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' });
         html += `
           <div class="scan-item" onclick="HistoryManager.showDetail('${s.id}')">
             <img class="scan-thumb" src="${s.thumbnail}" alt="Scan">
             <div class="scan-info">
-              <div class="scan-info-title">${s.grade.label}${!s.disease.isHealthy ? ' - ' + s.disease.name : ''}</div>
+              <div class="scan-info-title"><span>${s.grade.label}</span>${!s.disease.isHealthy ? ' - <span>' + s.disease.name + '</span>' : ''}</div>
               <div class="scan-info-meta">
                 <span>${time}</span>
                 <span>|</span>
@@ -130,8 +151,9 @@ const HistoryManager = {
 
   showDetail(id) {
     const scans = ScanStore.getScans();
-    const scan = scans.find(s => String(s.id) === String(id));
-    if (!scan) return;
+    const record = scans.find(s => String(s.id) === String(id));
+    if (!record) return;
+    const scan = this._forDisplay(record);
 
     const modal = document.getElementById('detailModal');
     const backdrop = document.getElementById('modalBackdrop');
@@ -322,7 +344,8 @@ const HistoryManager = {
   },
 
   deleteScan(id) {
-    if (!confirm('Delete this scan record?')) return;
+    const message = 'Delete this scan record?';
+    if (!(typeof LanguageManager !== 'undefined' ? LanguageManager.confirm(message) : confirm(message))) return;
     
     try {
     let scans = ScanStore.getScans(true);

@@ -32,6 +32,44 @@ function scan(id = 1, timestamp = new Date().toISOString()) {
     disease: { name: 'Healthy', confidence: .8, isHealthy: true },
     details: { size: 'Medium', surfaceCondition: 'Smooth' }, maturity: { value: 20 }, notes: '' };
 }
+
+test('unrecognized results do not invent classifier confidence or save a grade', () => {
+  const a = app();
+  a.element('resultArea').scrollIntoView = () => {};
+  const result = a.Scanner._buildRejectionResult(['No detection above the threshold']);
+  a.Scanner._displayResult(result);
+  a.Scanner._saveScan(result);
+  assert.match(a.element('resultArea').innerHTML, /No grading confidence is available/);
+  assert.doesNotMatch(a.element('resultArea').innerHTML, /99\.4%/);
+  assert.equal(a.ScanStore.getScans().length, 0);
+});
+
+test('history treats saved fields as text and never renders stored recommendation markup', () => {
+  const a = app();
+  const record = scan();
+  record.disease.name = '<img src=x onerror=alert(1)>';
+  record.disease.isHealthy = false;
+  record.details.size = '<script>bad</script>';
+  record.grade.class = 'grade-a" onmouseover="bad';
+  record.thumbnail = 'x" onerror="bad';
+  record.recommendations = [{text: '<b>advice</b>', type: 'red" onclick="bad', icon: '<svg onload="bad"></svg>'}];
+  record.notes = 'Keep <my> notes';
+  record.details.processingTime = '<img src=x onerror=alert(1)>';
+  a.ScanStore.saveScans([record]);
+  const before = a.data.get('pg_scans');
+  a.HistoryManager.refresh();
+  a.HistoryManager.showDetail(record.id);
+  a.DashboardManager._renderRecentScans(a.ScanStore.getScans());
+  for (const id of ['historyList', 'modalBody', 'dashRecentScans']) {
+    const html = a.element(id).innerHTML;
+    assert.doesNotMatch(html, /<script>|<img src=x|onerror="bad|onmouseover="bad|<svg onload/);
+  }
+  assert.match(a.element('modalBody').innerHTML, /&lt;script&gt;bad&lt;\/script&gt;/);
+  assert.match(a.element('dashRecentScans').innerHTML, /&lt;img src=x onerror=alert\(1\)&gt;/);
+  assert.match(a.element('modalBody').innerHTML, /&lt;b&gt;advice&lt;\/b&gt;/);
+  assert.match(a.element('modalBody').innerHTML, /Keep &lt;my&gt; notes/);
+  assert.equal(a.data.get('pg_scans'), before);
+});
 test('malformed storage cannot crash reads or be overwritten during an edit', () => {
   const a = app(); a.data.set('pg_scans', '{broken');
   assert.equal(a.ScanStore.getScans().length, 0);
@@ -90,6 +128,24 @@ test('report notes render as text, not executable markup', () => {
   assert.match(a.element('reportPreviewArea').innerHTML, /&lt;img/);
   assert.ok(!a.element('reportPreviewArea').innerHTML.includes('<img src=x'));
 });
+test('report disease names and size fields cannot introduce markup', () => {
+  const a = app(); a.element('reportFrom').value = a.element('reportTo').value = a.ScanStore.localDate();
+  const record = scan();
+  record.disease = {name: '<img src=x onerror=alert(1)>', confidence: .8, isHealthy: false};
+  record.details.size = '<script>bad()</script>';
+  a.ScanStore.saveScans([record]); a.ReportsManager.generateReport();
+  const html = a.element('reportPreviewArea').innerHTML;
+  assert.ok(!html.includes('<img src=x'));
+  assert.ok(!html.includes('<script>'));
+  assert.ok(html.includes('&lt;script&gt;'));
+});
+test('recommendations distinguish estimates from confirmed findings', () => {
+  const a = app(); const recs = a.Scanner._getRecommendations('Grade A', 'Anthracnose', 'Harvestable');
+  const text = recs.map(r => r.text).join(' ');
+  assert.match(text, /Possible Anthracnose/);
+  assert.match(text, /Confirm ripeness/);
+  assert.ok(!text.includes('Ideal for export'));
+});
 test('empty analytics reset totals and gauge uses saved maturity, not grade', () => {
   const a = app(); a.element('analyticsPremium').textContent = '90%';
   a.DashboardManager._updateStats([]);
@@ -125,4 +181,79 @@ test('photo failure always releases processing state', async () => {
   await a.Scanner.analyze();
   assert.equal(a.Scanner.isProcessing, false);
   assert.match(a.messages[0], /Analysis failed/);
+});
+
+function nativeReports(a, plugin) {
+  a.window.Capacitor = { isNativePlatform: () => true, getPlatform: () => 'android',
+    isPluginAvailable: name => name === 'ReportExport', registerPlugin: () => plugin };
+  a.element('reportFrom').value = a.element('reportTo').value = a.ScanStore.localDate();
+  const record = scan(); record.notes = '=SUM(1,2)\nPreserve this note';
+  a.ScanStore.saveScans([record]);
+}
+
+test('Android CSV uses the save dialog and preserves CSV escaping', async () => {
+  const a = app(); let saved;
+  nativeReports(a, { saveCsv: async options => { saved = options; return { cancelled: false }; } });
+  const original = a.data.get('pg_scans');
+  await a.ReportsManager.exportCSV();
+  assert.match(saved.filename, /^PitayaGrade_Report_\d{4}-\d{2}-\d{2}\.csv$/);
+  assert.ok(saved.data.startsWith('\uFEFF'));
+  assert.ok(saved.data.includes('"\'=SUM(1,2)\nPreserve this note"'));
+  assert.equal(a.messages.at(-1), 'CSV exported successfully');
+  assert.equal(a.element('exportCSVBtn').disabled, false);
+  assert.equal(a.data.get('pg_scans'), original);
+});
+
+test('plain-script Android bridge uses its injected plugin without an npm JS bundle', async () => {
+  const a = app(); let called = false;
+  nativeReports(a, {});
+  delete a.window.Capacitor.registerPlugin;
+  a.window.Capacitor.Plugins = { ReportExport: { saveCsv: async () => {
+    called = true; return { cancelled: false };
+  } } };
+  await a.ReportsManager.exportCSV();
+  assert.equal(called, true);
+});
+
+test('Android cancellation is quiet and failed exports can be retried', async () => {
+  const a = app();
+  nativeReports(a, { saveCsv: async () => ({ cancelled: true }) });
+  await a.ReportsManager.exportCSV();
+  assert.equal(a.messages.length, 0);
+  nativeReports(a, { saveCsv: async () => { throw new Error('disk full'); } });
+  await a.ReportsManager.exportCSV();
+  assert.match(a.messages.at(-1), /could not be exported/);
+  assert.equal(a.ReportsManager.exporting, false);
+  assert.equal(a.element('exportCSVBtn').disabled, false);
+});
+
+test('repeated export taps open only one Android destination picker', async () => {
+  const a = app(); let calls = 0, finish;
+  nativeReports(a, { saveCsv: () => { calls++; return new Promise(resolve => { finish = resolve; }); } });
+  const first = a.ReportsManager.exportCSV();
+  await a.ReportsManager.exportCSV();
+  assert.equal(calls, 1);
+  assert.equal(a.element('exportCSVBtn').disabled, true);
+  finish({ cancelled: true });
+  await first;
+});
+
+test('Android print receives the report only and does not claim job completion', async () => {
+  const a = app(); let printed;
+  nativeReports(a, { printHtml: async options => { printed = options.html; } });
+  a.element('printableReport').innerHTML = '<h2>Test report</h2>';
+  a.window.open = () => { throw new Error('Android must not open a browser popup'); };
+  await a.ReportsManager.printReport();
+  assert.match(printed, /<h2>Test report<\/h2>/);
+  assert.equal(a.messages.length, 0);
+});
+
+test('missing native plugin and print failures produce actionable messages', async () => {
+  const a = app();
+  nativeReports(a, { printHtml: async () => { throw new Error('no print service'); } });
+  await a.ReportsManager.printReport();
+  assert.match(a.messages.at(-1), /Printing is unavailable/);
+  a.window.Capacitor.isPluginAvailable = () => false;
+  await a.ReportsManager.exportCSV();
+  assert.match(a.messages.at(-1), /could not be exported/);
 });

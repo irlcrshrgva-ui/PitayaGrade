@@ -8,6 +8,7 @@ const PitayaApp = {
   settings: {
     language: 'en',
     offlineMode: false,
+    scanAlerts: true,
     threshold: 65
   },
 
@@ -17,9 +18,13 @@ const PitayaApp = {
     this.settings = { ...this.settings, ...saved };
     this.settings.threshold = Number.isFinite(Number(this.settings.threshold)) ? Math.max(10, Math.min(95, Number(this.settings.threshold))) : 65;
     this.settings.offlineMode = this.settings.offlineMode === true;
+    this.settings.scanAlerts = this.settings.scanAlerts !== false;
+    this.settings.language = this.settings.language === 'fil' ? 'fil' : 'en';
+    LanguageManager.init(this.settings.language);
     ModelInference.CONF_THRESHOLD = this.settings.threshold / 100;
 
     // Initialize modules
+    NotificationManager.init();
     Scanner.init();
     LiveScanner.init();
     DashboardManager.init();
@@ -109,6 +114,15 @@ const PitayaApp = {
   },
 
   _bindSettings() {
+    const scanAlerts = document.getElementById('scanAlerts');
+    scanAlerts.checked = this.settings.scanAlerts;
+    scanAlerts.addEventListener('change', () => {
+      const previous = this.settings.scanAlerts;
+      this.settings.scanAlerts = scanAlerts.checked;
+      if (!this._saveSettings()) this.settings.scanAlerts = previous;
+      scanAlerts.checked = this.settings.scanAlerts;
+      NotificationManager.scheduleSessionSummary();
+    });
     const threshold = document.getElementById('detectionThreshold');
     threshold.value = this.settings.threshold;
     document.getElementById('thresholdValue').textContent = this.settings.threshold + '%';
@@ -123,7 +137,15 @@ const PitayaApp = {
       document.getElementById('thresholdValue').textContent = this.settings.threshold + '%';
       ModelInference.CONF_THRESHOLD = this.settings.threshold / 100;
     });
-    // English is the only implemented translation; the pending option is disabled.
+    const language = document.getElementById('languageSelect');
+    language.value = this.settings.language;
+    language.addEventListener('change', () => {
+      const previous = this.settings.language;
+      this.settings.language = language.value;
+      if (!this._saveSettings()) this.settings.language = previous;
+      language.value = this.settings.language;
+      LanguageManager.setLanguage(this.settings.language);
+    });
 
     // Offline toggle
     const offlineToggle = document.getElementById('toggleOffline');
@@ -153,7 +175,7 @@ const PitayaApp = {
         if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); clearBtn.click(); }
       });
       clearBtn.addEventListener('click', () => {
-        if (confirm('Are you sure you want to delete all scan records? This cannot be undone.')) {
+        if (LanguageManager.confirm('Are you sure you want to delete all scan records? This cannot be undone.')) {
           try {
             ScanStore.clear();
             document.getElementById('detailModal').classList.remove('open');

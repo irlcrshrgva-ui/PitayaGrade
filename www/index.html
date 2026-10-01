@@ -69,11 +69,23 @@
       <span class="header-brand">PitayaGrade</span>
     </div>
     <div class="header-right">
+      <button class="header-btn" id="notificationsBtn" aria-label="Open notifications" aria-haspopup="dialog">&#128276;<span id="notifBadge" class="hidden" aria-live="polite"></span></button>
       <div class="connection-dot" id="connectionDot" title="Online"></div>
     </div>
   </header>
 
   <!-- Content Views -->
+  <dialog id="notificationDialog" aria-labelledby="notificationTitle">
+    <div class="notif-header">
+      <h2 id="notificationTitle">Notifications</h2>
+      <button id="notificationsClose" class="modal-close" aria-label="Close notifications" autofocus>&#10005;</button>
+    </div>
+    <div class="notification-actions">
+      <button id="notificationsRead" class="btn btn-secondary">Mark all read</button>
+      <button id="notificationsClear" class="btn btn-secondary">Clear alerts</button>
+    </div>
+    <div id="notifList" class="notif-list"></div>
+  </dialog>
   <main class="app-content">
 
     <!-- Dashboard View -->
@@ -483,10 +495,10 @@
             </div>
             <div>
               <div class="settings-item-label">Language</div>
-              <div class="settings-item-sub" id="currentLang">English (Filipino translation pending)</div>
+              <div class="settings-item-sub" id="currentLang">English / Filipino — interface translation; detailed guidance remains in English</div>
             </div>
           </div>
-          <button class="btn btn-sm btn-secondary" id="toggleLangBtn" disabled title="Filipino translation is not yet implemented">English</button>
+          <select class="btn btn-sm btn-secondary" id="languageSelect" aria-label="Language" data-no-translate><option value="en">English</option><option value="fil">Filipino</option></select>
         </div>
         <div class="settings-item">
           <div class="settings-item-left">
@@ -592,6 +604,17 @@
       </div>
 
       <div class="settings-group">
+        <div class="settings-group-title">Notifications</div>
+        <label class="settings-item" for="scanAlerts">
+          <div>
+            <div class="settings-item-label">Scan alerts</div>
+            <div class="settings-item-sub">Show in-app alerts after saving scans</div>
+          </div>
+          <input type="checkbox" id="scanAlerts" checked style="width:22px;height:22px;accent-color:var(--color-primary)">
+        </label>
+      </div>
+
+      <div class="settings-group">
         <div class="settings-group-title">Data</div>
         <div class="settings-item" id="clearDataBtn" role="button" tabindex="0">
           <div class="settings-item-left">
@@ -658,6 +681,7 @@
 <!-- Scripts -->
 <script src="ort.min.js"></script>
 <script src="js/storage.js"></script>
+<script src="js/language.js"></script>
 <script src="js/notifications.js"></script>
 <script src="js/model-inference.js"></script>
 <script src="js/scanner.js"></script>

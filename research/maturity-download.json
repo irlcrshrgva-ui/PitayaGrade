@@ -1,0 +1,10 @@
+{
+  "repository": "Project-AgML/dragonfruit_maturity_classification",
+  "source": "https://data.mendeley.com/datasets/2jpzbx8tm6/1",
+  "license": "CC BY 4.0",
+  "sourcePath": "raw/train-00000-of-00001.parquet",
+  "bytes": 315920809,
+  "sha256": "5bb6f4350692faba8f798406ac3418246471f7e8209c79da8fa3fcb80e514d98",
+  "downloadedAt": "2026-09-19T15:51:48.765Z",
+  "status": "Downloaded for inspection; not approved ground-truth grades or diagnoses"
+}

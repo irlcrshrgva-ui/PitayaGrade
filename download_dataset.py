@@ -3,23 +3,7 @@ import zipfile
 from pathlib import Path
 
 def main():
-    # Step 1: Write Kaggle credentials to home directory
-    home = Path.home()
-    kaggle_dir = home / ".kaggle"
-    kaggle_dir.mkdir(exist_ok=True)
-    kaggle_json = kaggle_dir / "kaggle.json"
-
-    # Write credentials
-    with open(kaggle_json, "w") as f:
-        f.write('{"username":"irlcrishregpea","key":"c8fdde8fa7bf9c21ebc7167a83feec4e"}')
-
-    # Set permissions (Windows doesn't enforce chmod 600 the same way, but good practice)
-    try:
-        os.chmod(kaggle_json, 0o600)
-    except Exception:
-        pass
-
-    print("Kaggle credentials configured locally!")
+    # Authenticate with your own Kaggle configuration; never write credentials here.
 
     # Step 2: Install kaggle CLI if not available
     try:

@@ -1,0 +1,70 @@
+{
+  "generatedAt": "2026-09-19T15:39:47.136Z",
+  "scope": "Existing prepared classification images and YOLO label files; byte-exact hashing only.",
+  "counts": {
+    "train": {
+      "Grade A": 666,
+      "Grade B": 692,
+      "Grade C": 467,
+      "Reject": 625
+    },
+    "val": {
+      "Grade A": 142,
+      "Grade B": 148,
+      "Grade C": 101,
+      "Reject": 134
+    },
+    "test": {
+      "Grade A": 143,
+      "Grade B": 149,
+      "Grade C": 100,
+      "Reject": 134
+    }
+  },
+  "uniqueImageHashes": 3501,
+  "crossSplitDuplicateGroups": 0,
+  "crossSplitExamples": [],
+  "conflictingLabelGroups": 0,
+  "conflictingLabelExamples": [],
+  "frameNamedImages": {
+    "Grade A": {
+      "train": 652,
+      "val": 140,
+      "test": 140
+    },
+    "Grade B": {
+      "train": 692,
+      "val": 148,
+      "test": 149
+    },
+    "Grade C": {
+      "train": 467,
+      "val": 101,
+      "test": 100
+    },
+    "Reject": {
+      "train": 625,
+      "val": 134,
+      "test": 134
+    }
+  },
+  "annotation": {
+    "files": 3501,
+    "rows": 3501,
+    "fixedBoxRows": 3501,
+    "segmentationRows": 0,
+    "malformedRows": 0,
+    "classes": {
+      "0": 951,
+      "1": 989,
+      "2": 668,
+      "3": 893
+    }
+  },
+  "limitations": [
+    "No exact duplicates does not establish independence: adjacent video frames and transformed copies can differ in bytes.",
+    "Frame names do not establish source video or fruit identity. Source-group metadata and expert labels are still required.",
+    "Counts do not verify grade correctness, disease diagnosis, collection location, consent, licensing, or measured accuracy.",
+    "Segmentation row counts check structure only, not annotation correctness."
+  ]
+}

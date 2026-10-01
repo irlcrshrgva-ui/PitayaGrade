@@ -1,0 +1,258 @@
+[
+  {
+    "id": "quality:2",
+    "task": "quality",
+    "sourceRow": 2,
+    "sourceDataset": "https://data.mendeley.com/datasets/2jpzbx8tm6/1",
+    "image": "dataset/public/prepared/quality/a53c727f8052518dded72c0223f36481da1aa87692fa9eb526eeae96a1ed0947.jpg",
+    "fileSha256": "ce9c4f540bb4d8207f6818c556b049f8e0882d5de8c2f479c089dba2a790fcbf",
+    "pixelSha256": "a53c727f8052518dded72c0223f36481da1aa87692fa9eb526eeae96a1ed0947",
+    "sourceLabel": "Fresh Dragon Fruit",
+    "originalCopies": 1,
+    "candidateSplit": "train",
+    "reviewedSourceGroup": null,
+    "reviewedLabel": null,
+    "reviewer": null,
+    "reviewedAt": null,
+    "draftStatus": "AI draft: human review required",
+    "draftAuthor": "Codex visual estimate",
+    "draftCreatedAt": "2026-09-21",
+    "draftBoundingBoxes": [
+      [
+        0.5125,
+        0.5599999999999999,
+        0.955,
+        0.76
+      ]
+    ],
+    "draftNotes": "Fruit including long bracts; verify left tip and attached stem exclusion.",
+    "boxCoordinateSpace": "upright",
+    "boundingBoxes": null,
+    "annotationReviewer": null,
+    "annotationReviewedAt": null
+  },
+  {
+    "id": "quality:3",
+    "task": "quality",
+    "sourceRow": 3,
+    "sourceDataset": "https://data.mendeley.com/datasets/2jpzbx8tm6/1",
+    "image": "dataset/public/prepared/quality/66ceec375320f26c13e680f343ed4fae80dba5c3ba3ea6bce68a86f016f473cc.jpg",
+    "fileSha256": "12c16ea76ddf01c673ee9d35dec2dc166cfa48f5210ffe3dcb1a4a742c6867ac",
+    "pixelSha256": "66ceec375320f26c13e680f343ed4fae80dba5c3ba3ea6bce68a86f016f473cc",
+    "sourceLabel": "Fresh Dragon Fruit",
+    "originalCopies": 1,
+    "candidateSplit": "train",
+    "reviewedSourceGroup": null,
+    "reviewedLabel": null,
+    "reviewer": null,
+    "reviewedAt": null,
+    "draftStatus": "AI draft: human review required",
+    "draftAuthor": "Codex visual estimate",
+    "draftCreatedAt": "2026-09-21",
+    "draftBoundingBoxes": [
+      [
+        0.485,
+        0.45,
+        0.77,
+        0.9
+      ]
+    ],
+    "draftNotes": "Upper bracts are clipped by the source image.",
+    "boxCoordinateSpace": "upright",
+    "boundingBoxes": null,
+    "annotationReviewer": null,
+    "annotationReviewedAt": null
+  },
+  {
+    "id": "quality:4",
+    "task": "quality",
+    "sourceRow": 4,
+    "sourceDataset": "https://data.mendeley.com/datasets/2jpzbx8tm6/1",
+    "image": "dataset/public/prepared/quality/4d9f2c16e7c835d5982e525a4efd3650cc68970d7ff57a66ed1a2b6e8d386f26.jpg",
+    "fileSha256": "eaea7e81c55e30c37567f799e60521b677941b2bbcac81caaaef6dc8bba4230f",
+    "pixelSha256": "4d9f2c16e7c835d5982e525a4efd3650cc68970d7ff57a66ed1a2b6e8d386f26",
+    "sourceLabel": "Fresh Dragon Fruit",
+    "originalCopies": 4,
+    "candidateSplit": "train",
+    "reviewedSourceGroup": null,
+    "reviewedLabel": null,
+    "reviewer": null,
+    "reviewedAt": null,
+    "draftStatus": "AI draft: human review required",
+    "draftAuthor": "Codex visual estimate",
+    "draftCreatedAt": "2026-09-21",
+    "draftBoundingBoxes": [
+      [
+        0.5,
+        0.5525,
+        1,
+        0.815
+      ]
+    ],
+    "draftNotes": "Right bracts clipped; check stem versus bract boundary.",
+    "boxCoordinateSpace": "upright",
+    "boundingBoxes": null,
+    "annotationReviewer": null,
+    "annotationReviewedAt": null
+  },
+  {
+    "id": "quality:6",
+    "task": "quality",
+    "sourceRow": 6,
+    "sourceDataset": "https://data.mendeley.com/datasets/2jpzbx8tm6/1",
+    "image": "dataset/public/prepared/quality/9a03332f5913c010df9c1145232eab80a57d5a10a79108b6e5cf3887f0c07d32.jpg",
+    "fileSha256": "df7fc1cd197557aefc2747f4a13e9c8b5cf14ae5d477b786240a32e7d7f7e67a",
+    "pixelSha256": "9a03332f5913c010df9c1145232eab80a57d5a10a79108b6e5cf3887f0c07d32",
+    "sourceLabel": "Fresh Dragon Fruit",
+    "originalCopies": 1,
+    "candidateSplit": "train",
+    "reviewedSourceGroup": null,
+    "reviewedLabel": null,
+    "reviewer": null,
+    "reviewedAt": null,
+    "draftStatus": "AI draft: human review required",
+    "draftAuthor": "Codex visual estimate",
+    "draftCreatedAt": "2026-09-21",
+    "draftBoundingBoxes": [
+      [
+        0.485,
+        0.475,
+        0.96,
+        0.77
+      ]
+    ],
+    "draftNotes": "Check lower bracts and supporting stem exclusion.",
+    "boxCoordinateSpace": "upright",
+    "boundingBoxes": null,
+    "annotationReviewer": null,
+    "annotationReviewedAt": null
+  },
+  {
+    "id": "quality:7",
+    "task": "quality",
+    "sourceRow": 7,
+    "sourceDataset": "https://data.mendeley.com/datasets/2jpzbx8tm6/1",
+    "image": "dataset/public/prepared/quality/9d7cd67d95cef3d11e4850f8287740cd3a95b609ed4e598352a4e58bbcf53163.jpg",
+    "fileSha256": "0f298279ec6862aca7deb44e5818beab7be57a3b92c0b4c2086a90bbdbacb44a",
+    "pixelSha256": "9d7cd67d95cef3d11e4850f8287740cd3a95b609ed4e598352a4e58bbcf53163",
+    "sourceLabel": "Fresh Dragon Fruit",
+    "originalCopies": 2,
+    "candidateSplit": "train",
+    "reviewedSourceGroup": null,
+    "reviewedLabel": null,
+    "reviewer": null,
+    "reviewedAt": null,
+    "draftStatus": "AI draft: human review required",
+    "draftAuthor": "Codex visual estimate",
+    "draftCreatedAt": "2026-09-21",
+    "draftBoundingBoxes": [
+      [
+        0.435,
+        0.51,
+        0.87,
+        0.98
+      ]
+    ],
+    "draftNotes": "Fruit bottom is clipped.",
+    "boxCoordinateSpace": "upright",
+    "boundingBoxes": null,
+    "annotationReviewer": null,
+    "annotationReviewedAt": null
+  },
+  {
+    "id": "quality:8",
+    "task": "quality",
+    "sourceRow": 8,
+    "sourceDataset": "https://data.mendeley.com/datasets/2jpzbx8tm6/1",
+    "image": "dataset/public/prepared/quality/f82221ea06aa3438b16ab1e6ec72eb1b7246c2cb70ed2b36c758a85cba7fc932.jpg",
+    "fileSha256": "6cf17b092d2004d9ca3e648fd80a915dd8d8c74e471d66855cd257a39fec833a",
+    "pixelSha256": "f82221ea06aa3438b16ab1e6ec72eb1b7246c2cb70ed2b36c758a85cba7fc932",
+    "sourceLabel": "Fresh Dragon Fruit",
+    "originalCopies": 1,
+    "candidateSplit": "train",
+    "reviewedSourceGroup": null,
+    "reviewedLabel": null,
+    "reviewer": null,
+    "reviewedAt": null,
+    "draftStatus": "AI draft: human review required",
+    "draftAuthor": "Codex visual estimate",
+    "draftCreatedAt": "2026-09-21",
+    "draftBoundingBoxes": [
+      [
+        0.41,
+        0.535,
+        0.82,
+        0.9299999999999999
+      ]
+    ],
+    "draftNotes": "Fruit left/bottom clipped.",
+    "boxCoordinateSpace": "upright",
+    "boundingBoxes": null,
+    "annotationReviewer": null,
+    "annotationReviewedAt": null
+  },
+  {
+    "id": "quality:9",
+    "task": "quality",
+    "sourceRow": 9,
+    "sourceDataset": "https://data.mendeley.com/datasets/2jpzbx8tm6/1",
+    "image": "dataset/public/prepared/quality/95e2b2229f1db25125a2aaaf517a13d4b07d5a397c9a697faf1ed31e8236445e.jpg",
+    "fileSha256": "6e29c98c2dc6a1adfcd9c7c3f08ceb000009a6bf8cda6453a913e3b38c080a7e",
+    "pixelSha256": "95e2b2229f1db25125a2aaaf517a13d4b07d5a397c9a697faf1ed31e8236445e",
+    "sourceLabel": "Fresh Dragon Fruit",
+    "originalCopies": 1,
+    "candidateSplit": "train",
+    "reviewedSourceGroup": null,
+    "reviewedLabel": null,
+    "reviewer": null,
+    "reviewedAt": null,
+    "draftStatus": "AI draft: human review required",
+    "draftAuthor": "Codex visual estimate",
+    "draftCreatedAt": "2026-09-21",
+    "draftBoundingBoxes": [
+      [
+        0.5,
+        0.5,
+        1,
+        1
+      ]
+    ],
+    "draftNotes": "Very tight source crop; full-frame draft is not evidence of a full fruit boundary.",
+    "boxCoordinateSpace": "upright",
+    "boundingBoxes": null,
+    "annotationReviewer": null,
+    "annotationReviewedAt": null
+  },
+  {
+    "id": "quality:11",
+    "task": "quality",
+    "sourceRow": 11,
+    "sourceDataset": "https://data.mendeley.com/datasets/2jpzbx8tm6/1",
+    "image": "dataset/public/prepared/quality/7b5983ea61f15b4227d0259b4955c0f022b37df39287f95c8a10a2e69377e61a.jpg",
+    "fileSha256": "47aa49130c1bb87529531e6bd6f30de170762adf850749ce1622653171268d51",
+    "pixelSha256": "7b5983ea61f15b4227d0259b4955c0f022b37df39287f95c8a10a2e69377e61a",
+    "sourceLabel": "Fresh Dragon Fruit",
+    "originalCopies": 1,
+    "candidateSplit": "train",
+    "reviewedSourceGroup": null,
+    "reviewedLabel": null,
+    "reviewer": null,
+    "reviewedAt": null,
+    "draftStatus": "AI draft: human review required",
+    "draftAuthor": "Codex visual estimate",
+    "draftCreatedAt": "2026-09-21",
+    "draftBoundingBoxes": [
+      [
+        0.56,
+        0.505,
+        0.86,
+        0.81
+      ]
+    ],
+    "draftNotes": "Low-light photo; verify left bracts and lower boundary.",
+    "boxCoordinateSpace": "upright",
+    "boundingBoxes": null,
+    "annotationReviewer": null,
+    "annotationReviewedAt": null
+  }
+]

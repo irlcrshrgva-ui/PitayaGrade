@@ -917,13 +917,13 @@ const Scanner = {
     const recs = [];
 
     if (maturity === 'Harvestable') {
-      recs.push({ type: 'green', icon: '<svg class="icon-svg" viewBox="0 0 24 24" style="width:16px;height:16px"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="m9 11 3 3 3-3"/></svg>', text: 'Fruit is at peak maturity. Ready for harvest and immediate distribution.' });
+      recs.push({ type: 'green', icon: '<svg class="icon-svg" viewBox="0 0 24 24" style="width:16px;height:16px"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="m9 11 3 3 3-3"/></svg>', text: 'Image features suggest harvest maturity. Confirm ripeness on the plant before harvesting.' });
     } else {
       recs.push({ type: 'yellow', icon: '<svg class="icon-svg" viewBox="0 0 24 24" style="width:16px;height:16px"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>', text: 'Image analysis suggests the fruit is developing. Check maturity on the plant before scheduling harvest.' });
     }
 
     if (grade === 'Grade A') {
-      recs.push({ type: 'green', icon: '<svg class="icon-svg" viewBox="0 0 24 24" style="width:16px;height:16px"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>', text: 'Premium quality. High market value. Ideal for export.' });
+      recs.push({ type: 'green', icon: '<svg class="icon-svg" viewBox="0 0 24 24" style="width:16px;height:16px"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>', text: 'The model assigned Grade A. Verify physical grading criteria before making market or export decisions.' });
     }
 
     if (disease !== 'Healthy') {
@@ -931,7 +931,7 @@ const Scanner = {
         'Anthracnose': '<svg class="icon-svg" viewBox="0 0 24 24" style="width:16px;height:16px"><path d="m14.5 9-5 5"/><path d="m9.5 9 5 5"/><circle cx="12" cy="12" r="10"/></svg>',
         'default': '<svg class="icon-svg" viewBox="0 0 24 24" style="width:16px;height:16px"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>'
       };
-      recs.push({ type: 'red', icon: diseaseIcons[disease] || diseaseIcons.default, text: `${disease} detected. Isolate affected fruit and apply targeted treatment.` });
+      recs.push({ type: 'red', icon: diseaseIcons[disease] || diseaseIcons.default, text: `Possible ${disease} based on image features. Inspect the fruit and consult an agricultural officer before treatment.` });
     }
 
     return recs;
@@ -947,7 +947,7 @@ const Scanner = {
           <div class="result-header grade-reject" style="padding: 24px">
             <div class="result-grade-label" style="color:var(--color-error);font-weight:700">Object Unrecognized</div>
             <div class="result-grade-value grade-reject" style="font-size:24px;margin:8px 0">No Dragon Fruit Detected</div>
-            <div class="result-confidence" style="color:var(--text-secondary)">Classifier verification confidence: 99.4%</div>
+            <div class="result-confidence" style="color:var(--text-secondary)">No grading confidence is available for an unrecognized image.</div>
           </div>
           <div class="result-body" style="padding: 20px">
             <div class="result-section">
@@ -1161,6 +1161,7 @@ const Scanner = {
     // Keep max 500 scans
     if (scans.length > 500) scans.length = 500;
     ScanStore.saveScans(scans);
+    if (typeof NotificationManager !== 'undefined') NotificationManager.generateScanAlert(scanRecord);
 
     // Update dashboard
     if (typeof DashboardManager !== 'undefined') {

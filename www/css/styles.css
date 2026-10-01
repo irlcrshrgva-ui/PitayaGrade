@@ -1620,6 +1620,21 @@ a { text-decoration: none; color: inherit; }
   visibility: visible;
 }
 
+#notificationDialog {
+  margin: auto;
+  width: min(94vw, 520px);
+  max-height: 85dvh;
+  padding: 0;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+}
+#notificationDialog::backdrop { background: rgba(0,0,0,0.65); }
+#notificationDialog .notif-header { justify-content: space-between; }
+.notification-actions { display: flex; gap: 8px; padding: 12px; flex-wrap: wrap; }
+#notifBadge { font-size: 11px; color: var(--color-error); }
+.notif-body { overflow-wrap: anywhere; }
 .notif-header {
   height: var(--header-height);
   padding: 0 var(--space-md);

@@ -1,0 +1,294 @@
+{
+  "quality": {
+    "rows": 1652,
+    "labels": {
+      "Fresh Dragon Fruit": 898,
+      "Defect Dragon Fruit": 754
+    },
+    "dimensions": {
+      "(800, 800)": 1652
+    },
+    "decodeErrors": []
+  },
+  "maturity": {
+    "rows": 2127,
+    "labels": {
+      "Immature Dragon Fruit": 1241,
+      "Mature Dragon Fruit": 886
+    },
+    "dimensions": {
+      "(800, 800)": 2127
+    },
+    "decodeErrors": []
+  },
+  "duplicatePixelGroups": 509,
+  "uniquePixelImages": 3047,
+  "withinTaskConflictingLabelGroups": 0,
+  "duplicateExamples": [
+    [
+      {
+        "task": "quality",
+        "row": 4,
+        "label": "Fresh Dragon Fruit"
+      },
+      {
+        "task": "quality",
+        "row": 119,
+        "label": "Fresh Dragon Fruit"
+      },
+      {
+        "task": "quality",
+        "row": 270,
+        "label": "Fresh Dragon Fruit"
+      },
+      {
+        "task": "quality",
+        "row": 766,
+        "label": "Fresh Dragon Fruit"
+      }
+    ],
+    [
+      {
+        "task": "quality",
+        "row": 7,
+        "label": "Fresh Dragon Fruit"
+      },
+      {
+        "task": "quality",
+        "row": 856,
+        "label": "Fresh Dragon Fruit"
+      }
+    ],
+    [
+      {
+        "task": "quality",
+        "row": 17,
+        "label": "Fresh Dragon Fruit"
+      },
+      {
+        "task": "quality",
+        "row": 649,
+        "label": "Fresh Dragon Fruit"
+      }
+    ],
+    [
+      {
+        "task": "quality",
+        "row": 20,
+        "label": "Fresh Dragon Fruit"
+      },
+      {
+        "task": "quality",
+        "row": 356,
+        "label": "Fresh Dragon Fruit"
+      }
+    ],
+    [
+      {
+        "task": "quality",
+        "row": 25,
+        "label": "Fresh Dragon Fruit"
+      },
+      {
+        "task": "quality",
+        "row": 166,
+        "label": "Fresh Dragon Fruit"
+      }
+    ],
+    [
+      {
+        "task": "quality",
+        "row": 41,
+        "label": "Fresh Dragon Fruit"
+      },
+      {
+        "task": "quality",
+        "row": 293,
+        "label": "Fresh Dragon Fruit"
+      }
+    ],
+    [
+      {
+        "task": "quality",
+        "row": 45,
+        "label": "Fresh Dragon Fruit"
+      },
+      {
+        "task": "quality",
+        "row": 655,
+        "label": "Fresh Dragon Fruit"
+      },
+      {
+        "task": "quality",
+        "row": 697,
+        "label": "Fresh Dragon Fruit"
+      }
+    ],
+    [
+      {
+        "task": "quality",
+        "row": 56,
+        "label": "Fresh Dragon Fruit"
+      },
+      {
+        "task": "quality",
+        "row": 652,
+        "label": "Fresh Dragon Fruit"
+      }
+    ],
+    [
+      {
+        "task": "quality",
+        "row": 59,
+        "label": "Fresh Dragon Fruit"
+      },
+      {
+        "task": "quality",
+        "row": 116,
+        "label": "Fresh Dragon Fruit"
+      }
+    ],
+    [
+      {
+        "task": "quality",
+        "row": 63,
+        "label": "Fresh Dragon Fruit"
+      },
+      {
+        "task": "quality",
+        "row": 846,
+        "label": "Fresh Dragon Fruit"
+      }
+    ],
+    [
+      {
+        "task": "quality",
+        "row": 78,
+        "label": "Fresh Dragon Fruit"
+      },
+      {
+        "task": "quality",
+        "row": 552,
+        "label": "Fresh Dragon Fruit"
+      }
+    ],
+    [
+      {
+        "task": "quality",
+        "row": 79,
+        "label": "Fresh Dragon Fruit"
+      },
+      {
+        "task": "quality",
+        "row": 646,
+        "label": "Fresh Dragon Fruit"
+      }
+    ],
+    [
+      {
+        "task": "quality",
+        "row": 80,
+        "label": "Fresh Dragon Fruit"
+      },
+      {
+        "task": "quality",
+        "row": 471,
+        "label": "Fresh Dragon Fruit"
+      }
+    ],
+    [
+      {
+        "task": "quality",
+        "row": 88,
+        "label": "Fresh Dragon Fruit"
+      },
+      {
+        "task": "quality",
+        "row": 622,
+        "label": "Fresh Dragon Fruit"
+      }
+    ],
+    [
+      {
+        "task": "quality",
+        "row": 100,
+        "label": "Fresh Dragon Fruit"
+      },
+      {
+        "task": "quality",
+        "row": 858,
+        "label": "Fresh Dragon Fruit"
+      }
+    ],
+    [
+      {
+        "task": "quality",
+        "row": 102,
+        "label": "Fresh Dragon Fruit"
+      },
+      {
+        "task": "quality",
+        "row": 543,
+        "label": "Fresh Dragon Fruit"
+      },
+      {
+        "task": "quality",
+        "row": 595,
+        "label": "Fresh Dragon Fruit"
+      }
+    ],
+    [
+      {
+        "task": "quality",
+        "row": 110,
+        "label": "Fresh Dragon Fruit"
+      },
+      {
+        "task": "quality",
+        "row": 892,
+        "label": "Fresh Dragon Fruit"
+      }
+    ],
+    [
+      {
+        "task": "quality",
+        "row": 113,
+        "label": "Fresh Dragon Fruit"
+      },
+      {
+        "task": "quality",
+        "row": 742,
+        "label": "Fresh Dragon Fruit"
+      }
+    ],
+    [
+      {
+        "task": "quality",
+        "row": 118,
+        "label": "Fresh Dragon Fruit"
+      },
+      {
+        "task": "quality",
+        "row": 850,
+        "label": "Fresh Dragon Fruit"
+      }
+    ],
+    [
+      {
+        "task": "quality",
+        "row": 120,
+        "label": "Fresh Dragon Fruit"
+      },
+      {
+        "task": "quality",
+        "row": 802,
+        "label": "Fresh Dragon Fruit"
+      }
+    ]
+  ],
+  "limitations": [
+    "Pixel-identical check only; source fruit/video identity and visual near-duplicates remain unverified.",
+    "Original source labels retained; no Grade A/B/C or disease diagnoses inferred.",
+    "Dataset train partition is a source container, not an approved research train/test split."
+  ]
+}

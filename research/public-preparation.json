@@ -1,0 +1,28 @@
+{
+  "status": "review_required_not_training_ready",
+  "exportedRecords": 3050,
+  "counts": {
+    "quality": {
+      "test: Fresh Dragon Fruit": 121,
+      "val: Fresh Dragon Fruit": 120,
+      "train: Fresh Dragon Fruit": 560,
+      "train: Defect Dragon Fruit": 526,
+      "val: Defect Dragon Fruit": 112,
+      "test: Defect Dragon Fruit": 114
+    },
+    "maturity": {
+      "test: Immature Dragon Fruit": 107,
+      "val: Immature Dragon Fruit": 106,
+      "train: Immature Dragon Fruit": 495,
+      "train: Mature Dragon Fruit": 552,
+      "val: Mature Dragon Fruit": 118,
+      "test: Mature Dragon Fruit": 119
+    }
+  },
+  "seed": 42,
+  "notes": [
+    "Identical pixels share one candidate partition across tasks.",
+    "Related but nonidentical photos may still cross partitions.",
+    "Reviewer/source groups and validated target labels are required before final evaluation."
+  ]
+}
