@@ -1,5 +1,4 @@
-/* =============================================
-   PitayaGrade - Main App Controller
+/* ======================================   PitayaGrade - Main App Controller
    Routing, state management, initialization
    ============================================= */
 
@@ -8,13 +7,9 @@ const PitayaApp = {
   settings: {
     language: 'en',
     offlineMode: false,
-<<<<<<< HEAD
     scanAlerts: true,
-    threshold: 65
-=======
     threshold: 65,
     selectedModel: 'yolov8-nano'
->>>>>>> origin/main
   },
 
   init() {
@@ -122,7 +117,6 @@ const PitayaApp = {
   },
 
   _bindSettings() {
-<<<<<<< HEAD
     const scanAlerts = document.getElementById('scanAlerts');
     scanAlerts.checked = this.settings.scanAlerts;
     scanAlerts.addEventListener('change', () => {
@@ -132,7 +126,6 @@ const PitayaApp = {
       scanAlerts.checked = this.settings.scanAlerts;
       NotificationManager.scheduleSessionSummary();
     });
-=======
     const modelSelect = document.getElementById('modelSelect');
     const selectedModelName = document.getElementById('selectedModelName');
     if (modelSelect && selectedModelName && typeof ModelInference !== 'undefined') {
@@ -165,7 +158,6 @@ const PitayaApp = {
       });
     }
 
->>>>>>> origin/main
     const threshold = document.getElementById('detectionThreshold');
     threshold.value = this.settings.threshold;
     document.getElementById('thresholdValue').textContent = this.settings.threshold + '%';
@@ -299,8 +291,7 @@ document.addEventListener('DOMContentLoaded', () => {
   PitayaApp.init();
 });
 
-/* =============================================
-   First-Time Tutorial
+/* ======================================   First-Time Tutorial
    ============================================= */
 const Tutorial = {
   current: 0,

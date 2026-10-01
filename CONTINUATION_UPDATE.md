@@ -8,7 +8,7 @@
   Removed unused legacy external-storage permissions; report export uses Android's
   document destination picker. Moved permissions/features before the application
   element to resolve manifest-order lint warnings.
-- Verification: 43 JavaScript tests, 59 lightweight Python tests and 23 ML runtime
+- Verification: 45 JavaScript tests, 59 lightweight Python tests and 23 ML runtime
   tests pass. Android `assembleDebug` and `lintDebug` succeed: 0 errors, 25 warnings.
   ML tests use synthetic fixtures and do not establish research accuracy.
 - APK: `android/app/build/outputs/apk/debug/app-debug.apk`. No Android hardware
