@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>PitayaGrade Review Desk</title>
+  <link rel="stylesheet" href="/review-tool/styles.css">
+</head>
+<body>
+  <header>
+    <div>
+      <p class="eyebrow">LOCAL EVIDENCE TOOL</p>
+      <h1>PitayaGrade Review Desk</h1>
+      <p>Review labels stay in this browser until you export them.</p>
+    </div>
+    <div class="status" id="status">Loading manifest…</div>
+  </header>
+
+  <main>
+    <aside class="panel controls">
+      <label>Review task
+        <select id="task"><option value="quality">Quality grading</option><option value="maturity">Maturity</option></select>
+      </label>
+      <label>Show
+        <select id="filter"><option value="unreviewed">Unreviewed first</option><option value="all">All records</option><option value="reviewed">Reviewed only</option></select>
+      </label>
+      <label>Anonymous reviewer ID
+        <input id="reviewer" autocomplete="off" placeholder="reviewer-01">
+      </label>
+      <label>Source-fruit group
+        <input id="sourceGroup" autocomplete="off" placeholder="farm-date-fruit-001">
+      </label>
+      <fieldset><legend>Reviewed label</legend><div id="labels" class="labels"></div></fieldset>
+      <div class="actions">
+        <button id="save" class="primary">Save review &amp; next</button>
+        <button id="clear">Clear this draft</button>
+      </div>
+      <p class="hint">Use one source group for every image or crop originating from the same physical fruit or capture sequence.</p>
+    </aside>
+
+    <section class="panel viewer">
+      <div class="progress"><div><strong id="progressText">0 / 0</strong><span id="progressPercent">0%</span></div><progress id="progress" max="100" value="0"></progress></div>
+      <div class="image-wrap"><img id="image" alt="Dragon fruit review image"><div id="imageError" class="image-error" hidden>Image unavailable. Confirm the local dataset is present.</div></div>
+      <dl class="metadata">
+        <div><dt>Record</dt><dd id="recordId">—</dd></div>
+        <div><dt>Candidate split</dt><dd id="split">—</dd></div>
+        <div><dt>Source label</dt><dd id="sourceLabel">—</dd></div>
+        <div><dt>Image path</dt><dd id="imagePath">—</dd></div>
+      </dl>
+      <nav><button id="previous">← Previous</button><span id="position">0 of 0</span><button id="next">Next →</button></nav>
+    </section>
+
+    <aside class="panel export-panel">
+      <h2>Evidence export</h2>
+      <p>Export often. JSON preserves the complete manifest; CSV opens in Excel and can be merged with the command-line validator.</p>
+      <button id="exportJson" class="primary">Export reviewed manifest</button>
+      <button id="exportCsv">Export current task CSV</button>
+      <button id="backup">Export draft backup</button>
+      <label class="import">Restore draft backup<input id="restore" type="file" accept="application/json"></label>
+      <p class="warning">A saved review is not automatically correct. A qualified reviewer remains responsible for label truth.</p>
+    </aside>
+  </main>
+
+  <div id="toast" role="status" aria-live="polite"></div>
+  <script src="/review-tool/review-state.js"></script>
+  <script src="/review-tool/app.js"></script>
+</body>
+</html>
+

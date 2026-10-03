@@ -2,6 +2,18 @@
 
 ## Excel-friendly review worksheet
 
+For a non-technical image-by-image workflow, start the private local Review Desk:
+
+```powershell
+node scripts/serve-review.js
+```
+
+Open `http://127.0.0.1:4174`. It serves only the review interface, public review
+manifest and locally prepared images. Drafts remain in that browser's local storage
+until exported. Export the reviewed manifest or task CSV frequently; browser storage
+is not a sufficient research backup. The tool never infers labels and does not upload
+images.
+
 Do not edit the large JSON manifest by hand. Export only the task being reviewed:
 
 ```powershell

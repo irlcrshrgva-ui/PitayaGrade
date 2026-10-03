@@ -1,5 +1,21 @@
 # Project continuation update
 
+## 2026-10-04 continuation: private visual review desk
+
+- Added a private browser-based workflow for reviewing all 3,050 retained quality
+  and maturity images one at a time. It supports task and status filters, keyboard
+  navigation, controlled labels and source groups, reviewer identity, local draft
+  recovery, and full-manifest or task-CSV exports.
+- Added a loopback-only server with an explicit allowlist. It exposes only the
+  review interface, public review manifest and prepared image formats; repository
+  files and path traversal requests remain inaccessible.
+- The interface does not upload images or infer expert decisions. It refuses
+  incomplete review evidence and retained-label conflicts, preserving the existing
+  fail-closed validation workflow.
+- Verification: all 57 JavaScript and 72 lightweight Python tests pass. Browser QA
+  loaded the real manifest, rendered retained fruit images and navigated between
+  samples. No label was fabricated during testing.
+
 ## 2026-10-04 continuation: review worksheet workflow
 
 - Added an Excel-friendly export/import command for the 3,050-row public review
