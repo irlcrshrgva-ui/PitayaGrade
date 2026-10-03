@@ -15,6 +15,11 @@ bundled WebAssembly runtime before integration, but remain unavailable until rea
 reviewed labels, held-out evaluation and verified assets exist. The disease
 segmenter remains isolated from the grade-model selector.
 
+Reviewed training now uses the same frozen partitions for MobileNetV2, ResNet50
+and EfficientNet-B3 by default and emits checked single-file ONNX candidates plus
+contract metadata. A synthetic exported classifier has loaded and executed through
+the bundled WebAssembly runtime. This proves the export path, not research accuracy.
+
 The deployed YOLO model now executes through the complete pinned WASM runtime.
 Browser verification found and fixed the previously missing MJS backend module;
 actual runtime execution is now a regression test. New scan metadata no longer
@@ -27,7 +32,7 @@ any supplied generated provenance before training. The mask-based coverage tool
 computes union area inside an aligned fruit mask without claiming whole-fruit
 severity or diagnosis. See the preparation guide for both commands and limitations.
 
-Local verification: 61 JavaScript checks, 72 lightweight Python checks and Android
+Local verification: 61 JavaScript checks, 75 Python checks and Android
 build/lint pass. The current debug APK SHA-256 is
 `cf817a4031c992415932c59c4008e64822dc37c323f93b25a9601d85042ccb96`.
 GitHub automation builds debug artifacts.

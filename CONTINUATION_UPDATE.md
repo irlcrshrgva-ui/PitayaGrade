@@ -2,6 +2,13 @@
 
 ## 2026-10-04 continuation: classifier integration contract
 
+- Expanded reviewed quality training from a hard-coded EfficientNet-B3 run to a
+  common MobileNetV2, ResNet50 and EfficientNet-B3 comparison on the same retained
+  partitions. A scoped `--models` option remains available for intentional subsets.
+- Training now exports each selected checkpoint as a checked single-file ONNX
+  candidate with fixed class order, 224x224 input, ImageNet normalization, logits
+  output, SHA-256 and explicit follow-up runtime-verification requirement. The
+  exported classifier was exercised successfully in the bundled WebAssembly runtime.
 - Added runtime decoding for the pending MobileNetV2, ResNet50 and EfficientNet-B3
   four-grade classifier contract. It accepts probability or logits exports and
   preserves the confidence rejection threshold.
@@ -14,7 +21,7 @@
 - Added an ONNX candidate verifier that runs the exact bundled WebAssembly backend,
   checks the registered input/output contract, rejects non-finite output and prints
   the asset checksum. Runtime compatibility is deliberately distinct from accuracy.
-- Verification: all 61 JavaScript and 72 lightweight Python tests pass. Capacitor
+- Verification: all 61 JavaScript and 75 Python tests pass. Capacitor
   synchronization, Android debug assembly and lint succeed. The rebuilt APK SHA-256
   is `cf817a4031c992415932c59c4008e64822dc37c323f93b25a9601d85042ccb96`.
 

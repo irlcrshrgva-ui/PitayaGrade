@@ -15,6 +15,7 @@ from importlib.metadata import version
 from scripts.reviewed_training import training_arguments, prepare_reviewed_dataset
 from scripts.training_policy import LossMonitor
 from scripts.image_orientation import load_upright_rgb
+from scripts.quality_onnx import export_quality_onnx
 
 # Validate before importing ML frameworks or downloading weights.
 TRAINING_ARGS = training_arguments() if __name__ == "__main__" else None
@@ -107,7 +108,7 @@ def create_dataloaders(prepared_dir):
 def build_model(model_name, num_classes=4):
     """
     Build model with ImageNet backbone + custom head (paper Section 3.5.2):
-    GlobalAvgPool -> Dropout(0.3) -> Dense(128, ReLU) -> BN -> Dropout(0.2) -> Dense(4, Softmax)
+    GlobalAvgPool -> Dropout(0.3) -> Dense(128, ReLU) -> BN -> Dropout(0.2) -> Dense(4 logits)
     """
     if model_name == "MobileNetV2":
         base = models.mobilenet_v2(weights=models.MobileNet_V2_Weights.IMAGENET1K_V1)
@@ -119,7 +120,7 @@ def build_model(model_name, num_classes=4):
         in_features = base.classifier[1].in_features
         base.classifier = nn.Identity()
 
-    elif model_name == "ResNet50V2":
+    elif model_name in {"ResNet50", "ResNet50V2"}:
         # PyTorch ResNet50 with V2 weights (best available pre-training)
         base = models.resnet50(weights=models.ResNet50_Weights.IMAGENET1K_V2)
         in_features = base.fc.in_features
@@ -165,9 +166,15 @@ def freeze_backbone(model):
 
 
 def unfreeze_backbone(model):
-    """Fine-tune the upper three EfficientNet feature blocks, retaining lower features."""
+    """Fine-tune the architecture's upper feature blocks, retaining lower features."""
     freeze_backbone(model)
-    for block in list(model.backbone.features.children())[-3:]:
+    if hasattr(model.backbone, 'features'):
+        blocks = list(model.backbone.features.children())[-3:]
+    elif hasattr(model.backbone, 'layer4'):
+        blocks = list(model.backbone.layer4.children())[-3:]
+    else:
+        raise ValueError('Unsupported backbone fine-tuning contract')
+    for block in blocks:
         for param in block.parameters():
             param.requires_grad = True
 
@@ -339,7 +346,7 @@ def generate_visualizations(all_histories, all_metrics, model_names):
     from matplotlib.gridspec import GridSpec
     from matplotlib.patches import FancyBboxPatch
 
-    COLORS = {"MobileNetV2": "#2196F3", "EfficientNetB3": "#4CAF50", "ResNet50V2": "#E91E8C"}
+    COLORS = {"MobileNetV2": "#2196F3", "EfficientNetB3": "#4CAF50", "ResNet50": "#E91E8C", "ResNet50V2": "#E91E8C"}
     BLACK = "#212121"
 
     plt.rcParams.update({"font.family": "DejaVu Sans", "figure.facecolor": "white", "axes.facecolor": "white"})
@@ -566,7 +573,7 @@ def main():
     RESULTS_DIR = TRAINING_ARGS.run_dir
     print("=" * 70)
     print("PitayaGrade - Real CNN Model Training")
-    print("EfficientNet-B3 | reviewed manuscript quality labels")
+    print("Selectable quality classifiers | reviewed manuscript quality labels")
     print("=" * 70)
 
     # Prepare dataset
@@ -574,12 +581,12 @@ def main():
     train_loader, val_loader, test_loader, class_to_idx = create_dataloaders(prepared_dir)
 
     (RESULTS_DIR / 'training-context.json').write_text(json.dumps({
-        'task': 'manuscript-quality', 'model': 'EfficientNetB3',
+        'task': 'manuscript-quality', 'models': TRAINING_ARGS.models,
         'frameworks': {name: version(name) for name in ('torch', 'torchvision', 'scikit-learn')},
         'classToIndex': class_to_idx, 'imageSize': IMG_SIZE, 'batchSize': BATCH_SIZE, 'seed': SEED,
         'orientation': 'EXIF-transpose to upright RGB before resize and augmentation',
         'phase1': {'epochs': PHASE1_EPOCHS, 'lr': 1e-3, 'backbone': 'frozen'},
-        'phase2': {'epochs': PHASE2_EPOCHS, 'lr': 1e-5, 'backbone': 'upper three feature blocks'},
+        'phase2': {'epochs': PHASE2_EPOCHS, 'lr': 1e-5, 'backbone': 'architecture-specific upper feature blocks'},
         'optimizer': {'name': 'Adam', 'weightDecay': 1e-4, 'betas': [0.9, 0.999]},
         'scheduler': {'name': 'ReduceLROnPlateau', 'patience': 5, 'factor': 0.5},
         'selectionMetric': 'val_loss', 'earlyStoppingPatience': PATIENCE,
@@ -587,7 +594,7 @@ def main():
                                   'No metadata check establishes expert-label truth or field accuracy.']
     }, indent=2) + '\n', encoding='utf-8')
 
-    model_names = ["EfficientNetB3"]
+    model_names = TRAINING_ARGS.models
     all_histories = {}
     all_metrics = {}
 
@@ -603,6 +610,15 @@ def main():
 
             metrics = evaluate_model(model_name, model, test_loader, class_to_idx)
             all_metrics[model_name] = metrics
+
+            idx_to_class = {index: name for name, index in class_to_idx.items()}
+            class_names = [idx_to_class[index] for index in range(len(idx_to_class))]
+            export_quality_onnx(
+                model,
+                RESULTS_DIR / f'{model_name}.onnx',
+                class_names,
+                input_size=IMG_SIZE,
+            )
 
             # Free GPU memory
             del model

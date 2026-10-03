@@ -109,13 +109,15 @@ python train_models.py --manifest research/reviewed-quality.json --run-dir train
 ```
 
 The manifest uses the same fields as `public-review-manifest.json`. The command
-trains only manuscript EfficientNet-B3, preserves reviewed partitions, and requires
-a new output directory. It saves a manifest snapshot, copied input data, checkpoints,
-metrics and figures there. It never resumes historical experiments or reuses the
-legacy `dataset_prepared` folder. Review the manuscript's 70/15/15 proportions while
-keeping source groups intact; the gate checks disjointness and class coverage,
-not exact proportions or research validity. Package versions for the verified
-training environment are in `requirements-training.txt` (Python 3.12).
+trains MobileNetV2, ResNet50 and EfficientNet-B3 by default so they can be compared
+on the same frozen partitions. Use `--models EfficientNetB3` only when an explicitly
+scoped single-model run is intended. It preserves reviewed partitions, requires a
+new output directory, and saves the manifest snapshot, copied inputs, checkpoints,
+metrics, figures, single-file ONNX candidates and export metadata there. It never
+resumes historical experiments or reuses the legacy `dataset_prepared` folder.
+Review the manuscript's 70/15/15 proportions while keeping source groups intact;
+the gate checks disjointness and class coverage, not exact proportions or research
+validity. Package versions are pinned in `requirements-training.txt` (Python 3.12).
 
 All quality loaders apply EXIF orientation before resizing, augmentation and
 normalization. This covers rotations and mirrored orientations. Original files
@@ -128,6 +130,9 @@ after ten epochs without loss improvement. Both phases use ReduceLROnPlateau
 their BatchNorm statistics remain frozen while the upper three EfficientNet
 feature blocks are fine-tuned. History records loss, accuracy, learning rates and
 the selected epoch; `training-context.json` records the configuration and versions.
+Every ONNX export is checked by the ONNX checker and records the app's 224x224
+ImageNet-normalized input, four-logit output, class order and SHA-256. Run the
+JavaScript candidate verifier before copying any export into the app.
 Fruit-crop provenance and the manuscript's full preprocessing sequence still need
 verification; these training corrections do not establish full pipeline alignment.
 

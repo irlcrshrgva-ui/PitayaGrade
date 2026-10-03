@@ -41,9 +41,12 @@ def prepare_reviewed_dataset(rows, run_dir, root=ROOT):
 
 
 def training_arguments():
-    parser = argparse.ArgumentParser(description='Train manuscript EfficientNet-B3 using reviewed grade labels and source-group partitions.')
+    parser = argparse.ArgumentParser(description='Train selectable quality models using reviewed grade labels and source-group partitions.')
     parser.add_argument('--manifest', required=True, type=Path)
     parser.add_argument('--run-dir', required=True, type=Path, help='New directory; existing results are never overwritten or resumed.')
+    parser.add_argument('--models', nargs='+', choices=['MobileNetV2', 'ResNet50', 'EfficientNetB3'],
+                        default=['MobileNetV2', 'ResNet50', 'EfficientNetB3'],
+                        help='Quality architectures to train; defaults to all selectable classifiers.')
     args = parser.parse_args()
     try:
         args.rows = read_reviewed_manifest(args.manifest)

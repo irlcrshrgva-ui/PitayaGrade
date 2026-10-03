@@ -105,8 +105,9 @@ This is a debug build, not proof of model accuracy or device validation.
 
 The supported quality-training command requires a reviewed manifest and a fresh
 run directory. See [the preparation guide](research/PREPARATION_GUIDE.md).
-It trains manuscript EfficientNet-B3; historical model comparisons do not approve
-adding selectable classifiers to the app.
+It trains MobileNetV2, ResNet50 and EfficientNet-B3 on the same retained partitions
+by default and exports checked ONNX candidates. This does not make a model selectable
+until its held-out evidence and bundled asset pass the release gates.
 
 After every quality model has produced predictions for the same frozen test split,
 create a CSV using `research/week4/predictions-template.csv` and run
