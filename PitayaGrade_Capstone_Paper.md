@@ -55,9 +55,16 @@ In Partial Fulfillment of the Requirements for the Degree of Bachelor of Science
 
 ## Abstract
 
-Dragon fruit (*Hylocereus* spp.) has emerged as one of the most commercially promising tropical fruits in the Philippines, yet pre-harvest quality grading and disease detection continue to rely heavily on subjective manual inspection. This dependence introduces inconsistencies, delays, and elevated post-harvest losses that reduce farmer profitability and market competitiveness. This capstone project presents **PitayaGrade**, a mobile-based computer vision system that leverages machine learning techniques to automate the pre-harvest quality grading and disease detection of dragon fruit. The system employs a dual-stage deep learning pipeline, combining a YOLOv8-Nano architecture for object detection and disease segmentation with a fine-tuned EfficientNet-B3 model for compound quality grading, trained on a curated dataset of dragon fruit images representing multiple quality grades and disease categories. PitayaGrade integrates image capture via a mobile application, real-time inference through a cloud-hosted model, and a structured reporting interface that delivers actionable results to farmers in the field. Experimental evaluation demonstrates that the system achieves an overall classification accuracy of 94.3% for quality grading and 91.7% for disease detection, with average inference times under 2.5 seconds per image on standard mobile hardware. Comparative analysis reveals that PitayaGrade significantly outperforms manual grading in terms of speed, consistency, and scalability. The findings affirm that machine learning-based agricultural tools can meaningfully support Philippine smallholder farmers in optimizing harvest decisions, reducing economic losses, and meeting the quality standards demanded by domestic and export markets.
+Dragon fruit (*Hylocereus* spp.) quality grading and visible disease assessment commonly rely on manual inspection, which can vary between evaluators and operating conditions. This capstone project develops **PitayaGrade**, an Android-targeted decision-support application for capturing or uploading fruit images, running local ONNX inference, presenting image-based quality and disease estimates, saving scan history, generating analytics and reports, and issuing local notifications. The implemented Capacitor application currently packages one checksum-verified YOLOv8-Nano ONNX model; its disease output still includes image heuristics. A validated dual-stage pipeline using a detector, an EfficientNet-B3 quality classifier and a disease-segmentation model remains the target research architecture. Automated software tests verify storage behavior, interface workflows, runtime asset integrity and execution of the bundled model through ONNX Runtime Web, but they do not establish agricultural accuracy. Formal performance claims remain pending reviewed grade labels, disease annotations, leakage-free held-out evaluation, physical-device trials and approved user acceptance testing. Accordingly, this manuscript reports the implemented prototype and evaluation protocol without claiming unmeasured accuracy, field impact or superiority over manual grading.
 
 **Keywords:** dragon fruit, machine learning, computer vision, quality grading, disease detection, convolutional neural network, mobile application, Philippine agriculture
+
+> **Evidence status (4 October 2026).** The software prototype and automated
+> regression checks are implemented. Numerical accuracy, field-test, manual-comparison
+> and UAT values remaining in Chapter 5 are legacy drafting placeholders, not verified
+> study results, and must not be cited or submitted as findings. They are retained only
+> to preserve the planned table structure until the Week 4 evaluation package is
+> completed from reviewed data, physical Android testing and approved participants.
 
 ---
 
@@ -149,11 +156,11 @@ The scope of this capstone project encompasses the following:
 
 4. **Platform.** The system is developed as a mobile application using the Capacitor framework targeting Android devices, reflecting the dominant mobile operating system among Philippine farmers.
 
-5. **Machine Learning Architecture.** The machine learning pipeline is based on a dual-stage architecture employing YOLOv8-Nano for object detection and disease segmentation, and EfficientNet-B3 for compound quality grading, balancing accuracy and computational efficiency on mobile hardware.
+5. **Machine Learning Architecture.** The intended research pipeline uses YOLOv8-Nano localization, EfficientNet-B3 quality grading and YOLOv8-Nano disease segmentation. The current application packages one YOLOv8-Nano grade-detection ONNX model and heuristic disease analysis. MobileNetV2, ResNet50, EfficientNet-B3 and disease-segmentation entries are registered but remain disabled until evaluated exports are supplied.
 
-6. **Dataset.** The training dataset comprises approximately 5,000 labeled images of dragon fruit collected from farms in Ilocos Norte, Pangasinan, and Quezon province, supplemented by publicly available dragon fruit image datasets and data augmentation techniques.
+6. **Dataset.** The repository contains a traceable public-data preparation manifest, but its target grade labels and disease annotations have not yet been reviewed. The final dataset size, collection locations and class counts must be reported only after expert review and leakage-safe freezing of the train, validation and test partitions.
 
-7. **Connectivity.** The system supports both online (cloud-based inference) and offline (on-device inference via TensorFlow Lite) modes of operation.
+7. **Connectivity.** The active application performs local ONNX Runtime Web inference and local record storage. It does not currently use a production cloud inference service or TensorFlow Lite backend. The Offline Mode setting communicates the local-processing preference; it does not switch between cloud and TFLite models.
 
 ### 1.5.2 Limitations
 
@@ -169,7 +176,7 @@ The following limitations are acknowledged:
 
 5. **Environmental Factors.** The model's performance may be influenced by environmental variables such as ambient lighting, weather conditions, and background complexity at the time of image capture. The system includes basic preprocessing to mitigate these factors but cannot fully eliminate their influence.
 
-6. **Generalizability.** The model is trained on dragon fruit samples from specific Philippine provinces and may not perform with equal accuracy on dragon fruit cultivars or growing conditions substantially different from those represented in the training data.
+6. **Generalizability.** The final reviewed training distribution and field performance are not yet established. Results from public candidate images or controlled captures must not be generalized to Philippine farms, cultivars or growing conditions without field evaluation.
 
 7. **Not a Replacement for Expert Diagnosis.** PitayaGrade is designed as a decision-support tool, not a replacement for professional phytopathological diagnosis. Farmers are advised to consult agricultural extension officers or plant pathologists for confirmation of detected diseases, particularly in cases where the system's confidence score is below the recommended threshold.
 
@@ -230,15 +237,15 @@ To contextualize the contribution of PitayaGrade within the existing landscape o
 | **Disease Detection** | No | Yes (1 disease) | Yes (5 diseases) | Yes (26 diseases) | **Yes (6 diseases/defects)** |
 | **Combined Grading + Disease** | No | No | No | No | **Yes** |
 | **Mobile Application** | No | No | Yes (basic) | Yes (demo only) | **Yes (full-featured)** |
-| **Offline Capability** | No | No | No | No | **Yes (TFLite)** |
+| **Offline Capability** | No | No | No | No | **Yes (local ONNX/WASM; device verification pending)** |
 | **Real-Time Alerts** | No | No | No | No | **Yes** |
 | **Digital Record-Keeping** | No | No | No | No | **Yes** |
-| **Cloud Integration** | No | No | No | Partial | **Yes** |
+| **Cloud Integration** | No | No | No | Partial | **No (proposed only)** |
 | **Analytics Dashboard** | No | No | No | No | **Yes** |
 | **Pre-Harvest Focus** | No (post-harvest) | Yes | Yes | Lab-based | **Yes** |
 | **Philippine Context** | No (Vietnam) | No (Vietnam) | No (Tanzania) | No (Global) | **Yes** |
-| **CNN Architecture** | InceptionV3 | ResNet-50 | InceptionV3 | GoogLeNet/AlexNet | **YOLOv8 + EfficientNet-B3** |
-| **Reported Accuracy** | 95.1% | 92.4% | 91-98% | 99.35% | **94.3% grading / 91.7% disease** |
+| **CNN Architecture** | InceptionV3 | ResNet-50 | InceptionV3 | GoogLeNet/AlexNet | **YOLOv8 deployed; dual-stage pipeline proposed** |
+| **Reported Accuracy** | 95.1% | 92.4% | 91-98% | 99.35% | **Evaluation pending** |
 
 **Table 2.1.** Comparative Analysis of Existing Systems vs. PitayaGrade
 
@@ -256,7 +263,7 @@ The research process follows the **Agile Software Development Life Cycle (SDLC)*
 
 ## 3.2 System Architecture
 
-The PitayaGrade system architecture follows a **client-server model** with provision for on-device inference, structured into three primary layers:
+The implemented PitayaGrade prototype follows a **local-first Capacitor architecture**. The client and packaged ONNX runtime are active; the server components described below remain proposed extensions rather than deployed services.
 
 ### 3.2.1 Client Layer (Mobile Application)
 
@@ -264,13 +271,13 @@ The client layer consists of an Android mobile application developed using **Cap
 
 - Providing the user interface for image capture, result display, history browsing, and dashboard visualization.
 - Performing image preprocessing (resizing, normalization, orientation correction) prior to inference.
-- Executing on-device inference via TensorFlow Lite when operating in offline mode.
-- Transmitting captured images to the server layer for cloud-based inference when operating in online mode.
-- Managing local data storage using SQLite for scan history and cached results.
+- Executing local inference through ONNX Runtime Web and its bundled WASM backend.
+- Keeping scan records and settings in browser `localStorage` within the Capacitor WebView.
+- Providing a user preference for local/offline processing without uploading scan metadata.
 
 ### 3.2.2 Server Layer (Cloud Backend)
 
-The server layer is hosted on a cloud platform (Google Cloud Platform or Amazon Web Services) and provides:
+The server layer is a proposed future component and is not present in the active application. A future implementation could provide:
 
 - A RESTful API endpoint for receiving image uploads and returning classification results.
 - The full-resolution model for high-accuracy inference.
@@ -280,12 +287,12 @@ The server layer is hosted on a cloud platform (Google Cloud Platform or Amazon 
 
 ### 3.2.3 Model Layer (Machine Learning Pipeline)
 
-The model layer encapsulates the machine learning components:
+The model layer distinguishes implemented and intended components:
 
-- The trained YOLOv8-Nano model for object detection and disease segmentation.
-- The trained EfficientNet-B3 model for compound quality grading.
+- A bundled YOLOv8-Nano ONNX grade-detection model whose runtime compatibility is verified but whose research accuracy remains unevaluated.
+- Registered but unavailable MobileNetV2, ResNet50, EfficientNet-B3 and disease-segmentation roles awaiting evaluated exports.
 - Preprocessing and postprocessing modules that standardize input images and format output predictions.
-- Model versioning and update mechanisms that enable over-the-air model updates as improved versions become available.
+- A checksum-verified model registry that prevents missing or altered files from being presented as selectable. Over-the-air updates are not implemented.
 
 ```
 System Architecture Diagram
@@ -343,11 +350,11 @@ System Architecture Diagram
 
 ### 3.3.1 Data Sources
 
-The training dataset for PitayaGrade was assembled from three complementary sources:
+Dataset preparation currently uses traceable public candidate images and retains source URLs and file/pixel hashes. The following review steps must be completed before the collection can be described as a training dataset:
 
-1. **Primary Field Collection.** A total of approximately 3,200 images were captured directly from dragon fruit farms in Ilocos Norte, Pangasinan, and Quezon province. Images were captured using smartphone cameras (Samsung Galaxy A54, Xiaomi Redmi Note 12) at resolutions of 12 megapixels and 8 megapixels, respectively. Field collection sessions were conducted across three harvest cycles (June-November 2025) to ensure representation of diverse growing conditions, maturation stages, and ambient lighting scenarios.
+1. **Primary Field Collection (Pending).** No retained manifest supports the previously drafted claim of 3,200 images from named provinces, devices and harvest cycles. Any original field images must be accompanied by collection permission, location/date metadata, source grouping and checksums before inclusion.
 
-2. **Supplementary Public Datasets.** Approximately 1,200 images were sourced from publicly available agricultural image repositories, including Kaggle dragon fruit datasets and the Plant Disease Image Dataset hosted by PCAARRD. These images were filtered and relabeled as necessary to align with the PitayaGrade classification taxonomy.
+2. **Public Candidate Data.** The repository documents public dataset candidates and prepares a manifest of 3,050 unique images. Source labels are not equivalent to the target Grade A/B/C/Reject and disease taxonomies; expert review is still required.
 
 3. **Data Augmentation.** To address class imbalance and increase the effective dataset size, the following augmentation techniques were applied to the primary and supplementary images:
    - Horizontal and vertical flipping
@@ -357,11 +364,11 @@ The training dataset for PitayaGrade was assembled from three complementary sour
    - Gaussian noise injection
    - Random cropping and resizing
 
-   After augmentation, the total effective dataset size was approximately 12,500 images.
+   Augmentation must occur only after splitting by source group and must not be counted as independent evidence. Final augmented counts remain pending a reviewed source manifest.
 
 ### 3.3.2 Labeling and Annotation
 
-All images were manually labeled by a team consisting of two agricultural science students and one experienced dragon fruit farmer serving as a domain expert. Labeling was performed using the LabelImg annotation tool and followed a dual-label scheme:
+The target labeling scheme is defined below, but the public manifest currently has no completed target-grade review and no retained evidence supporting the previously drafted expert-review claim. Reviewer identity or role, review time, source group, boxes and disease polygons must be recorded before training.
 
 **Quality Grade Labels:**
 - **Grade A (Premium):** Well-formed fruit with uniform coloring, smooth surface, no visible blemishes, diameter greater than or equal to 10 cm.
@@ -378,16 +385,13 @@ All images were manually labeled by a team consisting of two agricultural scienc
 - Sunburn
 - Fungal Spots
 
-Inter-rater reliability was assessed using Cohen's Kappa coefficient, achieving a value of 0.87, indicating strong agreement among annotators.
+Inter-rater reliability has not yet been measured. It should be calculated only from independently retained reviewer decisions on the same samples.
 
 ### 3.3.3 Dataset Split
 
-The final labeled dataset was partitioned as follows:
-- **Training Set:** 70% (approximately 8,750 images)
-- **Validation Set:** 15% (approximately 1,875 images)
-- **Test Set:** 15% (approximately 1,875 images)
+The candidate manifest uses train, validation and test partitions, but they cannot be considered final until target labels and source groups are reviewed. Final counts must be generated from the frozen reviewed manifest rather than copied from the historical draft.
 
-Stratified sampling was employed to ensure proportional representation of all quality grades and disease categories across the three partitions.
+The validation tools reject exact pixel duplicates and shared source groups across partitions. Near-duplicate and consecutive-capture review remains a required manual step.
 
 ## 3.4 Image Processing Techniques
 
@@ -409,7 +413,7 @@ Image preprocessing is a critical pipeline stage that standardizes input images 
 
 ### 3.5.1 Architecture Selection
 
-The PitayaGrade system employs a dual-stage deep learning pipeline utilizing **YOLOv8-Nano** (Jocher et al., 2023) and **EfficientNet-B3** (Tan & Le, 2019) as the base architectures. The selection of these models is based on the following criteria:
+The intended PitayaGrade research pipeline uses **YOLOv8-Nano** (Jocher et al., 2023) and **EfficientNet-B3** (Tan & Le, 2019) as base architectures. Only the bundled YOLOv8-Nano grade-detection export is active today. The target selection is based on the following criteria:
 
 1. **Computational Efficiency & Local Edge Deployment.** YOLOv8-Nano is a lightweight state-of-the-art object detection and segmentation model with approximately 3.2 million parameters, allowing it to perform fast real-time inference on edge devices. EfficientNet-B3 uses compound scaling to optimize accuracy and efficiency, possessing approximately 12 million parameters, which is suitable for standard mobile processors.
 
@@ -429,7 +433,7 @@ The dual-stage pipeline is configured as follows:
 
 ### 3.5.3 Transfer Learning Strategy
 
-A two-phase transfer learning strategy is employed for both models:
+A two-phase transfer learning strategy is defined for reviewed training runs:
 
 - **Phase 1 - Feature Extraction (10 epochs):** The base layers of YOLOv8-Nano and EfficientNet-B3 are frozen, and only the custom heads and segmentation/classification layers are trained, allowing them to adapt to the PitayaGrade classes.
 - **Phase 2 - Fine-Tuning (30 epochs):** The higher layers of both base networks are unfrozen and trained jointly with the heads at a reduced learning rate (1e-5) to adapt high-level feature representations to specific dragon fruit textures and visual defect patterns.
@@ -438,7 +442,7 @@ A two-phase transfer learning strategy is employed for both models:
 
 ### 3.6.1 Training Configuration
 
-The models are trained using the following configuration:
+Reviewed model runs are intended to use the following configuration; each completed run must retain its exact context and dependency versions:
 
 | Parameter | Value |
 |---|---|
@@ -468,7 +472,7 @@ Model performance is evaluated using the following metrics:
 
 ### 3.6.3 Cross-Validation
 
-Five-fold stratified cross-validation is performed on the training set to assess model robustness and mitigate the risk of overfitting to a particular data partition. The average performance across the five folds is reported alongside the hold-out test set results.
+Five-fold stratified cross-validation remains a proposed robustness check. If performed, folds must preserve source-fruit grouping and remain separate from the untouched test set; otherwise no cross-validation result should be reported.
 
 ## 3.7 Tools and Technologies
 
@@ -478,19 +482,19 @@ The development of PitayaGrade leverages the following tools and technologies:
 |---|---|---|
 | **Programming Language** | Python 3.10 | ML model development, data processing |
 | **ML Framework** | TensorFlow 2.12 / Keras | Model architecture, training, evaluation |
-| **Model Deployment** | TensorFlow Lite | On-device inference for Android |
+| **Model Deployment** | ONNX Runtime Web/WASM | Local inference in Capacitor Android |
 | **Computer Vision** | OpenCV 4.7 | Image preprocessing, segmentation |
 | **Data Augmentation** | Albumentations | Advanced image augmentation pipeline |
 | **Annotation Tool** | LabelImg | Image labeling and annotation |
 | **Mobile Framework** | Capacitor 6.0 (HTML/CSS/JS) | Android mobile application development |
-| **Backend** | Node.js / Express.js | RESTful API server |
-| **Cloud Platform** | Google Cloud Platform | Model hosting, API deployment |
-| **Database** | Firebase Firestore | Cloud database for records and analytics |
-| **Local Database** | SQLite | On-device data storage |
-| **Push Notifications** | Firebase Cloud Messaging | Alert and notification delivery |
+| **Backend** | None in active application | Future extension only |
+| **Cloud Platform** | None in active application | Future extension only |
+| **Database** | Browser localStorage | Local scan records and settings |
+| **Local Database** | Browser localStorage | Maximum 500 scan records |
+| **Notifications** | In-app notification center | Local alerts and session summaries |
 | **Version Control** | Git / GitHub | Source code management |
 | **IDE** | Visual Studio Code, Google Colab | Development and model training |
-| **Testing** | Jest, Pytest | Unit and integration testing |
+| **Testing** | Node test runner, Python unittest, Android lint | Unit, integration and build checks |
 | **UI/UX Design** | Figma | Application interface design |
 
 **Table 3.2.** Tools and Technologies
@@ -501,13 +505,13 @@ The PitayaGrade system follows a structured workflow from image capture to resul
 
 **Step 1: Image Capture.** The farmer opens the PitayaGrade mobile application and uses the built-in camera module to capture an image of the dragon fruit to be assessed. The camera module includes a viewfinder overlay guide that assists the farmer in framing the fruit correctly.
 
-**Step 2: Image Preprocessing.** The captured image undergoes the preprocessing pipeline described in Section 3.4. This includes resizing, color normalization, background segmentation, lighting correction, and noise reduction. Preprocessing is performed on-device in approximately 200-400 milliseconds.
+**Step 2: Image Preprocessing.** The deployed path resizes pixels and normalizes RGB values for the bundled ONNX model. Research preprocessing previews for segmentation, lighting correction and selective filtering exist separately and are not yet part of deployed inference. Phone timing remains unmeasured.
 
-**Step 3: Mode Selection.** The system checks network connectivity. If an internet connection is available, the image is transmitted to the cloud server for inference (online mode). If no connection is available, inference is performed on-device using the TensorFlow Lite model (offline mode).
+**Step 3: Local Inference.** The active application loads the selected checksum-verified ONNX asset and executes it through the bundled WASM runtime. It does not upload the image to a cloud inference server.
 
 **Step 4: Quality Grading Inference.** The preprocessed image is fed into the quality grading CNN model, which outputs a probability distribution across the four quality grade classes. The class with the highest probability is assigned as the predicted grade, along with a confidence score.
 
-**Step 5: Disease Detection Inference.** The same preprocessed image is simultaneously (or sequentially, in offline mode) fed into the disease detection CNN model, which outputs a probability distribution across the seven disease/defect classes. If the highest probability exceeds the detection threshold (default: 0.65), the corresponding disease is flagged.
+**Step 5: Disease Estimate.** Until an evaluated disease-segmentation ONNX model is supplied, the active application uses image heuristics and presents possible visual signs for physical or expert verification.
 
 **Step 6: Result Generation.** The system combines the quality grading and disease detection outputs into a unified result report that includes:
 - Assigned quality grade (A, B, C, or Reject)
@@ -516,9 +520,9 @@ The PitayaGrade system follows a structured workflow from image capture to resul
 - Confidence score for the detected disease
 - Recommended actions (e.g., "Monitor for anthracnose progression," "Harvest immediately for Grade B market")
 
-**Step 7: Alert Generation.** If a disease is detected or the fruit is classified as Reject, the system triggers an in-app alert notification. For severe detections (e.g., confirmed anthracnose or soft rot), a push notification is also sent to ensure the farmer is aware even if the application is not in the foreground.
+**Step 7: Alert Generation.** Qualifying grade or possible-disease results create local in-app alerts. The wording explicitly requires verification; no remote push service is active.
 
-**Step 8: Record Storage.** The scan result, including the original image, assigned grade, disease detection output, timestamp, and GPS coordinates (if available), is stored in the local SQLite database. When connectivity is available, records are synchronized to the Firebase Firestore cloud database.
+**Step 8: Record Storage.** Recognized scans store a thumbnail, timestamp, estimates, model/method metadata, recommendations and notes in local browser storage. No GPS or cloud synchronization is active.
 
 **Step 9: Dashboard Update.** Aggregated scan data is processed and displayed on the analytics dashboard, providing the farmer with insights into grading distributions, disease prevalence trends, and productivity metrics over time.
 
@@ -616,21 +620,21 @@ The disease detection feature identifies six categories of pathological conditio
 
 ### 4.1.4 Early Disease Identification
 
-Beyond detecting overt disease symptoms, PitayaGrade incorporates a sensitivity-optimized detection mode designed to identify the earliest visual indicators of disease onset. This capability is particularly valuable because the economic impact of dragon fruit diseases is heavily influenced by the timing of detection and intervention.
+The prototype can flag visible color and surface patterns for inspection, but it has not been trained or validated to identify pre-symptomatic or early-stage disease. Early-detection performance must not be claimed without reviewed longitudinal examples and expert ground truth.
 
 The early identification module operates by lowering the classification confidence threshold for disease categories and flagging fruits that exhibit subtle visual anomalies suggestive of early-stage infection, even when the model's confidence does not meet the standard detection threshold. When early-stage indicators are detected, the system issues a "monitor" recommendation rather than a definitive disease diagnosis, prompting the farmer to re-scan the fruit at a later date and consult with agricultural extension personnel if symptoms progress.
 
-This feature is trained using a subset of the dataset specifically curated to include images of dragon fruit at the earliest stages of disease development, captured through close collaboration with plant pathology experts who identified and labeled subtle symptomatic presentations.
+No retained expert-reviewed early-stage subset currently supports that claim. Future work should define symptom onset, review labels with qualified agricultural experts and evaluate early-stage sensitivity separately from general disease performance.
 
 ### 4.1.5 Machine Learning Model Integration
 
-PitayaGrade's machine learning model integration is designed for seamless operation across both cloud and edge computing environments, ensuring reliable performance regardless of network connectivity conditions.
+PitayaGrade currently uses local ONNX Runtime Web inference inside the Capacitor application. Cloud/TensorFlow Lite descriptions below are retained only as proposed alternatives and are not active processing paths.
 
-**Cloud Model.** The full-resolution TensorFlow model is hosted on a Google Cloud Platform instance and accessed via a RESTful API. The cloud model provides the highest accuracy inference and is the default processing path when the device has an active internet connection.
+**Cloud Model (Proposed).** No production cloud model, REST inference API or server-side credential service is deployed.
 
-**On-Device Model (TensorFlow Lite).** A quantized and optimized version of the CNN model is deployed on the mobile device using the TensorFlow Lite runtime. Post-training quantization reduces the model size from approximately 14 MB (full TensorFlow model) to approximately 3.5 MB (TFLite model) while maintaining accuracy within 1.5% of the full model.
+**On-Device Model (Implemented).** The application packages an ONNX file and ONNX Runtime Web/WASM assets. No evaluated TensorFlow Lite model or measured quantization comparison is retained.
 
-**Model Update Mechanism.** PitayaGrade includes an over-the-air (OTA) model update system that checks for updated model versions when the device connects to the internet. When a new model version is available, it is downloaded in the background and activated upon the next application launch. This mechanism ensures that farmers always have access to the most accurate model version without requiring a full application update.
+**Model Governance.** A static registry records each planned model's role, input size, output contract, availability and checksum. Models are delivered with an application build; an OTA update mechanism is not implemented.
 
 ## 4.2 Application Features
 
@@ -655,13 +659,13 @@ The application comprises the following primary screens:
 3. **Results Screen:** Detailed display of grading and disease detection results with confidence scores and recommendations.
 4. **History Screen:** Chronological list of past scans with thumbnail previews and filter/search capabilities.
 5. **Analytics Dashboard:** Graphical visualizations of grading distributions, disease trends, and productivity metrics.
-6. **Settings Screen:** Language selection, notification preferences, model update management, and account settings.
+6. **Settings Screen:** Language selection, notification preferences, local-processing preference, detection threshold and verified model selection.
 
 ### 4.2.2 Real-Time Monitoring System
 
 PitayaGrade's real-time monitoring capability provides farmers with continuous awareness of their crop quality status through aggregated scan data analysis. As the farmer scans multiple fruits across different sections of their farm, the monitoring system builds a dynamic picture of quality distribution and disease prevalence.
 
-**Farm-Wide Quality Map.** When GPS coordinates are available (with farmer permission), scan results are mapped to geographic positions within the farm, creating a visual quality heatmap that identifies high-performing and problem areas.
+**Farm-Wide Quality Map (Proposed).** The active application does not collect GPS coordinates or render a farm map.
 
 **Trend Detection.** The monitoring system analyzes scan results over time to identify emerging trends, such as a gradual increase in the proportion of Grade C fruits from a particular farm section, or a rising incidence of a specific disease. Trend alerts are generated when statistically significant patterns are detected.
 
@@ -673,7 +677,7 @@ The alert and notification system ensures that critical detections reach the far
 
 **In-App Alerts.** Immediate visual and haptic alerts are displayed on the Results Screen when a disease is detected or a fruit is classified as Reject. Alerts are color-coded by severity: yellow for cosmetic concerns (Grade C), orange for disease monitoring recommendations, and red for confirmed disease detections.
 
-**Push Notifications.** For high-severity detections (confirmed diseases, sudden increases in reject rates), push notifications are delivered via Firebase Cloud Messaging. Notifications include a brief summary of the issue and a link to the detailed scan result within the application.
+**Push Notifications (Not Implemented).** Alerts are stored and displayed inside the application. Firebase Cloud Messaging is not configured.
 
 **Batch Alerts.** At the end of each scanning session (defined as a sequence of scans within a 60-minute window), the system generates a session summary notification that recaps key findings: total fruits scanned, grade distribution, and any flagged issues.
 
@@ -683,23 +687,23 @@ The alert and notification system ensures that critical detections reach the far
 
 PitayaGrade replaces informal, memory-based farm record-keeping with a structured digital system that captures, organizes, and preserves all scan data:
 
-**Scan Log.** Every scan is recorded with the following metadata: date and time, GPS coordinates (if available), captured image, assigned quality grade, disease detection result, confidence scores, and any farmer-entered notes. Records are stored locally in SQLite and synchronized to Firebase Firestore when connectivity is available.
+**Scan Log.** Recognized scans retain a timestamp, thumbnail, grade estimate, disease estimate, model/method metadata, recommendations and optional notes. Records are stored in local browser storage; GPS, SQLite and Firestore synchronization are not active.
 
 **Search and Filter.** The history view supports filtering by date range, quality grade, disease type, and farm section. A search function allows farmers to locate specific records quickly.
 
 **Export Capability.** Scan records can be exported as CSV files or PDF reports for sharing with buyers, agricultural extension officers, or for the farmer's personal record-keeping purposes.
 
-**Data Retention.** By default, all records are retained indefinitely on the cloud database. Local device storage is managed through an automatic cleanup policy that retains the most recent 1,000 scans on-device and removes older images to conserve storage space while preserving scan metadata.
+**Data Retention.** The active application retains at most 500 local scan records. There is no cloud retention policy or cross-device synchronization.
 
 ### 4.2.5 Fast Processing and Instant Results
 
 Speed is critical for user adoption and practical field utility. PitayaGrade is engineered to deliver results within seconds:
 
-**Online Mode Performance.** In online mode (cloud inference), the average end-to-end processing time from image capture to result display is approximately 2.0-2.5 seconds, comprising roughly 300ms for preprocessing, 200ms for image upload, 800ms for model inference, and 200ms for result rendering, with network latency accounting for the remainder.
+**Measured Performance Pending.** No supported cloud timing result exists. Physical-device latency must be recorded against a specific APK, model hash, phone and repeated-run protocol.
 
-**Offline Mode Performance.** In offline mode (on-device inference via TFLite), the average processing time is approximately 1.5-2.0 seconds, eliminating network latency at the cost of marginally reduced accuracy.
+**Local Runtime.** Automated tests execute the bundled ONNX model through WASM, but this is not a phone benchmark. Android latency remains pending.
 
-**Batch Processing.** For scenarios where the farmer has captured multiple images for later analysis, PitayaGrade supports a batch processing mode that queues and processes images sequentially, displaying results as each image is completed.
+**Batch Processing (Not Implemented).** The active scan workflow processes one captured or uploaded image at a time.
 
 ### 4.2.6 Consistent and Standardized Grading Results
 
@@ -709,13 +713,13 @@ A primary advantage of PitayaGrade over manual grading is the consistency of its
 
 **Standardized Criteria.** The four-grade classification system (Grade A, B, C, Reject) is based on explicitly defined visual criteria that align with Philippine market standards, providing a common quality language between farmers and buyers.
 
-**Calibration.** The model's confidence scores are calibrated using temperature scaling to ensure that stated confidence levels correspond accurately to empirical accuracy rates (e.g., a 90% confidence prediction is correct approximately 90% of the time).
+**Calibration Pending.** No retained calibration experiment supports probabilistic interpretation of the displayed confidence. Reliability diagrams and calibration error should be calculated on the frozen reviewed test set before confidence is described as calibrated.
 
 ## 4.3 Optional Advanced Features
 
-### 4.3.1 Cloud Database Integration
+### 4.3.1 Cloud Database Integration (Proposed)
 
-PitayaGrade leverages Firebase Firestore as its cloud database solution, providing several capabilities beyond basic data synchronization:
+The active application does not use Firebase Firestore or authentication. A future, separately secured backend could provide the capabilities below:
 
 **Multi-Device Access.** Farmers or farm managers with multiple devices can access their scan history from any authenticated device, ensuring data continuity.
 
@@ -723,19 +727,19 @@ PitayaGrade leverages Firebase Firestore as its cloud database solution, providi
 
 **Aggregated Analytics.** Cloud-stored data enables large-scale analytics across multiple farms (with user consent), supporting research on regional disease patterns, quality trends, and best-practice identification.
 
-**Secure Authentication.** User authentication is managed through Firebase Authentication, supporting email/password and phone number authentication methods. All data transmissions are encrypted using HTTPS/TLS.
+**Secure Authentication (Proposed).** A future backend would require authenticated users, transport encryption, access controls and a reviewed privacy/retention policy. None is active in the local prototype.
 
-### 4.3.2 Offline Mode Capability
+### 4.3.2 Local Processing Capability
 
 Recognizing that many Philippine dragon fruit farms are located in rural areas with intermittent or limited internet connectivity, PitayaGrade is designed to function effectively in offline mode:
 
-**On-Device Inference.** The TensorFlow Lite model stored on the device enables full grading and disease detection functionality without an internet connection.
+**On-Device Inference.** The packaged ONNX/WASM runtime performs local grading inference. Physical-device offline first-run verification remains pending, and disease output is not yet produced by an evaluated segmentation model.
 
-**Local Data Caching.** All scan results are stored in the local SQLite database and queued for cloud synchronization when connectivity is restored.
+**Local Data Storage.** Recognized scan results are stored in browser localStorage. There is no cloud synchronization queue.
 
-**Graceful Connectivity Transition.** The application seamlessly transitions between online and offline modes without user intervention. A status indicator in the interface informs the farmer of the current connectivity status.
+**Connectivity Behavior.** The active inference path is local. The Offline Mode control records the user's local-processing preference rather than switching inference engines.
 
-**Offline Map Cache.** Farm map data (if previously loaded) is cached locally to support offline quality mapping functionality.
+**Offline Map Cache (Not Implemented).** The application does not collect or cache farm map data.
 
 ### 4.3.3 Dashboard Analytics
 
@@ -763,15 +767,21 @@ PitayaGrade enables farmers to generate and share structured reports summarizing
 
 ---
 
-# Chapter 5: Results and Discussion
+# Chapter 5: Results and Discussion — Evaluation Pending
+
+> **Do not cite the numerical tables in this chapter as results.** They are legacy
+> placeholders from the proposed study design and have no retained prediction files,
+> reviewed test manifest, device logs, participant records or approvals to support
+> them. Replace each table through the traceable process in
+> `research/WEEK4_EVALUATION_PLAN.md` before final submission.
 
 ## 5.1 System Testing Results
 
-The PitayaGrade system was subjected to comprehensive testing across three dimensions: functional testing, model performance evaluation, and user acceptance testing. Testing was conducted over a four-week period from October to November 2025, involving controlled laboratory evaluations and field trials on three operational dragon fruit farms in Ilocos Norte and Pangasinan.
+PitayaGrade has completed automated software regression testing and Android debug assembly/lint checks. Formal model evaluation, physical-device verification, field testing and user acceptance testing remain pending. The table below is an unverified planning scaffold and must be replaced by retained test evidence.
 
 ### 5.1.1 Functional Testing
 
-Functional testing verified that all system features operated as specified. A total of 156 test cases were designed and executed, covering all functional requirements including image capture, preprocessing, online and offline inference, result display, alert generation, record-keeping, and report export. Results are summarized in Table 5.1.
+The verified automated suite currently covers application workflows, storage integrity, localization, notifications, report safety, runtime assets and actual ONNX/WASM execution. It does not test a physical camera, Android lifecycle behavior, real model accuracy or field operation. The historical counts below are not verified results.
 
 | Test Category | Test Cases | Passed | Failed | Pass Rate |
 |---|---|---|---|---|
@@ -798,7 +808,7 @@ All critical and high-severity defects were resolved during the testing period. 
 
 ### 5.1.2 User Acceptance Testing
 
-User acceptance testing (UAT) was conducted with 15 participants: 10 dragon fruit farmers, 3 agricultural extension workers, and 2 agriculture students. Participants used the PitayaGrade application to scan dragon fruits on their farms and provided feedback through a structured questionnaire based on the System Usability Scale (SUS) and Technology Acceptance Model (TAM) constructs.
+User acceptance testing has not yet been conducted. It must begin only after adviser or institutional approval of the procedure and consent process. Anonymous task-level observations should be recorded using `research/week4/uat-template.csv`. The participant counts and ratings below are unverified placeholders.
 
 | Evaluation Criterion | Mean Rating (1-5 Likert Scale) | Interpretation |
 |---|---|---|
@@ -813,7 +823,7 @@ User acceptance testing (UAT) was conducted with 15 participants: 10 dragon frui
 
 **Table 5.2.** User Acceptance Testing Results
 
-The System Usability Scale score, calculated from the standardized SUS questionnaire, was **78.3**, which falls into the "Good" to "Excellent" usability range according to the Bangor, Kortum, and Miller (2009) adjective rating scale.
+The drafted SUS score of **78.3** is not supported by retained participant responses and must be replaced after approved UAT; it is not a study finding.
 
 Key qualitative feedback from participants included:
 - Farmers appreciated the speed of results and the visual presentation of grades.
@@ -825,7 +835,7 @@ Key qualitative feedback from participants included:
 
 ### 5.2.1 Quality Grading Model Performance
 
-The quality grading model was evaluated on the held-out test set of 1,875 images. Overall results are presented in Table 5.3.
+The deployed grading model has not yet been evaluated against a reviewed, leakage-free held-out test manifest. The values below are unverified placeholders. Final metrics must be generated from complete prediction exports using `scripts/summarize_model_evaluation.py`.
 
 | Class | Precision | Recall | F1-Score | Support |
 |---|---|---|---|---|
@@ -837,7 +847,7 @@ The quality grading model was evaluated on the held-out test set of 1,875 images
 
 **Table 5.3.** Quality Grading Model Classification Report
 
-The overall accuracy of the quality grading model on the test set was **94.3%**, exceeding the target threshold of 90% established in the specific objectives.
+The drafted **94.3%** value is unsupported and must be replaced by the generated held-out evaluation report; it is not a study finding.
 
 **Confusion Matrix Analysis.** The confusion matrix (Table 5.4) reveals that the most common misclassification pattern occurs between Grade B and Grade C, which is expected given the inherent visual similarity between these adjacent grade categories. Misclassifications between Grade A and Reject are rare (less than 0.5%), indicating that the model reliably distinguishes between the highest and lowest quality extremes.
 
@@ -850,11 +860,11 @@ The overall accuracy of the quality grading model on the test set was **94.3%**,
 
 **Table 5.4.** Quality Grading Confusion Matrix (Rows = Actual, Columns = Predicted)
 
-The five-fold cross-validation results yielded a mean accuracy of 93.8% (standard deviation 1.2%), confirming the model's stability across different data partitions.
+The drafted cross-validation values are unsupported. Cross-validation has not established model stability.
 
 ### 5.2.2 Disease Detection Model Performance
 
-The disease detection model was evaluated on the same held-out test set. Results are presented in Table 5.5.
+The intended disease-segmentation model has not yet been supplied as an evaluated app asset. Current disease results include image heuristics and must not be reported as validated diagnoses. The values below are unverified placeholders.
 
 | Class | Precision | Recall | F1-Score | Support |
 |---|---|---|---|---|
@@ -869,7 +879,7 @@ The disease detection model was evaluated on the same held-out test set. Results
 
 **Table 5.5.** Disease Detection Model Classification Report
 
-The overall accuracy of the disease detection model on the test set was **91.7%**, meeting the target threshold of 90%.
+The drafted **91.7%** value is unsupported. Disease-segmentation accuracy remains unevaluated.
 
 **Analysis of Results.** The model demonstrated the highest performance on the Healthy class (F1 = 0.970) and Sunburn (F1 = 0.934), both of which have relatively distinctive visual characteristics. Performance was lowest for Fungal Spots (F1 = 0.880) and Pest Damage (F1 = 0.884), which can present with high visual variability and, in some cases, resemble each other's symptoms. The distinction between early-stage anthracnose and general fungal spots was identified as the most challenging classification boundary.
 
@@ -893,13 +903,13 @@ The Area Under the Receiver Operating Characteristic (AUC-ROC) score for each cl
 
 **Table 5.6.** AUC-ROC Scores by Model and Class
 
-All AUC-ROC values exceed 0.94, indicating strong discriminative performance across all classes. The Reject class (0.991) and Healthy class (0.994) achieve near-perfect discrimination, which is critical for preventing severely defective or diseased fruits from being misclassified as acceptable.
+The drafted AUC-ROC values are unsupported and must be removed or replaced by traceable one-vs-rest calculations from retained prediction scores.
 
 ## 5.3 Performance Evaluation
 
 ### 5.3.1 Processing Speed
 
-Inference speed was measured across three representative device categories to assess the system's performance across the range of hardware likely to be used by target users:
+Inference speed has not yet been measured on the listed physical devices. The table below is an unverified test target; final measurements must identify the APK and model hashes, device, Android version and repeated-run protocol.
 
 | Device | Mode | Avg. Inference Time | Total Processing Time |
 |---|---|---|---|
@@ -912,11 +922,11 @@ Inference speed was measured across three representative device categories to as
 
 **Table 5.7.** Processing Speed by Device and Mode
 
-Total processing time includes image capture, preprocessing, inference, and result rendering. All tested device-mode combinations achieved total processing times under 2.5 seconds, meeting the real-time performance requirement.
+The drafted device timings are unsupported. Whether the application meets a real-time requirement must be determined from repeated physical-device tests.
 
 ### 5.3.2 Reliability
 
-System reliability was assessed through a stress test of 500 consecutive scans performed over a 4-hour period:
+A 500-scan physical-device stress test has not yet been performed. The table below is an unverified planning placeholder.
 
 | Metric | Result |
 |---|---|
@@ -929,7 +939,7 @@ System reliability was assessed through a stress test of 500 consecutive scans p
 
 **Table 5.8.** Reliability Testing Results
 
-The three failures were attributed to transient network timeouts in online mode and were handled gracefully by the application's error handling mechanism, which automatically retried the inference in offline mode.
+The drafted stress-test failures and automatic cloud-to-offline retry behavior are unsupported and do not describe the active local-only inference path.
 
 ### 5.3.3 Model Size and Resource Utilization
 
@@ -942,11 +952,11 @@ The three failures were attributed to transient network timeouts in online mode 
 
 **Table 5.9.** Model Size and Resource Utilization
 
-The TFLite model's modest size (3.5 MB) and RAM footprint (62 MB) ensure compatibility with budget-tier smartphones commonly used by Filipino farmers.
+No retained TFLite asset or resource profile supports this table. The active ONNX package must be measured on target phones before compatibility is claimed.
 
 ## 5.4 Benefits Compared to Manual Grading
 
-A comparative evaluation between PitayaGrade and manual grading was conducted using a set of 200 dragon fruit samples assessed by both the system and three experienced human graders. Results highlight the following advantages of PitayaGrade:
+A controlled comparison with manual graders has not yet been conducted. The values below are unverified planning placeholders and cannot support claims of superiority, cost savings or early disease detection.
 
 ### 5.4.1 Speed
 
@@ -958,37 +968,37 @@ A comparative evaluation between PitayaGrade and manual grading was conducted us
 
 **Table 5.10.** Speed Comparison
 
-PitayaGrade processes fruits approximately 9.4 times faster than manual grading, a significant advantage during peak harvest periods when large volumes must be assessed within narrow time windows.
+The drafted 9.4-times comparison is unsupported. Throughput must be measured under a controlled protocol before any speed advantage is claimed.
 
 ### 5.4.2 Consistency
 
-Inter-rater agreement among the three human graders was measured at Cohen's Kappa = 0.74 (substantial agreement), while PitayaGrade's test-retest reliability over three repeated scans of the same 50 fruits was Kappa = 1.0 (perfect agreement). This confirms that PitayaGrade eliminates the inter-rater variability inherent in manual grading, providing perfectly reproducible results.
+The drafted human-grader and repeatability values are unsupported. Agreement and repeatability remain pending controlled evaluation.
 
 ### 5.4.3 Disease Detection Sensitivity
 
-Among the 200 test samples, 38 fruits exhibited disease symptoms. PitayaGrade correctly identified 35 of these (92.1% sensitivity), while the average detection rate among the three human graders was 27 of 38 (71.1%). Notably, PitayaGrade detected 8 fruits with early-stage symptoms that were missed by all three human graders, underscoring the system's advantage in identifying diseases at pre-symptomatic or early-symptomatic stages.
+No retained expert-reviewed sample comparison supports the drafted sensitivity or early-stage detection claims. These statements must not be used as findings.
 
 ### 5.4.4 Cost Efficiency
 
-A preliminary cost-benefit analysis estimates that PitayaGrade can reduce grading labor costs by approximately 60-75% for a medium-scale farm (1,000-5,000 fruits per harvest). The primary cost of PitayaGrade deployment is the farmer's existing smartphone and optional mobile data charges, with no additional hardware investment required.
+No retained cost study supports the drafted labor-savings estimate. Economic analysis should include device, training, maintenance, annotation, support and verification costs before reporting savings.
 
 ---
 
-# Chapter 6: Conclusion and Recommendations
+# Chapter 6: Current Conclusion and Recommendations
 
 ## 6.1 Summary of Findings
 
-This capstone project has successfully designed, developed, and evaluated **PitayaGrade**, a mobile-based pre-harvest quality grading and disease detection system for dragon fruit utilizing machine learning techniques. The principal findings of the study are summarized as follows:
+This capstone project has developed and software-tested a functional **PitayaGrade** prototype. The retained evidence supports conclusions about implementation and automated runtime behavior only. Agricultural accuracy, field performance, user acceptance and economic impact remain evaluation objectives rather than findings.
 
-1. **Feasibility of ML-Based Dragon Fruit Assessment.** The study demonstrates that a dual-stage deep learning pipeline (YOLOv8-Nano and EfficientNet-B3) with transfer learning can effectively classify dragon fruit quality and detect common diseases from smartphone-captured images. The achieved accuracy levels (94.3% for quality grading and 91.7% for disease detection) validate the technical feasibility of the approach.
+1. **Implemented ML Runtime.** The application can load and execute the bundled YOLOv8-Nano ONNX model locally through ONNX Runtime Web. This verifies deployment compatibility, not grading or disease accuracy. The intended classifier and segmentation assets remain pending reviewed training and evaluation.
 
-2. **Practical Mobile Deployment.** Through model optimization and the Capacitor mobile framework, PitayaGrade delivers real-time inference on standard consumer smartphones, including budget-tier devices commonly used by Filipino farmers. The system's offline capability ensures functionality in rural areas with limited connectivity.
+2. **Android Build Readiness.** The Capacitor Android debug application assembles and passes lint, and its packaged web/model assets are synchronized. Camera, offline first-run, lifecycle, export and performance behavior still require checks on physical phones before practical deployment can be claimed.
 
-3. **Superior Performance vs. Manual Methods.** Comparative evaluation demonstrates that PitayaGrade processes fruits approximately 9.4 times faster than manual grading, achieves perfect consistency (compared to Kappa = 0.74 for human graders), and detects diseases with significantly higher sensitivity (92.1% vs. 71.1%), particularly for early-stage infections.
+3. **No Manual-Superiority Finding Yet.** No retained controlled comparison supports a speed, agreement or sensitivity advantage over experienced graders. Any future comparison must use the same reviewed samples, a documented protocol and appropriate statistical analysis.
 
-4. **User Acceptance.** User acceptance testing with 15 participants, including farmers and agricultural extension workers, yielded a System Usability Scale score of 78.3 and high ratings across all evaluation criteria, confirming that the system is perceived as usable, useful, and worth adopting.
+4. **User Acceptance Pending.** No approved participant evidence is retained. UAT must use anonymous participant identifiers, a consistent task script and the approved consent process before usability conclusions are written.
 
-5. **Comprehensive Feature Set.** Beyond core grading and detection capabilities, PitayaGrade provides a holistic farm management tool with features including real-time alerts, digital record-keeping, analytics dashboards, and report export, addressing the broader operational needs of dragon fruit farmers.
+5. **Implemented Application Features.** The prototype includes image capture/upload, local analysis, model catalog and selection controls, notifications, saved records, analytics and report export. These workflows are covered by automated tests, while their effectiveness for farmers remains subject to device testing and UAT.
 
 ## 6.2 Impact on Agriculture
 

@@ -1,5 +1,20 @@
 # Project continuation update
 
+## 2026-10-04 continuation: manuscript evidence reconciliation
+
+- Rewrote the abstract and current conclusion to report only retained implementation
+  evidence. Removed active claims of 94.3%/91.7% accuracy, three-farm trials, 15-user
+  UAT, cloud/TFLite deployment, device speed, cost savings and superiority over
+  manual graders.
+- Corrected the scope, architecture, data collection, workflow, tools and feature
+  descriptions to distinguish the active local Capacitor/ONNX/localStorage system
+  from proposed server, Firebase, TensorFlow Lite, GPS and segmentation components.
+- Legacy Chapter 5 tables remain solely as visibly labeled planning scaffolds so the
+  intended report structure is preserved. Every numerical table is explicitly
+  non-citable until replaced from the Week 4 evidence package.
+- Added a manuscript-status regression test that rejects the return of the most
+  consequential unsupported finding statements. No research result was invented.
+
 ## 2026-10-04 continuation: selectable-model governance and evaluation automation
 
 - Replaced the implicit one-item model list with a five-entry model catalog covering
