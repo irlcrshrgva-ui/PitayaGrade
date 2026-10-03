@@ -1,5 +1,33 @@
 # Review data before model training
 
+## Excel-friendly review worksheet
+
+Do not edit the large JSON manifest by hand. Export only the task being reviewed:
+
+```powershell
+python -m scripts.review_manifest export research/public-review-manifest.json `
+  research/quality-review.csv --task quality
+```
+
+Open the CSV in Excel or another spreadsheet editor. For every reviewed row, fill
+`reviewedLabel`, `reviewedSourceGroup`, `reviewer` and timezone-aware `reviewedAt`
+(for example `2026-10-04T18:30:00+08:00`). Leave all four blank when a row has not
+been reviewed. Preserve the `id` column and do not change image/source fields.
+
+Merge the worksheet into a new manifest without overwriting the source:
+
+```powershell
+python -m scripts.review_manifest import research/public-review-manifest.json `
+  research/quality-review.csv research/quality-reviewed.json `
+  --target manuscript-quality
+python scripts/validate-research-data.py research/quality-reviewed.json `
+  --target manuscript-quality
+```
+
+The importer rejects duplicate/unknown IDs, incomplete review evidence, incompatible
+labels, timestamps without a timezone and attempts to overwrite existing reviews.
+The validator remains the authority for file hashes, class coverage and split leakage.
+
 The owner retained the manuscript's Grade A/B/C/Reject outputs on 2026-09-20.
 Fresh/Defective and Mature/Immature remain original source labels only.
 

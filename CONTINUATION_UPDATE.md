@@ -1,5 +1,16 @@
 # Project continuation update
 
+## 2026-10-04 continuation: review worksheet workflow
+
+- Added an Excel-friendly export/import command for the 3,050-row public review
+  manifest. Reviewers can work by task without manually editing JSON.
+- Imports create a new manifest and reject unknown/duplicate IDs, partial review
+  evidence, incompatible labels, timezone-free timestamps and attempts to overwrite
+  retained decisions. The existing research validator still controls checksums,
+  class coverage and split leakage.
+- Added focused regression tests and documented the exact quality-review commands.
+  The workflow reduces annotation friction but does not supply or infer labels.
+
 ## 2026-10-04 continuation: manuscript evidence reconciliation
 
 - Rewrote the abstract and current conclusion to report only retained implementation
