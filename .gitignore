@@ -41,6 +41,9 @@ venv/
 .idea/
 .vscode/
 
+# Local reviewer worksheets may contain reviewer identifiers and working labels
+local-review/
+
 # OS and office temporary files
 .DS_Store
 Thumbs.db
