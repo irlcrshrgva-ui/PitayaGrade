@@ -121,6 +121,11 @@ Model performance must be recalculated using a leakage-free, untouched test set.
 See [CONTINUATION_UPDATE.md](CONTINUATION_UPDATE.md) for the latest module-by-module
 changes, verification results, storage behavior, and remaining implementation gaps.
 
+Use [the Week 4 evaluation plan](research/WEEK4_EVALUATION_PLAN.md) and its
+[evidence templates](research/week4/README.md) for formal model evaluation,
+physical-device testing, UAT, manuscript revision and release approval. The blank
+templates are not completed evidence and must be filled from actual test runs.
+
 The active Capacitor app stores scans in `localStorage` under `pg_scans` and
 settings under `pg_settings`. There is no active backend, authentication service,
 or user-role system. The SQLite service in the Flutter prototype is separate.

@@ -1,5 +1,20 @@
 # Project continuation update
 
+## 2026-10-04 continuation: Week 4 evidence handoff
+
+- Added a formal Week 4 plan covering frozen model/dataset hashes, leakage-safe
+  model comparison, Android verification, approved anonymous UAT, manuscript
+  reconciliation, release signing and defense preparation.
+- Added blank CSV evidence templates for model evaluation, physical-device tests
+  and UAT. Blank rows are deliberate; no research, device or participant results
+  were invented from source code or synthetic tests.
+- Linked the plan and templates from the README. Release gates distinguish software
+  regression checks from model accuracy, hardware behavior and user evidence.
+- Verification: all 50 JavaScript tests pass, including actual bundled ONNX/WASM
+  execution, and all 63 lightweight Python tests pass. The repository remains
+  blocked on reviewed labels, evaluated final models, physical-device testing and
+  approved UAT evidence rather than on these documentation artifacts.
+
 ## 2026-10-01 continuation: actual runtime repair and crop verification
 
 - Browser testing exposed a missing `ort-wasm-simd-threaded.mjs`: model loading

@@ -1,0 +1,2 @@
+session_id,tested_at,participant_id,participant_role,device_model,app_version,task_id,task_description,completed,time_seconds,error_count,help_needed,ease_rating_1_to_5,confidence_rating_1_to_5,participant_comment,observer_note,issue_id
+

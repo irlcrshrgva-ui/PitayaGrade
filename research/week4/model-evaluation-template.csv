@@ -1,0 +1,2 @@
+evaluation_id,evaluated_at,task,model_name,model_version,model_sha256,test_manifest,test_manifest_sha256,test_sample_count,classes,input_size,confidence_threshold,device,runtime,accuracy,macro_precision,macro_recall,macro_f1,map50,map50_95,mask_map50,mean_latency_ms,p95_latency_ms,failed_samples,confusion_matrix_path,predictions_path,notes,reviewer
+

@@ -1,0 +1,2 @@
+test_run_id,tested_at,device_model,android_version,app_version,apk_sha256,network_state,test_case,precondition,steps,expected_result,actual_result,status,evidence_path,defect_id,tester
+
