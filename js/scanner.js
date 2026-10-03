@@ -689,20 +689,21 @@ const Scanner = {
     }
     const colorVariance = Math.sqrt(varSum / totalPx / 3) / 255;
 
-    if (!modelResult && (colorVariance < 0.03 || colorVariance > 0.92 || brightness < 0.09 || brightness > 0.97)) {
+    const requiresHeuristicLocalization = !modelResult || modelResult.classificationOnly;
+    if (requiresHeuristicLocalization && (colorVariance < 0.03 || colorVariance > 0.92 || brightness < 0.09 || brightness > 0.97)) {
       return this._buildRejectionResult(['Flat surface, solid background, or extreme exposure detected']);
     }
 
     // Dragonfruit has both pink skin AND green scale tips — require both
-    if (!modelResult && avgPinkRatio < 0.06) {
+    if (requiresHeuristicLocalization && avgPinkRatio < 0.06) {
       return this._buildRejectionResult(['Insufficient pink/magenta skin color detected — not a dragon fruit']);
     }
-    if (!modelResult && avgGreenRatio < 0.02) {
+    if (requiresHeuristicLocalization && avgGreenRatio < 0.02) {
       return this._buildRejectionResult(['No green scale tips detected — not a dragon fruit']);
     }
     // Pink-to-green ratio must be within the biological range of pitaya (3:1 to 20:1)
     const pinkToGreen = avgGreenRatio > 0 ? avgPinkRatio / avgGreenRatio : 999;
-    if (!modelResult && (pinkToGreen < 1.5 || pinkToGreen > 25)) {
+    if (requiresHeuristicLocalization && (pinkToGreen < 1.5 || pinkToGreen > 25)) {
       return this._buildRejectionResult(['Pink-to-green color ratio outside dragon fruit biological range']);
     }
 

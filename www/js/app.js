@@ -134,8 +134,11 @@ const PitayaApp = {
       models.forEach(model => {
         const option = document.createElement('option');
         option.value = model.id;
-        option.disabled = !model.available;
-        option.textContent = model.available ? model.name : `${model.name} — evaluated model pending`;
+        const selectable = ModelInference.canSelectModel(model);
+        option.disabled = !selectable;
+        option.textContent = selectable ? model.name : model.role === 'disease-segmenter'
+          ? `${model.name} — separate disease pipeline pending`
+          : `${model.name} — evaluated model pending`;
         modelSelect.appendChild(option);
       });
       const updateSelectedModel = () => {

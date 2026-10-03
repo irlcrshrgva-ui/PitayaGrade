@@ -24,6 +24,7 @@ function verifyModelRegistry(webRoot) {
     if (ids.has(model.id)) throw new Error(`Duplicate model id: ${model.id}`);
     ids.add(model.id);
     if (!model.name || !model.role || !model.status || !model.outputContract ||
+        !['rgb-zero-to-one', 'rgb-imagenet-normalized'].includes(model.preprocessing) ||
         !Number.isInteger(model.inputSize) || model.inputSize < 1 || !Array.isArray(model.classes) ||
         !model.classes.length || new Set(model.classes).size !== model.classes.length) {
       throw new Error(`Incomplete model contract: ${model.id}`);
@@ -47,4 +48,3 @@ function verifyModelRegistry(webRoot) {
 
 module.exports = { readRegistry, verifyModelRegistry };
 if (require.main === module) console.log(JSON.stringify(verifyModelRegistry(process.argv[2] || 'www'), null, 2));
-

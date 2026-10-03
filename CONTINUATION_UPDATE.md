@@ -1,5 +1,23 @@
 # Project continuation update
 
+## 2026-10-04 continuation: classifier integration contract
+
+- Added runtime decoding for the pending MobileNetV2, ResNet50 and EfficientNet-B3
+  four-grade classifier contract. It accepts probability or logits exports and
+  preserves the confidence rejection threshold.
+- Aligned classifier preprocessing with the retained PyTorch training pipeline:
+  224x224 RGB input and ImageNet mean/standard-deviation normalization. The earlier
+  300px EfficientNet registry value did not match the actual trainer and was fixed.
+- Classification-only models cannot bypass fruit localization checks. Disease
+  segmentation remains a separate pipeline and cannot accidentally become the
+  selected grade model.
+- Added an ONNX candidate verifier that runs the exact bundled WebAssembly backend,
+  checks the registered input/output contract, rejects non-finite output and prints
+  the asset checksum. Runtime compatibility is deliberately distinct from accuracy.
+- Verification: all 61 JavaScript and 72 lightweight Python tests pass. Capacitor
+  synchronization, Android debug assembly and lint succeed. The rebuilt APK SHA-256
+  is `cf817a4031c992415932c59c4008e64822dc37c323f93b25a9601d85042ccb96`.
+
 ## 2026-10-04 continuation: private visual review desk
 
 - Added a private browser-based workflow for reviewing all 3,050 retained quality

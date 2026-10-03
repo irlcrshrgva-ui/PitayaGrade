@@ -115,6 +115,12 @@ duplicate or incompatible predictions and generates traceable metrics, confusion
 matrices, latency summaries and mistake lists. It does not create missing labels or
 replace field evaluation.
 
+Before enabling an exported ONNX file, run
+`node scripts/verify-model-candidate.js <model-id> <candidate.onnx>`. This exercises
+the candidate with the bundled WebAssembly runtime, verifies its declared shape
+contract and prints its SHA-256. It proves compatibility, not accuracy; held-out
+evaluation remains mandatory.
+
 YOLO dataset preparation likewise requires reviewed fruit boxes. The Colab entry
 point uses the reviewed quality-training workflow. See the preparation guide for
 commands and remaining methodology gaps; a new one-class detector cannot directly

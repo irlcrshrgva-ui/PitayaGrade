@@ -5,7 +5,15 @@ project owner on 2026-09-19. Features beyond that document require an explicit
 owner request and approval. This audit does not revise the manuscript or approve
 changes to the research design.
 
-## Current status — 2026-10-01
+## Current status — 2026-10-04
+
+The selectable-model path now includes a checked four-grade classifier output
+contract for MobileNetV2, ResNet50 and EfficientNet-B3. Its 224x224 ImageNet
+normalization matches the retained trainer; classification-only results still pass
+fruit localization checks. Candidate ONNX exports can be executed against the
+bundled WebAssembly runtime before integration, but remain unavailable until real
+reviewed labels, held-out evaluation and verified assets exist. The disease
+segmenter remains isolated from the grade-model selector.
 
 The deployed YOLO model now executes through the complete pinned WASM runtime.
 Browser verification found and fixed the previously missing MJS backend module;
@@ -19,8 +27,10 @@ any supplied generated provenance before training. The mask-based coverage tool
 computes union area inside an aligned fruit mask without claiming whole-fruit
 severity or diagnosis. See the preparation guide for both commands and limitations.
 
-Local verification: 50 JavaScript checks, 63 lightweight Python checks and Android
-build/lint pass (0 errors, 25 warnings). GitHub automation now builds debug artifacts.
+Local verification: 61 JavaScript checks, 72 lightweight Python checks and Android
+build/lint pass. The current debug APK SHA-256 is
+`cf817a4031c992415932c59c4008e64822dc37c323f93b25a9601d85042ccb96`.
+GitHub automation builds debug artifacts.
 No Android hardware is connected. The public review manifest has 3,050 images and
 zero reviewed target-grade labels; training/evaluation and field/UAT remain blocked
 by missing genuine research evidence. Earlier status descriptions below are history.

@@ -19,8 +19,16 @@ const ModelInference = {
   MODELS: PitayaModelRegistry.map(model => ({ ...model, classes: Array.from(model.classes) })),
   selectedModelId: 'yolov8-nano',
 
+  _isGradeModel(model) {
+    return model && ['integrated-detector-grader', 'quality-classifier'].includes(model.role);
+  },
+
+  canSelectModel(model) {
+    return Boolean(model && model.available && this._isGradeModel(model));
+  },
+
   getAvailableModels() {
-    return this.MODELS.filter(model => model.available);
+    return this.MODELS.filter(model => this.canSelectModel(model));
   },
 
   getModelCatalog() {
@@ -28,12 +36,12 @@ const ModelInference = {
   },
 
   getSelectedModel() {
-    return this.MODELS.find(model => model.available && model.id === this.selectedModelId) ||
+    return this.MODELS.find(model => this.canSelectModel(model) && model.id === this.selectedModelId) ||
       this.getAvailableModels()[0];
   },
 
   selectModel(modelId) {
-    const model = this.MODELS.find(candidate => candidate.available && candidate.id === modelId);
+    const model = this.MODELS.find(candidate => candidate.id === modelId && this.canSelectModel(candidate));
     if (!model) return false;
     this.selectedModelId = model.id;
     this.session = this.sessions[model.id] || null;
@@ -43,7 +51,7 @@ const ModelInference = {
 
   // ── Load the selected model once, then reuse its session ───────────────────
   async load(modelId = this.selectedModelId) {
-    const model = this.MODELS.find(candidate => candidate.available && candidate.id === modelId);
+    const model = this.MODELS.find(candidate => candidate.id === modelId && this.canSelectModel(candidate));
     if (!model) return false;
     if (this.sessions[model.id]) {
       this.session = this.sessions[model.id];
@@ -81,9 +89,9 @@ const ModelInference = {
     return Boolean(this.sessions[model.id]);
   },
 
-  // ── Preprocess image → Float32 tensor [1, 3, 640, 640] ───────────────────
-  _preprocess(imgElement, inputSize) {
-    const S = inputSize;
+  // ── Preprocess image using the selected model's registry contract ─────────
+  _preprocess(imgElement, model) {
+    const S = model.inputSize;
     const canvas = document.createElement('canvas');
     canvas.width  = S;
     canvas.height = S;
@@ -93,19 +101,68 @@ const ModelInference = {
 
     const tensor = new Float32Array(3 * S * S);
     const stride = S * S;
+    const imagenet = model.preprocessing === 'rgb-imagenet-normalized';
+    if (!imagenet && model.preprocessing !== 'rgb-zero-to-one') {
+      throw new Error('Unsupported preprocessing contract');
+    }
+    const means = [0.485, 0.456, 0.406];
+    const deviations = [0.229, 0.224, 0.225];
     for (let i = 0; i < stride; i++) {
-      tensor[i]            = data[i * 4]     / 255.0; // R
-      tensor[stride + i]   = data[i * 4 + 1] / 255.0; // G
-      tensor[stride*2 + i] = data[i * 4 + 2] / 255.0; // B
+      for (let channel = 0; channel < 3; channel++) {
+        let value = data[i * 4 + channel] / 255.0;
+        if (imagenet) value = (value - means[channel]) / deviations[channel];
+        tensor[channel * stride + i] = value;
+      }
     }
     return new ort.Tensor('float32', tensor, [1, 3, S, S]);
+  },
+
+  // ── Postprocess a verified registry output contract ──────────────────────
+  _postprocess(outputTensor, model = this.getSelectedModel()) {
+    if (model.outputContract === 'quality-softmax-v1') {
+      return this._postprocessQuality(outputTensor, model);
+    }
+    if (model.outputContract === 'yolov8-grade-detection-v1') {
+      return this._postprocessGradeDetection(outputTensor, model);
+    }
+    throw new Error('Unsupported model output contract');
+  },
+
+  // Classifier exports may contain probabilities or raw logits. The result is
+  // explicitly marked classification-only because it has no localization box.
+  _postprocessQuality(outputTensor, model) {
+    const dims = Array.from(outputTensor.dims || []);
+    const values = Array.from(outputTensor.data || []);
+    const validShape = (dims.length === 1 && dims[0] === model.classes.length) ||
+      (dims.length === 2 && dims[0] === 1 && dims[1] === model.classes.length);
+    if (!validShape || values.length !== model.classes.length || !values.every(Number.isFinite)) {
+      throw new Error('Unsupported quality classifier output shape');
+    }
+    const total = values.reduce((sum, value) => sum + value, 0);
+    const alreadyProbabilities = values.every(value => value >= 0 && value <= 1) &&
+      Math.abs(total - 1) < 0.001;
+    const probabilities = alreadyProbabilities ? values : (() => {
+      const maximum = Math.max(...values);
+      const exponentials = values.map(value => Math.exp(value - maximum));
+      const denominator = exponentials.reduce((sum, value) => sum + value, 0);
+      return exponentials.map(value => value / denominator);
+    })();
+    const bestIndex = probabilities.reduce((best, value, index) =>
+      value > probabilities[best] ? index : best, 0);
+    const confidence = probabilities[bestIndex];
+    return {
+      isDragonFruit: confidence >= this.CONF_THRESHOLD,
+      grade: confidence >= this.CONF_THRESHOLD ? model.classes[bestIndex] : null,
+      confidence,
+      classificationOnly: true
+    };
   },
 
   // ── Postprocess YOLOv8 output → best detection ────────────────────────────
   // YOLOv8n output shape: [1, 4+numClasses, 8400]
   //   dim 0..3  : x_c, y_c, w, h  (normalised to INPUT_SIZE)
   //   dim 4..7  : class scores (Grade A, B, C, Reject)
-  _postprocess(outputTensor, model = this.getSelectedModel()) {
+  _postprocessGradeDetection(outputTensor, model) {
     const data  = outputTensor.data;
     if (outputTensor.dims.length !== 3 || outputTensor.dims[1] !== 4 + model.classes.length) {
       throw new Error('Unsupported YOLO output shape');
@@ -146,7 +203,7 @@ const ModelInference = {
 
   // ── Public: run full inference on an image element ────────────────────────
   async infer(imgElement, modelId = this.selectedModelId) {
-    const model = this.MODELS.find(candidate => candidate.available && candidate.id === modelId);
+    const model = this.MODELS.find(candidate => candidate.id === modelId && this.canSelectModel(candidate));
     if (!model || !await this.load(model.id)) return null; // model unavailable — caller should fall back
 
     const t0 = performance.now();
@@ -155,7 +212,7 @@ const ModelInference = {
     let inputTensor;
     let results;
     try {
-    inputTensor = this._preprocess(imgElement, model.inputSize);
+    inputTensor = this._preprocess(imgElement, model);
     const feeds = {};
     feeds[session.inputNames[0]] = inputTensor;
 

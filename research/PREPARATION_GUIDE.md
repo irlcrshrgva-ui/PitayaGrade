@@ -43,6 +43,21 @@ The validator remains the authority for file hashes, class coverage and split le
 The owner retained the manuscript's Grade A/B/C/Reject outputs on 2026-09-20.
 Fresh/Defective and Mature/Immature remain original source labels only.
 
+## Verify a trained ONNX candidate before integration
+
+Do not enable a new model by editing the catalog first. Run the candidate against
+the exact bundled WebAssembly runtime and its declared input/output contract:
+
+```powershell
+node scripts/verify-model-candidate.js efficientnet-b3-quality path\to\model.onnx
+```
+
+Valid IDs are `yolov8-nano`, `mobilenetv2-quality`, `resnet50-quality`,
+`efficientnet-b3-quality`, and `yolov8n-disease-seg`. A successful check prints
+the input/output shapes and SHA-256 needed for the registry. It establishes runtime
+compatibility only. The model must still pass the frozen held-out evaluation before
+its asset is copied into `www/model/` and marked selectable.
+
 ## Generated files
 
 - `dataset/public/prepared/`: original image bytes, one image per task/pixel hash.
