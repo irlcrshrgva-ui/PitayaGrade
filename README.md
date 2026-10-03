@@ -12,6 +12,14 @@ PitayaGrade is a capstone project for AI-assisted pre-harvest quality grading an
 
 > This is the manuscript pipeline awaiting evaluated models and integration. The current deployed application contains the YOLOv8 ONNX model, while portions of disease analysis still use image heuristics. Selectable classifiers require explicit scope approval.
 
+The Settings model picker now shows the complete planned catalog: YOLOv8-Nano,
+MobileNetV2, ResNet50, EfficientNet-B3 and YOLOv8-Nano disease segmentation. Only
+the checksum-verified bundled YOLOv8-Nano asset is selectable today. Pending models
+are visibly disabled until an evaluated ONNX file, output contract and checksum are
+added to `js/model-registry.js`; the build rejects missing or altered selectable
+assets. This preserves the required selection workflow without presenting invented
+or historical checkpoints as validated models.
+
 ## Main directories
 
 - `www/` — production web assets packaged by Capacitor
@@ -99,6 +107,13 @@ The supported quality-training command requires a reviewed manifest and a fresh
 run directory. See [the preparation guide](research/PREPARATION_GUIDE.md).
 It trains manuscript EfficientNet-B3; historical model comparisons do not approve
 adding selectable classifiers to the app.
+
+After every quality model has produced predictions for the same frozen test split,
+create a CSV using `research/week4/predictions-template.csv` and run
+`python -m scripts.summarize_model_evaluation --help`. The tool fails on incomplete,
+duplicate or incompatible predictions and generates traceable metrics, confusion
+matrices, latency summaries and mistake lists. It does not create missing labels or
+replace field evaluation.
 
 YOLO dataset preparation likewise requires reviewed fruit boxes. The Colab entry
 point uses the reviewed quality-training workflow. See the preparation guide for

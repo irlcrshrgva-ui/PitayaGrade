@@ -129,18 +129,19 @@ const PitayaApp = {
     const modelSelect = document.getElementById('modelSelect');
     const selectedModelName = document.getElementById('selectedModelName');
     if (modelSelect && selectedModelName && typeof ModelInference !== 'undefined') {
-      const models = ModelInference.getAvailableModels();
+      const models = ModelInference.getModelCatalog();
       modelSelect.innerHTML = '';
       models.forEach(model => {
         const option = document.createElement('option');
         option.value = model.id;
-        option.textContent = model.name;
+        option.disabled = !model.available;
+        option.textContent = model.available ? model.name : `${model.name} — evaluated model pending`;
         modelSelect.appendChild(option);
       });
       const updateSelectedModel = () => {
         const model = ModelInference.getSelectedModel();
         modelSelect.value = model.id;
-        selectedModelName.textContent = model.name + ' (bundled ONNX)';
+        selectedModelName.textContent = model.name + ' (verified bundled ONNX)';
       };
       updateSelectedModel();
       modelSelect.addEventListener('change', () => {

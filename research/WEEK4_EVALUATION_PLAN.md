@@ -32,6 +32,19 @@ or incorrect boxes. For disease segmentation, retain mask mAP and class-level
 results. Do not substitute detection-box results for grading or segmentation
 results.
 
+For quality-model comparisons, export one row per model and held-out sample using
+`week4/predictions-template.csv`, then run:
+
+```powershell
+python -m scripts.summarize_model_evaluation reviewed-manifest.json predictions.csv `
+  --target manuscript-quality --output-dir research/week4/runs/evaluation-001
+```
+
+The command validates the reviewed manifest and requires exactly one prediction
+for every held-out sample from every model. It writes traceable summary metrics,
+confusion matrices and mistake lists to a new output directory. Missing samples,
+duplicates, incompatible labels and reused output directories stop the run.
+
 ## 3. Android verification
 
 Use `week4/device-test-template.csv` and capture screenshots or screen recordings.
@@ -87,4 +100,3 @@ The current software regression suite may be green while these evidence gates ar
 still incomplete. Completion requires real reviewed data, a physical device and
 approved users; those results must not be inferred from source code or synthetic
 tests.
-

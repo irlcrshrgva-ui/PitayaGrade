@@ -8,4 +8,5 @@ for (const directory of ['js', 'css']) {
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8')
   .replace('src="www/ort.min.js"', 'src="ort.min.js"');
 fs.writeFileSync(path.join(root, 'www/index.html'), html);
+require('./verify-model-registry').verifyModelRegistry(path.join(root, 'www'));
 console.log('Updated Capacitor web assets from existing sources.');

@@ -16,27 +16,24 @@ const ModelInference = {
 
   ASSET_BASE: new URL('.', document.querySelector('script[src$="ort.min.js"]').src).href,
   CONF_THRESHOLD: 0.30,
-  MODELS: [
-    {
-      id: 'yolov8-nano',
-      name: 'YOLOv8-Nano',
-      modelPath: 'model/best.onnx',
-      inputSize: 640,
-      classes: ['Grade A', 'Grade B', 'Grade C', 'Reject']
-    }
-  ],
+  MODELS: PitayaModelRegistry.map(model => ({ ...model, classes: Array.from(model.classes) })),
   selectedModelId: 'yolov8-nano',
 
   getAvailableModels() {
+    return this.MODELS.filter(model => model.available);
+  },
+
+  getModelCatalog() {
     return this.MODELS.slice();
   },
 
   getSelectedModel() {
-    return this.MODELS.find(model => model.id === this.selectedModelId) || this.MODELS[0];
+    return this.MODELS.find(model => model.available && model.id === this.selectedModelId) ||
+      this.getAvailableModels()[0];
   },
 
   selectModel(modelId) {
-    const model = this.MODELS.find(candidate => candidate.id === modelId);
+    const model = this.MODELS.find(candidate => candidate.available && candidate.id === modelId);
     if (!model) return false;
     this.selectedModelId = model.id;
     this.session = this.sessions[model.id] || null;
@@ -46,7 +43,7 @@ const ModelInference = {
 
   // ── Load the selected model once, then reuse its session ───────────────────
   async load(modelId = this.selectedModelId) {
-    const model = this.MODELS.find(candidate => candidate.id === modelId);
+    const model = this.MODELS.find(candidate => candidate.available && candidate.id === modelId);
     if (!model) return false;
     if (this.sessions[model.id]) {
       this.session = this.sessions[model.id];
@@ -149,7 +146,7 @@ const ModelInference = {
 
   // ── Public: run full inference on an image element ────────────────────────
   async infer(imgElement, modelId = this.selectedModelId) {
-    const model = this.MODELS.find(candidate => candidate.id === modelId);
+    const model = this.MODELS.find(candidate => candidate.available && candidate.id === modelId);
     if (!model || !await this.load(model.id)) return null; // model unavailable — caller should fall back
 
     const t0 = performance.now();

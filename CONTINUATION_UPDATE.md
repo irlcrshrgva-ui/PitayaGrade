@@ -1,5 +1,23 @@
 # Project continuation update
 
+## 2026-10-04 continuation: selectable-model governance and evaluation automation
+
+- Replaced the implicit one-item model list with a five-entry model catalog covering
+  the planned YOLOv8-Nano, MobileNetV2, ResNet50, EfficientNet-B3 and disease
+  segmentation roles. Pending assets appear disabled; only the real bundled model
+  is selectable.
+- Added checksum and contract validation to the build. A model cannot be marked
+  selectable unless its file exists under packaged assets and matches the registry
+  hash. The Android package was resynchronized after the change.
+- Added a fail-closed held-out prediction summarizer. It requires exactly one
+  prediction per test sample per model and exports traceable accuracy, macro
+  precision/recall/F1, per-class metrics, confusion matrices, mistake lists and
+  latency summaries. It rejects missing/duplicate samples and incompatible labels.
+- Verification: 53 JavaScript tests and 67 lightweight Python tests pass. The
+  synchronized Android debug APK assembles and lint succeeds. No new model accuracy,
+  physical-device result or UAT result is claimed; four planned model assets remain
+  dependent on reviewed training and evaluation.
+
 ## 2026-10-04 continuation: Week 4 evidence handoff
 
 - Added a formal Week 4 plan covering frozen model/dataset hashes, leakage-safe

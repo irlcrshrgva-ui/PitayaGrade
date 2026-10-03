@@ -7,6 +7,7 @@ const root = path.resolve(__dirname, '..');
 function model(url, ort = {}, runtime = 'http://localhost/www/ort.min.js') {
   const context = { URL, document: { currentScript: { src: url }, querySelector: () => ({ src: runtime }) }, ort, console, performance };
   vm.createContext(context);
+  vm.runInContext(fs.readFileSync(path.join(root, 'js/model-registry.js'), 'utf8'), context);
   vm.runInContext(fs.readFileSync(path.join(root, 'js/model-inference.js'), 'utf8') + '\nthis.model = ModelInference;', context);
   return context.model;
 }
@@ -23,6 +24,13 @@ test('root and packaged pages use bundled assets', () => {
     assert.match(html, /js\/notifications.js/);
     assert.match(html, /js\/model-inference.js/);
   }
+});
+test('only verified bundled models can be selected', () => {
+  const instance = model('http://localhost/www/js/model-inference.js');
+  assert.equal(instance.getModelCatalog().length, 5);
+  assert.deepEqual(Array.from(instance.getAvailableModels(), item => item.id), ['yolov8-nano']);
+  assert.equal(instance.selectModel('efficientnet-b3-quality'), false);
+  assert.equal(instance.getSelectedModel().id, 'yolov8-nano');
 });
 test('concurrent inference callers wait for one model load', async () => {
   let resolve, calls = 0;

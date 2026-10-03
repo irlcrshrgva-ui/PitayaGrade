@@ -24,6 +24,11 @@ from the frozen held-out dataset, physical Android devices and actual participan
 - Passing software tests proves runtime behavior, not research accuracy.
 - Store large raw exports outside Git and record their path and checksum here.
 
+Quality-model prediction exports should follow `predictions-template.csv`. Use
+`python -m scripts.summarize_model_evaluation --help` for the fail-closed comparison
+tool; its generated JSON, summary, confusion matrices and mistake lists provide the
+source evidence for `model-evaluation-template.csv`.
+
 ## Release gate
 
 The capstone is ready for a final release only when:
@@ -35,4 +40,3 @@ The capstone is ready for a final release only when:
 - offline first-run, permissions, background/resume and export behavior are tested;
 - UAT findings are resolved or explicitly accepted as limitations;
 - every manuscript result and figure can be traced to retained evidence.
-
