@@ -39,6 +39,12 @@ area only when a valid fruit region is available.
 
 ## Run the web application
 
+Public web preview: <https://irlcrshrgva-ui.github.io/PitayaGrade/>
+
+The preview is published from `www/` after updates reach the `main` branch. Camera
+access requires browser permission. Records and settings remain local to each
+browser/device and are not synchronized to a server.
+
 ```bash
 npm ci
 npm start
