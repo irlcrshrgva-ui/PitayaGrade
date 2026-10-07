@@ -71,6 +71,11 @@ Run `npm test` for asset wiring and inference regression checks.
 Both web entry points use the bundled ONNX runtime and model without a CDN.
 Photo scans report model fallback explicitly; disease analysis remains heuristic
 until a checksum-verified segmentation asset is registered.
+The bundled grade detector is additionally guarded by the selected confidence
+threshold and a conservative fruit-signature check requiring plausible pink skin
+and green scale-tip evidence inside its detected region. This reduces known face
+and background false positives, but it does not replace retraining with reviewed
+non-fruit negative images or establish real-world specificity.
 New scans retain their analysis methods and report physical size as not measured.
 Existing records are preserved, including earlier framing-based size estimates.
 Symptom guidance describes possible signs to inspect, not confirmed findings.

@@ -155,19 +155,19 @@ const ModelInference = {
   },
 
   // ── Postprocess a verified registry output contract ──────────────────────
-  _postprocess(outputTensor, model = this.getSelectedModel()) {
+  _postprocess(outputTensor, model = this.getSelectedModel(), confidenceThreshold = this.CONF_THRESHOLD) {
     if (model.outputContract === 'quality-softmax-v1') {
-      return this._postprocessQuality(outputTensor, model);
+      return this._postprocessQuality(outputTensor, model, confidenceThreshold);
     }
     if (model.outputContract === 'yolov8-grade-detection-v1') {
-      return this._postprocessGradeDetection(outputTensor, model);
+      return this._postprocessGradeDetection(outputTensor, model, confidenceThreshold);
     }
     throw new Error('Unsupported model output contract');
   },
 
   // Classifier exports may contain probabilities or raw logits. The result is
   // explicitly marked classification-only because it has no localization box.
-  _postprocessQuality(outputTensor, model) {
+  _postprocessQuality(outputTensor, model, confidenceThreshold = this.CONF_THRESHOLD) {
     const dims = Array.from(outputTensor.dims || []);
     const values = Array.from(outputTensor.data || []);
     const validShape = (dims.length === 1 && dims[0] === model.classes.length) ||
@@ -188,8 +188,8 @@ const ModelInference = {
       value > probabilities[best] ? index : best, 0);
     const confidence = probabilities[bestIndex];
     return {
-      isDragonFruit: confidence >= this.CONF_THRESHOLD,
-      grade: confidence >= this.CONF_THRESHOLD ? model.classes[bestIndex] : null,
+      isDragonFruit: confidence >= confidenceThreshold,
+      grade: confidence >= confidenceThreshold ? model.classes[bestIndex] : null,
       confidence,
       classificationOnly: true
     };
@@ -199,7 +199,7 @@ const ModelInference = {
   // YOLOv8n output shape: [1, 4+numClasses, 8400]
   //   dim 0..3  : x_c, y_c, w, h  (normalised to INPUT_SIZE)
   //   dim 4..7  : class scores (Grade A, B, C, Reject)
-  _postprocessGradeDetection(outputTensor, model) {
+  _postprocessGradeDetection(outputTensor, model, confidenceThreshold = this.CONF_THRESHOLD) {
     const data  = outputTensor.data;
     if (outputTensor.dims.length !== 3 || outputTensor.dims[1] !== 4 + model.classes.length) {
       throw new Error('Unsupported YOLO output shape');
@@ -221,7 +221,7 @@ const ModelInference = {
       if (maxConf > bestConf) { bestConf = maxConf; bestCls = maxCls; bestIndex = i; }
     }
 
-    if (bestCls === -1 || bestConf < this.CONF_THRESHOLD) {
+    if (bestCls === -1 || bestConf < confidenceThreshold) {
       return { isDragonFruit: false, grade: null, confidence: bestConf };
     }
 
@@ -340,7 +340,7 @@ const ModelInference = {
   },
 
   // ── Public: run full inference on an image element ────────────────────────
-  async infer(imgElement, modelId = this.selectedModelId) {
+  async infer(imgElement, modelId = this.selectedModelId, confidenceThreshold = this.CONF_THRESHOLD) {
     const model = this.MODELS.find(candidate => candidate.id === modelId && this.canSelectModel(candidate));
     if (!model || !await this.load(model.id)) return null; // model unavailable — caller should fall back
 
@@ -356,11 +356,15 @@ const ModelInference = {
 
     results  = await session.run(feeds);
     const output   = results[session.outputNames[0]];
-    const parsed   = this._postprocess(output, model);
+    const threshold = Number.isFinite(confidenceThreshold)
+      ? Math.max(0, Math.min(1, confidenceThreshold)) : this.CONF_THRESHOLD;
+    const parsed   = this._postprocess(output, model, threshold);
 
     parsed.inferenceMs = Math.round(performance.now() - t0);
     parsed.modelId = model.id;
     parsed.modelName = model.name;
+    parsed.requiresVisualGate = model.requiresVisualGate !== false;
+    parsed.confidenceThreshold = threshold;
     return parsed;
     } catch (err) {
       console.error('[ModelInference] Inference failed:', err);

@@ -11,6 +11,7 @@ const PitayaModelRegistry = Object.freeze([
     inputSize: 640,
     preprocessing: 'rgb-zero-to-one',
     outputContract: 'yolov8-grade-detection-v1',
+    requiresVisualGate: true,
     classes: Object.freeze(['Grade A', 'Grade B', 'Grade C', 'Reject'])
   }),
   Object.freeze({

@@ -113,6 +113,7 @@ test('postprocessing reads output dimensions and respects rejection threshold', 
   instance.CONF_THRESHOLD = 0.95;
   assert.equal(instance._postprocess(output).isDragonFruit, false);
   instance.CONF_THRESHOLD = 0.30;
+  assert.equal(instance._postprocess(output, instance.getSelectedModel(), 0.95).isDragonFruit, false);
   output.data[12] = 0.1;
   assert.equal(instance._postprocess(output).isDragonFruit, false);
   assert.throws(() => instance._postprocess({ dims: [1, 6, 2] }), /Unsupported/);

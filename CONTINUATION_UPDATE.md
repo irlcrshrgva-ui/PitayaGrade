@@ -1,5 +1,25 @@
 # Project continuation update
 
+## 2026-10-07 continuation: face false-positive safety gate
+
+- Confirmed the structural false-positive risk: the bundled detector has only four
+  grade classes and therefore cannot independently represent a person/background
+  rejection class. Its registry now explicitly requires an additional visual gate.
+- Added a conservative check inside the model-reported box for plausible pink skin,
+  green scale tips, biological color balance, exposure and color variation. A
+  model grade is discarded as `Unrecognized Object` when this gate fails.
+- Fixed the Settings confidence threshold so its selected value now reaches actual
+  ONNX inference in both photo and live scanning. Previously the UI showed 65%
+  while the runtime continued using its internal 30% threshold.
+- Regression coverage now rejects a synthetic face/skin-tone image even when the
+  model result claims Grade B and accepts a controlled pink/green fruit signature.
+  This is a safety mitigation, not proof against real faces or a substitute for
+  retraining with reviewed non-fruit negatives.
+- Verification: all 63 JavaScript checks and 80 lightweight Python checks pass.
+  Capacitor synchronization, Android debug assembly and lint succeed. The rebuilt
+  APK SHA-256 is
+  `bf803e568456e4d794875d7f1075d6345150c82005b5bf72a02f29cc7741866f`.
+
 ## 2026-10-07 continuation: private assisted-review queue
 
 - Added a fail-separated quality proposal generator using the bundled ONNX model.

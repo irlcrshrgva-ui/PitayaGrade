@@ -7,6 +7,12 @@ changes to the research design.
 
 ## Current status — 2026-10-07
 
+The bundled detector now has a conservative fruit-signature rejection gate because
+its four grade classes cannot express a true background/person class. The configured
+confidence threshold is also applied to actual ONNX inference. Synthetic face-like
+pixels are rejected in regression testing, but real negative-image evaluation and
+negative-class retraining remain required before claiming specificity.
+
 The private review workflow now accepts a separately generated, checksum-linked
 model-proposal file and can prioritize uncertainty. The real run produced 1,553
 quality proposals, but its strong Grade A skew confirms that these are review aids,
@@ -56,9 +62,9 @@ any supplied generated provenance before training. The mask-based coverage tool
 computes union area inside an aligned fruit mask without claiming whole-fruit
 severity or diagnosis. See the preparation guide for both commands and limitations.
 
-Local verification: 62 JavaScript checks, 77 Python checks and Android
+Local verification: 63 JavaScript checks, 80 Python checks and Android
 build/lint pass. The current debug APK SHA-256 is
-`bffd03bd610781dc68b22d7468db1d3eca608eec75cbeb4790a3b49691fe9bc8`.
+`bf803e568456e4d794875d7f1075d6345150c82005b5bf72a02f29cc7741866f`.
 GitHub automation builds debug artifacts.
 No Android hardware is connected. The public review manifest has 3,050 images and
 zero reviewed target-grade labels; training/evaluation and field/UAT remain blocked

@@ -209,7 +209,8 @@ const LiveScanner = {
       this.canvas.width = this.canvas.height = 128;
       this.ctx.drawImage(frame, 0, 0, 128, 128);
       const pixels = this.ctx.getImageData(0, 0, 128, 128);
-      const model = await ModelInference.infer(frame, PitayaApp.settings.selectedModel);
+      const model = await ModelInference.infer(
+        frame, PitayaApp.settings.selectedModel, PitayaApp.settings.threshold / 100);
       const diseaseModel = await ModelInference.inferDisease(
         frame, PitayaApp.settings.selectedDiseaseModel, model?.box || null);
       if (!this.isActive || request !== this.cameraRequest) return;

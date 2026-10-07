@@ -32,6 +32,27 @@ function scan(id = 1, timestamp = new Date().toISOString()) {
     disease: { name: 'Healthy', confidence: .8, isHealthy: true },
     details: { size: 'Medium', surfaceCondition: 'Smooth' }, maturity: { value: 20 }, notes: '' };
 }
+function fruitPixels() {
+  const width = 128, height = 128;
+  const data = new Uint8ClampedArray(width * height * 4);
+  for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
+    const offset = (y * width + x) * 4;
+    let color = [30, 30, 30];
+    if (x >= 32 && x < 96 && y >= 32 && y < 96) {
+      color = x >= 80 ? [30, 160, 50] : [220, 20, 100];
+    }
+    data[offset] = color[0]; data[offset + 1] = color[1]; data[offset + 2] = color[2]; data[offset + 3] = 255;
+  }
+  return { width, height, data };
+}
+function faceLikePixels() {
+  const data = new Uint8ClampedArray(128 * 128 * 4);
+  for (let i = 0; i < data.length; i += 4) {
+    const shade = (i / 4) % 2 ? 15 : 0;
+    data[i] = 210 - shade; data[i + 1] = 160 - shade; data[i + 2] = 130 - shade; data[i + 3] = 255;
+  }
+  return { width:128, height:128, data };
+}
 
 test('unrecognized results do not invent classifier confidence or save a grade', () => {
   const a = app();
@@ -155,11 +176,17 @@ test('empty analytics reset totals and gauge uses saved maturity, not grade', ()
   a.DashboardManager._updateGauge([]);
   assert.equal(a.element('gaugeValue').textContent, '--%');
 });
-test('trained detection supplies ROI and is not rejected by color or filename heuristics', () => {
-  const a = app(); const pixels = { width: 128, height: 128, data: new Uint8ClampedArray(128 * 128 * 4).fill(100) };
+test('trained detection requires a plausible fruit signature and rejects face-like pixels', () => {
+  const a = app(); const pixels = fruitPixels();
   a.Scanner.currentFileName = 'apple-orchard-dragon-fruit.jpg';
+  const rejectedFace = a.Scanner._generateResult({ isDragonFruit: true, grade: 'Grade B', confidence: .8,
+    requiresVisualGate:true, box: { x: .25, y: .25, right: .75, bottom: .75 }, inferenceMs: 20 },
+  faceLikePixels());
+  assert.equal(rejectedFace.isDragonFruit, false);
+  assert.equal(rejectedFace.grade.label, 'Unrecognized Object');
+  assert.match(rejectedFace.disease.symptoms.join(' '), /green scale|Flat surface/);
   const result = a.Scanner._generateResult({ isDragonFruit: true, grade: 'Grade B', confidence: .8,
-    box: { x: .25, y: .25, right: .75, bottom: .75 }, inferenceMs: 20 }, pixels);
+    requiresVisualGate:true, box: { x: .25, y: .25, right: .75, bottom: .75 }, inferenceMs: 20 }, pixels);
   assert.equal(result.grade.label, 'Grade B');
   assert.equal(result.isDragonFruit, true);
   assert.equal(result.modelMetrics, null);
@@ -171,7 +198,8 @@ test('trained detection supplies ROI and is not rejected by color or filename he
   assert.doesNotMatch(result.details.modelUsed, /EfficientNet|TFLite|Cloud/);
   assert.ok(result.disease.symptoms.every(text => !/confirmed|verified/.test(text)));
   const segmented = a.Scanner._generateResult({ isDragonFruit: true, grade: 'Grade B', confidence: .8,
-    box: { x: .25, y: .25, right: .75, bottom: .75 }, inferenceMs: 20, modelName:'YOLOv8-Nano' }, pixels,
+    requiresVisualGate:true, box: { x: .25, y: .25, right: .75, bottom: .75 },
+    inferenceMs: 20, modelName:'YOLOv8-Nano' }, pixels,
     { name:'Anthracnose', confidence:.9, isHealthy:false, areaPercent:null,
       severityMeasured:false, analysisMethod:'YOLOv8 disease segmentation ONNX',
       inferenceMs:30, modelName:'YOLOv8-Nano Disease Segmentation' });
@@ -183,9 +211,10 @@ test('trained detection supplies ROI and is not rejected by color or filename he
 });
 test('scan metadata stays local regardless of the offline preference', () => {
   const a = app();
-  const pixels = { width: 128, height: 128, data: new Uint8ClampedArray(128 * 128 * 4).fill(100) };
+  const pixels = fruitPixels();
   const detection = { isDragonFruit: true, grade: 'Grade A', confidence: .9,
-    box: { x: .1, y: .1, right: .9, bottom: .9 }, inferenceMs: 20, modelName: 'YOLOv8-Nano' };
+    requiresVisualGate:true, box: { x: .25, y: .25, right: .75, bottom: .75 },
+    inferenceMs: 20, modelName: 'YOLOv8-Nano' };
   for (const offlineMode of [false, true]) {
     a.PitayaApp.settings.offlineMode = offlineMode;
     const result = a.Scanner._generateResult(detection, pixels);
