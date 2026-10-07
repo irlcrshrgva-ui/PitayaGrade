@@ -117,6 +117,11 @@ It trains MobileNetV2, ResNet50 and EfficientNet-B3 on the same retained partiti
 by default and exports checked ONNX candidates. This does not make a model selectable
 until its held-out evidence and bundled asset pass the release gates.
 
+The optional `scripts.suggest_reviews` command uses the bundled model only to
+prioritize manual review and propose draft labels. Its outputs live under the
+Git-ignored `local-review/` directory, include the model checksum and never modify
+the public or reviewed manifest. They are not accuracy evidence or approved labels.
+
 After every quality model has produced predictions for the same frozen test split,
 create a CSV using `research/week4/predictions-template.csv` and run
 `python -m scripts.summarize_model_evaluation --help`. The tool fails on incomplete,

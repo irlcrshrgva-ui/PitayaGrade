@@ -42,6 +42,32 @@
     return { reviewed, total: rows.length, percent: rows.length ? Math.round(reviewed / rows.length * 100) : 0 };
   }
 
+  function suggestionMap(record, manifest) {
+    if (!record || record.schemaVersion !== 1 || !Array.isArray(record.proposals)) {
+      throw new Error('Unsupported proposal file');
+    }
+    const known = new Map(manifest.filter(row => row.task === 'quality').map(row => [row.id, row]));
+    const result = {};
+    for (const proposal of record.proposals) {
+      if (!proposal || !known.has(proposal.id) || result[proposal.id]) throw new Error('Proposal IDs must be unique known quality records');
+      if (proposal.status !== 'unverified-model-proposal' || proposal.humanReviewRequired !== true) {
+        throw new Error('Proposal file must require human review');
+      }
+      if (proposal.proposedLabel !== null && !LABELS.quality.includes(proposal.proposedLabel)) {
+        throw new Error('Proposal contains an incompatible quality label');
+      }
+      if (![proposal.confidence, proposal.reviewPriority].every(value =>
+        typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 1)) {
+        throw new Error('Proposal confidence values must be between zero and one');
+      }
+      if (typeof proposal.modelSha256 !== 'string' || !/^[a-f0-9]{64}$/i.test(proposal.modelSha256)) {
+        throw new Error('Proposal model checksum is invalid');
+      }
+      result[proposal.id] = { ...proposal };
+    }
+    return result;
+  }
+
   function csv(rows) {
     const fields = ['id', 'image', 'candidateSplit', 'sourceDataset', 'sourceLabel',
       'reviewedLabel', 'reviewedSourceGroup', 'reviewer', 'reviewedAt'];
@@ -52,6 +78,5 @@
     return [fields.join(','), ...rows.map(row => fields.map(field => escape(row[field])).join(','))].join('\r\n') + '\r\n';
   }
 
-  return { LABELS, validateDraft, mergeDrafts, progress, csv };
+  return { LABELS, validateDraft, mergeDrafts, progress, suggestionMap, csv };
 });
-

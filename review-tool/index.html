@@ -22,7 +22,7 @@
         <select id="task"><option value="quality">Quality grading</option><option value="maturity">Maturity</option></select>
       </label>
       <label>Show
-        <select id="filter"><option value="unreviewed">Unreviewed first</option><option value="all">All records</option><option value="reviewed">Reviewed only</option></select>
+        <select id="filter"><option value="unreviewed">Unreviewed first</option><option value="priority">Proposal uncertainty first</option><option value="all">All records</option><option value="reviewed">Reviewed only</option></select>
       </label>
       <label>Anonymous reviewer ID
         <input id="reviewer" autocomplete="off" placeholder="reviewer-01">
@@ -31,6 +31,11 @@
         <input id="sourceGroup" autocomplete="off" placeholder="farm-date-fruit-001">
       </label>
       <fieldset><legend>Reviewed label</legend><div id="labels" class="labels"></div></fieldset>
+      <section class="suggestion" aria-live="polite">
+        <strong>Model proposal</strong>
+        <span id="suggestionText">Load a proposal file to see review assistance.</span>
+        <button id="useSuggestion" disabled>Use proposal as draft</button>
+      </section>
       <div class="actions">
         <button id="save" class="primary">Save review &amp; next</button>
         <button id="clear">Clear this draft</button>
@@ -56,8 +61,9 @@
       <button id="exportJson" class="primary">Export reviewed manifest</button>
       <button id="exportCsv">Export current task CSV</button>
       <button id="backup">Export draft backup</button>
+      <label class="import">Load model proposals<input id="proposalFile" type="file" accept="application/json"></label>
       <label class="import">Restore draft backup<input id="restore" type="file" accept="application/json"></label>
-      <p class="warning">A saved review is not automatically correct. A qualified reviewer remains responsible for label truth.</p>
+      <p class="warning">A proposal is not a reviewed label and is never saved automatically. A qualified reviewer remains responsible for label truth.</p>
     </aside>
   </main>
 
@@ -66,4 +72,3 @@
   <script src="/review-tool/app.js"></script>
 </body>
 </html>
-

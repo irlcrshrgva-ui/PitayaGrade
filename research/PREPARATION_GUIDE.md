@@ -12,7 +12,22 @@ Open `http://127.0.0.1:4174`. It serves only the review interface, public review
 manifest and locally prepared images. Drafts remain in that browser's local storage
 until exported. Export the reviewed manifest or task CSV frequently; browser storage
 is not a sufficient research backup. The tool never infers labels and does not upload
-images.
+images. Model proposals can be loaded from a local JSON file, but they are never
+saved automatically and remain separate from reviewed evidence.
+
+To generate private review-assistance proposals from the currently bundled model:
+
+```powershell
+python -m scripts.suggest_reviews `
+  --output local-review/quality-model-proposals-YYYY-MM-DD.json
+```
+
+The command also writes an Excel-friendly CSV. Load the JSON with **Load model
+proposals**, then choose **Proposal uncertainty first** to inspect low-confidence
+images first. **Use proposal as draft** only selects a radio button; a reviewer
+must still inspect the image, provide the source-fruit group and reviewer ID, and
+save deliberately. The proposal file records the model checksum and confidence.
+It is not a reviewed manifest, ground truth, model evaluation or publication result.
 
 Do not edit the large JSON manifest by hand. Export only the task being reviewed:
 
@@ -63,6 +78,8 @@ its asset is copied into `www/model/` and marked selectable.
 - `dataset/public/prepared/`: original image bytes, one image per task/pixel hash.
 - `research/public-review-manifest.json`: file paths, source rows, checksums,
   original labels, candidate partitions and empty review fields.
+- `local-review/quality-model-proposals-*.json` and `.csv`: private unverified
+  suggestions, excluded from Git and never accepted by the training validator.
 - `research/public-preparation.json`: exported counts and limitations.
 - `research/public-image-groups.json`: all original row memberships per pixel hash.
 

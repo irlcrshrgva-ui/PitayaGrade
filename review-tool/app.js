@@ -2,9 +2,11 @@
   const STORAGE = 'pitayagrade_review_drafts_v1';
   const els = Object.fromEntries(['status','task','filter','reviewer','sourceGroup','labels','save','clear',
     'progressText','progressPercent','progress','image','imageError','recordId','split','sourceLabel',
-    'imagePath','previous','next','position','exportJson','exportCsv','backup','restore','toast']
+    'imagePath','previous','next','position','exportJson','exportCsv','backup','restore','proposalFile',
+    'suggestionText','useSuggestion','toast']
     .map(id => [id, document.getElementById(id)]));
   let manifest = [], rows = [], index = 0;
+  let suggestions = {};
   let drafts = readDrafts();
 
   function readDrafts() {
@@ -19,6 +21,10 @@
     if (els.filter.value === 'reviewed') rows = taskRows.filter(row => row.reviewedLabel || drafts[row.id]);
     else if (els.filter.value === 'unreviewed') rows = taskRows.filter(row => !row.reviewedLabel && !drafts[row.id]);
     else rows = taskRows;
+    if (els.filter.value === 'priority') {
+      rows = taskRows.filter(row => !row.reviewedLabel && !drafts[row.id]).sort((left, right) =>
+        (suggestions[right.id]?.reviewPriority ?? -1) - (suggestions[left.id]?.reviewPriority ?? -1));
+    }
     index = Math.min(index, Math.max(0, rows.length - 1));
     render();
   }
@@ -39,13 +45,22 @@
     const row = current();
     els.position.textContent = rows.length ? `${index + 1} of ${rows.length}` : '0 of 0';
     for (const button of [els.previous, els.next, els.save, els.clear]) button.disabled = !row;
-    if (!row) { els.image.removeAttribute('src'); els.recordId.textContent = 'No matching records'; renderLabels(els.task.value); return; }
+    if (!row) { els.image.removeAttribute('src'); els.recordId.textContent = 'No matching records';
+      els.suggestionText.textContent = 'No proposal for this view.'; els.useSuggestion.disabled = true;
+      renderLabels(els.task.value); return; }
     const draft = drafts[row.id] || row;
     renderLabels(row.task, draft.reviewedLabel);
     els.sourceGroup.value = draft.reviewedSourceGroup || '';
     if (draft.reviewer) els.reviewer.value = draft.reviewer;
     els.recordId.textContent = row.id; els.split.textContent = row.candidateSplit;
     els.sourceLabel.textContent = row.sourceLabel || '—'; els.imagePath.textContent = row.image;
+    const proposal = suggestions[row.id];
+    els.useSuggestion.disabled = !proposal?.proposedLabel;
+    els.suggestionText.textContent = proposal
+      ? (proposal.proposedLabel
+        ? `${proposal.proposedLabel} at ${(proposal.confidence * 100).toFixed(1)}% — confirm visually before saving.`
+        : `No label reached the threshold (${(proposal.confidence * 100).toFixed(1)}% best confidence).`)
+      : 'No model proposal loaded for this record.';
     els.imageError.hidden = true; els.image.hidden = false; els.image.src = '/' + row.image.replace(/^\/+/, '');
   }
   function selectedLabel() { return document.querySelector('input[name="reviewedLabel"]:checked')?.value || ''; }
@@ -67,12 +82,23 @@
   els.previous.addEventListener('click', () => { index = Math.max(0, index - 1); render(); });
   els.next.addEventListener('click', () => { index = Math.min(rows.length - 1, index + 1); render(); });
   els.save.addEventListener('click', saveReview);
+  els.useSuggestion.addEventListener('click', () => {
+    const proposal = suggestions[current()?.id]; if (!proposal?.proposedLabel) return;
+    const radio = Array.from(document.querySelectorAll('input[name="reviewedLabel"]'))
+      .find(input => input.value === proposal.proposedLabel);
+    if (radio) { radio.checked = true; toast('Proposal copied to the draft; review it before saving'); }
+  });
   els.clear.addEventListener('click', () => { const row=current(); if (!row || !drafts[row.id]) return; if (confirm('Clear this local draft review?')) { delete drafts[row.id]; persist(); rebuild(); } });
   els.image.addEventListener('error', () => { els.image.hidden = true; els.imageError.hidden = false; });
   els.reviewer.addEventListener('change', () => localStorage.setItem('pitayagrade_reviewer_id', els.reviewer.value));
   els.exportJson.addEventListener('click', () => { try { download(`pitayagrade-reviewed-${dateTag()}.json`, JSON.stringify(ReviewState.mergeDrafts(manifest,drafts),null,2)+'\n','application/json'); } catch(e) { toast(e.message); } });
   els.exportCsv.addEventListener('click', () => { try { const merged=ReviewState.mergeDrafts(manifest,drafts).filter(r=>r.task===els.task.value); download(`${els.task.value}-review-${dateTag()}.csv`,ReviewState.csv(merged),'text/csv'); } catch(e) { toast(e.message); } });
   els.backup.addEventListener('click', () => download(`review-draft-${dateTag()}.json`, JSON.stringify(drafts,null,2)+'\n','application/json'));
+  els.proposalFile.addEventListener('change', async () => { try {
+    const record = JSON.parse(await els.proposalFile.files[0].text());
+    suggestions = ReviewState.suggestionMap(record, manifest); rebuild();
+    toast(`${Object.keys(suggestions).length} unverified proposals loaded locally`);
+  } catch(e) { toast(e.message); } finally { els.proposalFile.value=''; } });
   els.restore.addEventListener('change', async () => { try { const value=JSON.parse(await els.restore.files[0].text()); if (!value || typeof value!=='object' || Array.isArray(value)) throw new Error('Invalid draft backup'); drafts=value; ReviewState.mergeDrafts(manifest,drafts); persist(); rebuild(); toast('Draft backup restored'); } catch(e) { toast(e.message); } finally { els.restore.value=''; } });
 
   try {
@@ -85,4 +111,3 @@
     rebuild();
   } catch (error) { els.status.textContent = error.message; els.status.style.color = '#ff9bad'; }
 })();
-

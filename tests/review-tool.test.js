@@ -22,6 +22,19 @@ test('visual review export preserves rows and refuses retained conflicts', () =>
   assert.throws(() => state.mergeDrafts([{ ...manifest[0], reviewedLabel:'Grade A' }], draft), /refusing to overwrite/);
 });
 
+test('model proposals remain separate and require explicit human review', () => {
+  const manifest = [{ id:'one', task:'quality', reviewedLabel:null }];
+  const proposal = { id:'one', proposedLabel:'Grade B', confidence:.7, reviewPriority:.3,
+    modelSha256:'a'.repeat(64), status:'unverified-model-proposal', humanReviewRequired:true };
+  const mapped = state.suggestionMap({ schemaVersion:1, proposals:[proposal] }, manifest);
+  assert.equal(mapped.one.proposedLabel, 'Grade B');
+  assert.equal(manifest[0].reviewedLabel, null);
+  assert.throws(() => state.suggestionMap({ schemaVersion:1, proposals:[{ ...proposal,
+    humanReviewRequired:false }] }, manifest), /human review/);
+  assert.throws(() => state.suggestionMap({ schemaVersion:1, proposals:[{ ...proposal,
+    proposedLabel:'Fresh' }] }, manifest), /incompatible/);
+});
+
 test('review server exposes only the tool, manifest and prepared images', () => {
   assert.ok(server.resolveRequestPath('/').endsWith(path.join('review-tool','index.html')));
   assert.ok(server.resolveRequestPath('/research/public-review-manifest.json'));

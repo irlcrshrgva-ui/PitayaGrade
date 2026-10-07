@@ -7,6 +7,12 @@ changes to the research design.
 
 ## Current status — 2026-10-07
 
+The private review workflow now accepts a separately generated, checksum-linked
+model-proposal file and can prioritize uncertainty. The real run produced 1,553
+quality proposals, but its strong Grade A skew confirms that these are review aids,
+not labels or evaluation evidence. No proposal is copied into the review manifest
+or training data without an explicit reviewer action.
+
 The owner has explicitly requested that all planned models appear in the app and
 that users can choose which model to use. This supersedes the earlier unresolved
 approval note about model selection. Quality models and disease segmentation are

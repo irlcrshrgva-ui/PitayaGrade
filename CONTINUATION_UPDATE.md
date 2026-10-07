@@ -1,5 +1,23 @@
 # Project continuation update
 
+## 2026-10-07 continuation: private assisted-review queue
+
+- Added a fail-separated quality proposal generator using the bundled ONNX model.
+  It reproduces the deployed 640x640 preprocessing and four-grade output decoder,
+  records the model checksum/confidence and ranks uncertain images first. It never
+  modifies a manifest or converts predictions into reviewed labels.
+- Generated private proposals for all 1,553 unreviewed quality candidates. Seventy
+  did not reach the 30% proposal threshold; 1,042 reached at least 65%. The output
+  distribution was 1,421 Grade A, 13 Grade B, 11 Grade C and 38 Reject, which is
+  visibly imbalanced and must not be represented as ground truth or accuracy.
+- The Review Desk can load the private JSON, show confidence, sort uncertainty
+  first and copy a proposal into the unsaved radio selection. It still requires
+  explicit visual review, source grouping, reviewer identity and save action.
+- Browser QA loaded all 1,553 proposals, surfaced the 2.0%-confidence case first
+  and confirmed that copying a proposal does not increase reviewed progress.
+- Verification: all 63 JavaScript checks pass. Three new Python checks cover
+  preprocessing, decoding, uncertainty order and strict separation from manifests.
+
 ## 2026-10-07 continuation: segmentation export contract correction
 
 - Corrected the disease pipeline contract to match its reviewed trainer: six
