@@ -9,7 +9,8 @@ const PitayaApp = {
     offlineMode: false,
     scanAlerts: true,
     threshold: 65,
-    selectedModel: 'yolov8-nano'
+    selectedModel: 'yolov8-nano',
+    selectedDiseaseModel: 'yolov8n-disease-seg'
   },
 
   init() {
@@ -25,6 +26,7 @@ const PitayaApp = {
     if (!ModelInference.selectModel(this.settings.selectedModel)) {
       this.settings.selectedModel = ModelInference.getSelectedModel().id;
     }
+    ModelInference.selectDiseaseModel(this.settings.selectedDiseaseModel);
 
     // Initialize modules
     NotificationManager.init();
@@ -159,6 +161,31 @@ const PitayaApp = {
           ModelInference.selectModel(previous);
         }
         updateSelectedModel();
+      });
+    }
+
+    const diseaseModelSelect = document.getElementById('diseaseModelSelect');
+    const selectedDiseaseModelName = document.getElementById('selectedDiseaseModelName');
+    if (diseaseModelSelect && selectedDiseaseModelName && typeof ModelInference !== 'undefined') {
+      const diseaseModels = ModelInference.getDiseaseModelCatalog();
+      diseaseModelSelect.innerHTML = '';
+      diseaseModels.forEach(model => {
+        const option = document.createElement('option');
+        option.value = model.id;
+        option.disabled = !ModelInference.canSelectDiseaseModel(model);
+        option.textContent = model.available ? model.name : 'YOLOv8n-Seg — pending';
+        diseaseModelSelect.appendChild(option);
+      });
+      const active = ModelInference.getSelectedDiseaseModel();
+      diseaseModelSelect.value = active?.id || diseaseModels[0]?.id || '';
+      selectedDiseaseModelName.textContent = active
+        ? `${active.name} (verified bundled ONNX)`
+        : 'HSV fallback active; segmentation model pending';
+      diseaseModelSelect.addEventListener('change', () => {
+        if (!ModelInference.selectDiseaseModel(diseaseModelSelect.value)) return;
+        this.settings.selectedDiseaseModel = diseaseModelSelect.value;
+        if (!this._saveSettings()) return;
+        selectedDiseaseModelName.textContent = `${ModelInference.getSelectedDiseaseModel().name} (verified bundled ONNX)`;
       });
     }
 

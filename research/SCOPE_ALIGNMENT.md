@@ -5,7 +5,19 @@ project owner on 2026-09-19. Features beyond that document require an explicit
 owner request and approval. This audit does not revise the manuscript or approve
 changes to the research design.
 
-## Current status — 2026-10-04
+## Current status — 2026-10-07
+
+The owner has explicitly requested that all planned models appear in the app and
+that users can choose which model to use. This supersedes the earlier unresolved
+approval note about model selection. Quality models and disease segmentation are
+shown as separate selectors because they perform different tasks; unavailable
+entries remain disabled until their evaluated assets and checksums are registered.
+
+The disease-segmentation runtime path is now implemented for both photo and live
+scanning. It validates the expected YOLOv8 segmentation outputs, decodes the
+dominant symptom class, combines retained masks and measures affected area only
+inside a valid detected fruit region. The real segmentation asset is not present,
+so HSV remains the labeled fallback and no disease-model result is claimed.
 
 The selectable-model path now includes a checked four-grade classifier output
 contract for MobileNetV2, ResNet50 and EfficientNet-B3. Its 224x224 ImageNet
@@ -32,9 +44,9 @@ any supplied generated provenance before training. The mask-based coverage tool
 computes union area inside an aligned fruit mask without claiming whole-fruit
 severity or diagnosis. See the preparation guide for both commands and limitations.
 
-Local verification: 61 JavaScript checks, 75 Python checks and Android
+Local verification: 62 JavaScript checks, 75 Python checks and Android
 build/lint pass. The current debug APK SHA-256 is
-`cf817a4031c992415932c59c4008e64822dc37c323f93b25a9601d85042ccb96`.
+`6ff54e9a2af6f0907b8e68888210e9339593576b8d1d75de24cdd15b755ed425`.
 GitHub automation builds debug artifacts.
 No Android hardware is connected. The public review manifest has 3,050 images and
 zero reviewed target-grade labels; training/evaluation and field/UAT remain blocked
@@ -120,10 +132,9 @@ architecture amendment has been assumed. Existing metrics remain unvalidated.
 
 ## Scope decisions still needed
 
-- Selectable MobileNetV2/ResNet50 models appear in the README and earlier proposed
-  diagrams. Those are not sufficient evidence of owner approval to extend this
-  governing manuscript. Do not implement model selection without locating explicit
-  approval or obtaining it.
+- Model selection is owner-approved. Final enabling still requires evaluated,
+  checksum-verified assets for MobileNetV2, ResNet50, EfficientNet-B3 and disease
+  segmentation; displaying a disabled catalog entry is not model completion.
 - Confirm whether cloud/Firebase and TFLite are required for submission, given
   the manuscript's conflicting scope and optional-feature descriptions. Keeping
   ONNX/localStorage as the final architecture would require an approved amendment.

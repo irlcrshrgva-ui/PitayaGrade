@@ -40,6 +40,8 @@ const LanguageManager = {
     'The image heuristic assigned Grade A. Verify physical grading criteria before making market or export decisions.': 'Grade A ang ibinigay ng pagsusuri ng larawan. Suriin ang pisikal na pamantayan ng paggrado bago magpasya tungkol sa pagbebenta o pag-export.',
     'Disease Analysis': 'Pagsusuri ng Sintomas',
     'Image color heuristics; inspect flagged fruit': 'Pagsusuri ng kulay; suriin ang prutas na may babala',
+    'HSV fallback active; segmentation model pending': 'Aktibo ang pansamantalang HSV; hinihintay ang segmentation model',
+    'Disease analysis model': 'Modelo para sa pagsusuri ng sintomas',
     'Signs to Inspect': 'Mga Palatandaang Susuriin',
     'Not measured': 'Hindi sinukat',
     'No visible symptoms flagged by color analysis': 'Walang sintomas na na-flag ng pagsusuri ng kulay',

@@ -36,10 +36,36 @@ test('only verified bundled models can be selected', () => {
   assert.deepEqual(Array.from(instance.getAvailableModels(), item => item.id), ['yolov8-nano']);
   assert.equal(instance.selectModel('efficientnet-b3-quality'), false);
   const disease = instance.MODELS.find(item => item.id === 'yolov8n-disease-seg');
+  assert.deepEqual(Array.from(instance.getDiseaseModelCatalog(), item => item.id), ['yolov8n-disease-seg']);
   disease.available = true;
   assert.equal(instance.canSelectModel(disease), false);
   assert.equal(instance.selectModel(disease.id), false);
   assert.equal(instance.getSelectedModel().id, 'yolov8-nano');
+});
+test('disease segmentation contract decodes class and fruit-relative mask coverage', () => {
+  const instance = model('http://localhost/www/js/model-inference.js');
+  const disease = instance.getDiseaseModelCatalog()[0];
+  const maskChannels = 2;
+  const channels = 4 + disease.classes.length + maskChannels;
+  const data = new Float32Array(channels);
+  data[0] = 320; data[1] = 320; data[2] = 640; data[3] = 640;
+  data[4 + 1] = 0.9; // Anthracnose
+  data[4 + disease.classes.length] = 10;
+  const outputs = {
+    detections: { dims:[1, channels, 1], data },
+    prototypes: { dims:[1, maskChannels, 2, 2], data:new Float32Array([1, 1, 1, 1, 0, 0, 0, 0]) }
+  };
+  const result = instance._postprocessDisease(outputs, disease,
+    { x:0, y:0, right:1, bottom:1 });
+  assert.equal(result.name, 'Anthracnose');
+  assert.equal(result.areaPercent, 100);
+  assert.equal(result.severityMeasured, true);
+  assert.match(result.analysisMethod, /segmentation ONNX/);
+  const withoutFruitRoi = instance._postprocessDisease(outputs, disease);
+  assert.equal(withoutFruitRoi.areaPercent, null);
+  assert.equal(withoutFruitRoi.severityMeasured, false);
+  instance.CONF_THRESHOLD = 0.95;
+  assert.equal(instance._postprocessDisease(outputs, disease), null);
 });
 test('concurrent inference callers wait for one model load', async () => {
   let resolve, calls = 0;
@@ -52,6 +78,25 @@ test('concurrent inference callers wait for one model load', async () => {
   resolve({ inputNames: ['images'], outputNames: ['output0'] });
   assert.deepEqual(await Promise.all([first, second]), [true, true]);
   assert.equal(calls, 1);
+
+  const disease = instance.getDiseaseModelCatalog()[0];
+  disease.available = true;
+  let resolveDisease;
+  const diseasePending = new Promise(r => { resolveDisease = r; });
+  instance.sessions = {};
+  instance.loadingPromises = {};
+  instance._load = async selected => {
+    calls++;
+    const session = await diseasePending;
+    instance.sessions[selected.id] = session;
+    delete instance.loadingPromises[selected.id];
+    return true;
+  };
+  const diseaseFirst = instance.loadDisease(disease.id);
+  const diseaseSecond = instance.loadDisease(disease.id);
+  resolveDisease({ inputNames: ['images'], outputNames: ['detections', 'prototypes'] });
+  assert.deepEqual(await Promise.all([diseaseFirst, diseaseSecond]), [true, true]);
+  assert.equal(calls, 2);
 });
 test('postprocessing reads output dimensions and respects rejection threshold', () => {
   const instance = model('http://localhost/www/js/model-inference.js');

@@ -184,14 +184,19 @@ const Scanner = {
     markStep(4, 'active'); await this._delay(200);
 
     const modelResult = await modelPromise;
+    const diseaseModelResult = (typeof ModelInference !== 'undefined' && imgEl)
+      ? await ModelInference.inferDisease(imgEl, PitayaApp.settings.selectedDiseaseModel, modelResult?.box || null)
+      : null;
 
     markStep(4, 'done');
     markStep(5, 'active'); await this._delay(150);
 
-    const result = this._generateResult(modelResult);
+    const result = this._generateResult(modelResult, this.currentImageData, diseaseModelResult);
     result.details.processingTime = ((performance.now() - started) / 1000).toFixed(1) + 's';
     result.details.processingMode = 'Local (ONNX / image analysis)';
-    result.details.modelUsed = modelResult ? (modelResult.modelName || 'YOLOv8-Nano') + ' ONNX + HSV disease heuristics' : 'HSV image heuristics (model unavailable)';
+    const gradeMethod = modelResult ? (modelResult.modelName || 'YOLOv8-Nano') + ' ONNX' : 'HSV grade heuristics';
+    const diseaseMethod = diseaseModelResult ? (diseaseModelResult.modelName || 'Disease segmentation') + ' ONNX' : 'HSV disease heuristics';
+    result.details.modelUsed = `${gradeMethod} + ${diseaseMethod}`;
     if (!modelResult) ToastManager.show('Model unavailable. Using image heuristics.', 'warning');
 
     markStep(5, 'done');
@@ -640,7 +645,7 @@ const Scanner = {
   //   Stage 2B: 6-dimensional compound quality grading within ROI
   // All classification decisions are deterministic (no Math.random)
   // ============================================================
-  _generateResult(modelResult, imageData = this.currentImageData) {
+  _generateResult(modelResult, imageData = this.currentImageData, diseaseModelResult = null) {
     if (modelResult && !modelResult.isDragonFruit) {
       return this._buildRejectionResult(['The model did not detect a dragon fruit above its confidence threshold']);
     }
@@ -708,7 +713,7 @@ const Scanner = {
     }
 
     // === STAGE 2A: YOLOv8-Seg Disease Segmentation ===
-    const diseaseResult = this._segmentDiseases(data, imgWidth, imgHeight, roi, cellSize);
+    const diseaseResult = diseaseModelResult || this._segmentDiseases(data, imgWidth, imgHeight, roi, cellSize);
 
     // === STAGE 2B: EfficientNet-B3 Compound Quality Grading ===
     const gradeResult = this._computeCompoundGrade(data, imgWidth, imgHeight, roi, cellSize);
@@ -716,7 +721,7 @@ const Scanner = {
     if (modelResult && modelResult.isDragonFruit && modelResult.grade) {
       const gl  = modelResult.grade;
       const gc  = Math.round(modelResult.confidence * 1000) / 1000;
-      const diseaseOvr = this._segmentDiseases(data, imgWidth, imgHeight, roi, cellSize);
+      const diseaseOvr = diseaseResult;
       const mr = gradeResult.metrics.maturityRatio;
       const matOvr = mr > 0.85
         ? { status: 'Harvestable', value: Math.min(100, Math.round(75 + mr * 25)), isHarvestable: true }
@@ -743,7 +748,8 @@ const Scanner = {
         grade: { label: gl, confidence: gc, class: this._gradeClass(gl), analysisMethod: 'ONNX grade detector' },
         disease: { name: diseaseOvr.name, confidence: diseaseOvr.confidence,
                    isHealthy: diseaseOvr.isHealthy, symptoms: sym, areaPercent: diseaseOvr.areaPercent,
-                   analysisMethod: 'HSV color heuristic' },
+                   analysisMethod: diseaseOvr.analysisMethod || 'HSV color heuristic',
+                   severityMeasured: diseaseOvr.severityMeasured !== false },
         maturity: matOvr,
         details: {
           size: 'Not measured', imageCoveragePercent: Math.round(cov * 1000) / 10,
@@ -751,8 +757,9 @@ const Scanner = {
           colorDescriptor: cols[ci], surfaceCondition: surfs[ui],
           brightness: (br * 100).toFixed(0) + '%',
           processingMode: 'Local (ONNX / image analysis)',
-          processingTime: (modelResult.inferenceMs / 1000).toFixed(2) + 's',
-          modelUsed: (modelResult.modelName || 'YOLOv8-Nano') + ' ONNX + HSV disease heuristics'
+          processingTime: ((modelResult.inferenceMs + (diseaseModelResult?.inferenceMs || 0)) / 1000).toFixed(2) + 's',
+          modelUsed: (modelResult.modelName || 'YOLOv8-Nano') + ' ONNX + ' +
+            (diseaseModelResult ? (diseaseModelResult.modelName || 'Disease segmentation') + ' ONNX' : 'HSV disease heuristics')
         },
         compoundScore: gradeResult.score,
         featureScores: gradeResult.scores,
@@ -772,12 +779,12 @@ const Scanner = {
     else gradeLabel = 'Reject';
 
     // Apply disease impact on grade (deterministic downgrade rules)
-    if (diseaseResult.areaPercent > 25) {
+    if (Number.isFinite(diseaseResult.areaPercent) && diseaseResult.areaPercent > 25) {
       gradeLabel = 'Reject';
-    } else if (diseaseResult.areaPercent > 12 && gradeLabel !== 'Reject') {
+    } else if (Number.isFinite(diseaseResult.areaPercent) && diseaseResult.areaPercent > 12 && gradeLabel !== 'Reject') {
       const downgrade = { 'Grade A': 'Grade B', 'Grade B': 'Grade C', 'Grade C': 'Reject' };
       gradeLabel = downgrade[gradeLabel] || gradeLabel;
-    } else if (diseaseResult.areaPercent > 5 && gradeLabel === 'Grade A') {
+    } else if (Number.isFinite(diseaseResult.areaPercent) && diseaseResult.areaPercent > 5 && gradeLabel === 'Grade A') {
       gradeLabel = 'Grade B';
     }
 
@@ -845,7 +852,9 @@ const Scanner = {
         confidence: diseaseResult.confidence,
         isHealthy: diseaseResult.isHealthy,
         symptoms: diseaseSymptoms,
-        areaPercent: diseaseResult.areaPercent, analysisMethod: 'HSV color heuristic'
+        areaPercent: diseaseResult.areaPercent,
+        analysisMethod: diseaseResult.analysisMethod || 'HSV color heuristic',
+        severityMeasured: diseaseResult.severityMeasured !== false
       },
       maturity: {
         status: maturityStatus,

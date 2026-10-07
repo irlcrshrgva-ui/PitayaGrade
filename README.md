@@ -10,7 +10,7 @@ PitayaGrade is a capstone project for AI-assisted pre-harvest quality grading an
 4. Analyze reviewed disease/defect regions using YOLOv8-Nano segmentation.
 5. Display confidence, recommendations, history, analytics, and reports.
 
-> This is the manuscript pipeline awaiting evaluated models and integration. The current deployed application contains the YOLOv8 ONNX model, while portions of disease analysis still use image heuristics. Selectable classifiers require explicit scope approval.
+> This is the manuscript pipeline awaiting evaluated models and integration. The current deployed application contains the YOLOv8 ONNX model, while portions of disease analysis still use image heuristics.
 
 The Settings model picker now shows the complete planned catalog: YOLOv8-Nano,
 MobileNetV2, ResNet50, EfficientNet-B3 and YOLOv8-Nano disease segmentation. Only
@@ -19,6 +19,13 @@ are visibly disabled until an evaluated ONNX file, output contract and checksum 
 added to `js/model-registry.js`; the build rejects missing or altered selectable
 assets. This preserves the required selection workflow without presenting invented
 or historical checkpoints as validated models.
+
+Quality grading and disease segmentation have separate selectors because they are
+different inference tasks. The disease selector currently shows its pending
+YOLOv8n-Seg entry while the application uses the clearly labeled HSV fallback.
+Once an evaluated segmentation asset is registered, the same photo and live-scan
+paths load it independently, decode its masks, and report fruit-relative affected
+area only when a valid fruit region is available.
 
 ## Main directories
 
@@ -62,7 +69,8 @@ After editing `index.html`, `js/`, or `css/`, run `npm run build` to update
 `www/`, or `npm run sync:android` to also synchronize the Android project.
 Run `npm test` for asset wiring and inference regression checks.
 Both web entry points use the bundled ONNX runtime and model without a CDN.
-Photo scans report model fallback explicitly; disease analysis remains heuristic.
+Photo scans report model fallback explicitly; disease analysis remains heuristic
+until a checksum-verified segmentation asset is registered.
 New scans retain their analysis methods and report physical size as not measured.
 Existing records are preserved, including earlier framing-based size estimates.
 Symptom guidance describes possible signs to inspect, not confirmed findings.
@@ -129,8 +137,10 @@ replace the app's existing four-grade model.
 
 `train_segmentation.py` prepares reviewed disease-region polygons on fruit crops
 and supports YOLOv8n-seg training. See the preparation guide for its separate
-manifest contract and Healthy negative samples. This research workflow does not
-replace the app's heuristic disease output or establish model accuracy.
+manifest contract and Healthy negative samples. The app contains the runtime
+integration contract for its evaluated ONNX export, but the selector remains
+disabled and HSV remains active until that real asset is registered. The training
+workflow and integration code do not establish model accuracy.
 
 The deployed web model is stored under `www/model/`. Large training datasets and framework checkpoints are intentionally excluded from Git because the local project is several gigabytes. Dataset sources, licenses, splitting procedures, preprocessing, and final evaluation results should be documented before the capstone release.
 

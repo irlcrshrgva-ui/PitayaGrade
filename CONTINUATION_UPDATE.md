@@ -1,5 +1,24 @@
 # Project continuation update
 
+## 2026-10-07 continuation: separate disease-model runtime path
+
+- Added an independent disease-segmentation selector and runtime session so the
+  planned YOLOv8n-Seg asset cannot be confused with a selectable quality model.
+  Its pending option is visible but disabled; HSV remains explicitly labeled as
+  the active fallback until an evaluated, checksum-verified asset is registered.
+- Wired photo and live scanning to run the disease model after fruit localization.
+  The decoder validates the YOLO segmentation output contract, applies confidence
+  filtering and class-aware suppression, combines retained masks and reports
+  affected area relative to the detected fruit region. Unknown area no longer
+  causes a fabricated disease-based grade downgrade.
+- Added concurrency-safe disease model loading, candidate-contract validation and
+  regression coverage for class decoding, mask coverage and unavailable assets.
+- Verification: all 62 JavaScript and 75 lightweight Python tests pass. Capacitor
+  synchronization, Android debug assembly and lint succeed. The rebuilt APK SHA-256
+  is `6ff54e9a2af6f0907b8e68888210e9339593576b8d1d75de24cdd15b755ed425`.
+  Browser QA confirmed the two selectors fit the mobile Settings layout. No model
+  accuracy, physical-device result or disease diagnosis is claimed.
+
 ## 2026-10-04 continuation: classifier integration contract
 
 - Expanded reviewed quality training from a hard-coded EfficientNet-B3 run to a

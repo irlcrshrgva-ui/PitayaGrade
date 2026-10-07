@@ -534,11 +534,11 @@
               <svg class="icon-svg" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
             </div>
             <div>
-              <div class="settings-item-label">Disease Analysis</div>
-              <div class="settings-item-sub">Image color heuristics; inspect flagged fruit</div>
+              <label class="settings-item-label" for="diseaseModelSelect">Disease Analysis</label>
+              <div class="settings-item-sub" id="selectedDiseaseModelName">HSV fallback active; segmentation model pending</div>
             </div>
           </div>
-          <span class="settings-item-right" style="color:var(--color-info);font-size:12px;font-weight:600">HSV</span>
+          <select id="diseaseModelSelect" class="btn btn-sm btn-secondary" aria-label="Disease analysis model"></select>
         </div>
         <div class="settings-item">
           <div class="settings-item-left">

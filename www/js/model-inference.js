@@ -18,6 +18,7 @@ const ModelInference = {
   CONF_THRESHOLD: 0.30,
   MODELS: PitayaModelRegistry.map(model => ({ ...model, classes: Array.from(model.classes) })),
   selectedModelId: 'yolov8-nano',
+  selectedDiseaseModelId: 'yolov8n-disease-seg',
 
   _isGradeModel(model) {
     return model && ['integrated-detector-grader', 'quality-classifier'].includes(model.role);
@@ -27,12 +28,28 @@ const ModelInference = {
     return Boolean(model && model.available && this._isGradeModel(model));
   },
 
+  _isDiseaseModel(model) {
+    return model && model.role === 'disease-segmenter';
+  },
+
+  canSelectDiseaseModel(model) {
+    return Boolean(model && model.available && this._isDiseaseModel(model));
+  },
+
   getAvailableModels() {
     return this.MODELS.filter(model => this.canSelectModel(model));
   },
 
   getModelCatalog() {
     return this.MODELS.slice();
+  },
+
+  getDiseaseModelCatalog() {
+    return this.MODELS.filter(model => this._isDiseaseModel(model));
+  },
+
+  getSelectedDiseaseModel() {
+    return this.MODELS.find(model => this.canSelectDiseaseModel(model) && model.id === this.selectedDiseaseModelId) || null;
   },
 
   getSelectedModel() {
@@ -46,6 +63,13 @@ const ModelInference = {
     this.selectedModelId = model.id;
     this.session = this.sessions[model.id] || null;
     this.isLoaded = Boolean(this.session);
+    return true;
+  },
+
+  selectDiseaseModel(modelId) {
+    const model = this.MODELS.find(candidate => candidate.id === modelId && this.canSelectDiseaseModel(candidate));
+    if (!model) return false;
+    this.selectedDiseaseModelId = model.id;
     return true;
   },
 
@@ -65,6 +89,17 @@ const ModelInference = {
     return this.loadingPromise;
   },
 
+  async loadDisease(modelId = this.selectedDiseaseModelId) {
+    const model = this.MODELS.find(candidate => candidate.id === modelId && this.canSelectDiseaseModel(candidate));
+    if (!model) return false;
+    if (this.sessions[model.id]) return true;
+    if (this.loadingPromises[model.id]) return this.loadingPromises[model.id];
+    this.isLoading = true;
+    const promise = this._load(model);
+    this.loadingPromises[model.id] = promise;
+    return promise;
+  },
+
   async _load(model) {
     try {
       // Point ORT to the WASM files bundled in www/
@@ -77,12 +112,14 @@ const ModelInference = {
       });
 
       this.sessions[model.id] = session;
-      this.session = session;
-      this.isLoaded = true;
+      if (this._isGradeModel(model)) {
+        this.session = session;
+        this.isLoaded = true;
+      }
       console.log('[ModelInference] ' + model.name + ' loaded. Inputs:', session.inputNames, 'Outputs:', session.outputNames);
     } catch (err) {
       console.error('[ModelInference] Failed to load model:', err);
-      this.isLoaded = false;
+      if (this._isGradeModel(model)) this.isLoaded = false;
     }
     delete this.loadingPromises[model.id];
     this.isLoading = false;
@@ -201,6 +238,107 @@ const ModelInference = {
     };
   },
 
+  _postprocessDisease(outputs, model, fruitBox = null) {
+    const tensors = Object.values(outputs || {});
+    const prototypes = tensors.find(tensor => tensor.dims?.length === 4 && tensor.dims[0] === 1);
+    const detection = tensors.find(tensor => tensor.dims?.length === 3 && tensor.dims[0] === 1);
+    if (!prototypes || !detection) throw new Error('Unsupported disease segmentation outputs');
+    const maskChannels = prototypes.dims[1];
+    const maskHeight = prototypes.dims[2];
+    const maskWidth = prototypes.dims[3];
+    const expectedChannels = 4 + model.classes.length + maskChannels;
+    if (detection.dims[1] !== expectedChannels || detection.dims[2] < 1 ||
+        prototypes.data.length !== maskChannels * maskHeight * maskWidth) {
+      throw new Error('Unsupported disease segmentation output shape');
+    }
+
+    const count = detection.dims[2];
+    const candidates = [];
+    for (let index = 0; index < count; index++) {
+      let bestClass = -1;
+      let bestConfidence = 0;
+      for (let classIndex = 0; classIndex < model.classes.length; classIndex++) {
+        const confidence = detection.data[(4 + classIndex) * count + index];
+        if (confidence > bestConfidence) {
+          bestConfidence = confidence;
+          bestClass = classIndex;
+        }
+      }
+      if (bestClass < 0 || bestConfidence < this.CONF_THRESHOLD) continue;
+      const centerX = detection.data[index];
+      const centerY = detection.data[count + index];
+      const width = detection.data[2 * count + index];
+      const height = detection.data[3 * count + index];
+      const box = {
+        x: Math.max(0, (centerX - width / 2) / model.inputSize),
+        y: Math.max(0, (centerY - height / 2) / model.inputSize),
+        right: Math.min(1, (centerX + width / 2) / model.inputSize),
+        bottom: Math.min(1, (centerY + height / 2) / model.inputSize)
+      };
+      if (box.right > box.x && box.bottom > box.y) {
+        candidates.push({ index, classIndex:bestClass, confidence:bestConfidence, box });
+      }
+    }
+    if (!candidates.length) return null;
+    candidates.sort((left, right) => right.confidence - left.confidence);
+    const dominantClass = candidates[0].classIndex;
+    const retained = [];
+    for (const candidate of candidates.filter(item => item.classIndex === dominantClass)) {
+      const overlaps = retained.some(other => {
+        const left = Math.max(candidate.box.x, other.box.x);
+        const top = Math.max(candidate.box.y, other.box.y);
+        const right = Math.min(candidate.box.right, other.box.right);
+        const bottom = Math.min(candidate.box.bottom, other.box.bottom);
+        const intersection = Math.max(0, right - left) * Math.max(0, bottom - top);
+        const candidateArea = (candidate.box.right - candidate.box.x) * (candidate.box.bottom - candidate.box.y);
+        const otherArea = (other.box.right - other.box.x) * (other.box.bottom - other.box.y);
+        return intersection / (candidateArea + otherArea - intersection) > 0.45;
+      });
+      if (!overlaps) retained.push(candidate);
+    }
+
+    const className = model.classes[dominantClass];
+    const bestConfidence = retained[0].confidence;
+    let areaPercent = null;
+    if (className !== 'Healthy' && fruitBox &&
+        [fruitBox.x, fruitBox.y, fruitBox.right, fruitBox.bottom].every(Number.isFinite)) {
+      const left = Math.max(0, Math.min(maskWidth, Math.floor(fruitBox.x * maskWidth)));
+      const top = Math.max(0, Math.min(maskHeight, Math.floor(fruitBox.y * maskHeight)));
+      const right = Math.max(left + 1, Math.min(maskWidth, Math.ceil(fruitBox.right * maskWidth)));
+      const bottom = Math.max(top + 1, Math.min(maskHeight, Math.ceil(fruitBox.bottom * maskHeight)));
+      let positive = 0;
+      let total = 0;
+      for (let y = top; y < bottom; y++) {
+        for (let x = left; x < right; x++) {
+          const normalizedX = (x + 0.5) / maskWidth;
+          const normalizedY = (y + 0.5) / maskHeight;
+          let covered = false;
+          for (const candidate of retained) {
+            if (normalizedX < candidate.box.x || normalizedX > candidate.box.right ||
+                normalizedY < candidate.box.y || normalizedY > candidate.box.bottom) continue;
+            let logit = 0;
+            for (let channel = 0; channel < maskChannels; channel++) {
+              const coefficient = detection.data[(4 + model.classes.length + channel) * count + candidate.index];
+              logit += coefficient * prototypes.data[channel * maskHeight * maskWidth + y * maskWidth + x];
+            }
+            if (logit >= 0) { covered = true; break; }
+          }
+          if (covered) positive++;
+          total++;
+        }
+      }
+      areaPercent = total ? positive / total * 100 : null;
+    }
+    return {
+      name: className,
+      confidence: bestConfidence,
+      isHealthy: className === 'Healthy',
+      areaPercent: className === 'Healthy' ? 0 : areaPercent,
+      severityMeasured: className === 'Healthy' || Number.isFinite(areaPercent),
+      analysisMethod: 'YOLOv8 disease segmentation ONNX'
+    };
+  },
+
   // ── Public: run full inference on an image element ────────────────────────
   async infer(imgElement, modelId = this.selectedModelId) {
     const model = this.MODELS.find(candidate => candidate.id === modelId && this.canSelectModel(candidate));
@@ -226,6 +364,31 @@ const ModelInference = {
     return parsed;
     } catch (err) {
       console.error('[ModelInference] Inference failed:', err);
+      return null;
+    } finally {
+      if (inputTensor) inputTensor.dispose();
+      if (results) Object.values(results).forEach(tensor => tensor.dispose());
+    }
+  },
+
+  async inferDisease(imgElement, modelId = this.selectedDiseaseModelId, fruitBox = null) {
+    const model = this.MODELS.find(candidate => candidate.id === modelId && this.canSelectDiseaseModel(candidate));
+    if (!model || !await this.loadDisease(model.id)) return null;
+    const started = performance.now();
+    const session = this.sessions[model.id];
+    let inputTensor;
+    let results;
+    try {
+      inputTensor = this._preprocess(imgElement, model);
+      results = await session.run({ [session.inputNames[0]]: inputTensor });
+      const parsed = this._postprocessDisease(results, model, fruitBox);
+      if (!parsed) return null;
+      parsed.inferenceMs = Math.round(performance.now() - started);
+      parsed.modelId = model.id;
+      parsed.modelName = model.name;
+      return parsed;
+    } catch (error) {
+      console.error('[ModelInference] Disease inference failed:', error);
       return null;
     } finally {
       if (inputTensor) inputTensor.dispose();

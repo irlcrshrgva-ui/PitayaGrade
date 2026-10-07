@@ -1860,7 +1860,12 @@ a { text-decoration: none; color: inherit; }
   display: flex;
   align-items: center;
   gap: var(--space-md);
+  flex: 1;
+  min-width: 0;
 }
+
+.settings-item-left > div:last-child { min-width: 0; }
+.settings-item select { flex: 0 0 154px; max-width: 154px; }
 
 .settings-item-icon {
   font-size: 20px;

@@ -31,10 +31,10 @@ function validateContract(model, outputs) {
       throw new Error(`Expected YOLO grade output [1,${4 + model.classes.length},N]`);
     }
   } else if (model.outputContract === 'yolov8-disease-segmentation-v1') {
-    const detection = tensors.find(tensor => tensor.dims && tensor.dims.length === 3 &&
-      tensor.dims[0] === 1 && tensor.dims[1] >= 4 + model.classes.length && tensor.dims[2] > 0);
     const prototypes = tensors.find(tensor => tensor.dims && tensor.dims.length === 4 &&
       tensor.dims[0] === 1 && tensor.dims[1] > 0 && tensor.dims[2] > 0 && tensor.dims[3] > 0);
+    const detection = prototypes && tensors.find(tensor => tensor.dims && tensor.dims.length === 3 &&
+      tensor.dims[0] === 1 && tensor.dims[1] === 4 + model.classes.length + prototypes.dims[1] && tensor.dims[2] > 0);
     if (!detection || !prototypes) throw new Error('Expected YOLO segmentation detections and mask prototypes');
   } else {
     throw new Error(`Unsupported output contract: ${model.outputContract}`);

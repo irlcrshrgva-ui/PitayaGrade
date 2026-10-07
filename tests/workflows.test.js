@@ -170,6 +170,15 @@ test('trained detection supplies ROI and is not rejected by color or filename he
   assert.match(result.details.processingMode, /^Local/);
   assert.doesNotMatch(result.details.modelUsed, /EfficientNet|TFLite|Cloud/);
   assert.ok(result.disease.symptoms.every(text => !/confirmed|verified/.test(text)));
+  const segmented = a.Scanner._generateResult({ isDragonFruit: true, grade: 'Grade B', confidence: .8,
+    box: { x: .25, y: .25, right: .75, bottom: .75 }, inferenceMs: 20, modelName:'YOLOv8-Nano' }, pixels,
+    { name:'Anthracnose', confidence:.9, isHealthy:false, areaPercent:null,
+      severityMeasured:false, analysisMethod:'YOLOv8 disease segmentation ONNX',
+      inferenceMs:30, modelName:'YOLOv8-Nano Disease Segmentation' });
+  assert.equal(segmented.grade.label, 'Grade B');
+  assert.equal(segmented.disease.analysisMethod, 'YOLOv8 disease segmentation ONNX');
+  assert.equal(segmented.disease.severityMeasured, false);
+  assert.match(segmented.details.modelUsed, /Disease Segmentation.*ONNX/);
   assert.equal(a.Scanner._modelROI({ x: 0, y: 0, right: 0, bottom: 0 }, 8, 8), null);
 });
 test('scan metadata stays local regardless of the offline preference', () => {

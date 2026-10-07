@@ -210,8 +210,10 @@ const LiveScanner = {
       this.ctx.drawImage(frame, 0, 0, 128, 128);
       const pixels = this.ctx.getImageData(0, 0, 128, 128);
       const model = await ModelInference.infer(frame, PitayaApp.settings.selectedModel);
+      const diseaseModel = await ModelInference.inferDisease(
+        frame, PitayaApp.settings.selectedDiseaseModel, model?.box || null);
       if (!this.isActive || request !== this.cameraRequest) return;
-      const result = Scanner._generateResult(model, pixels);
+      const result = Scanner._generateResult(model, pixels, diseaseModel);
       result.detectedObject = result.isDragonFruit ? 'Dragon Fruit' + (model ? '' : ' (heuristic)') : 'Unrecognized';
       this._smoothResult(result);
       this._updateHud();
