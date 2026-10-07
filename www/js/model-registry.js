@@ -35,8 +35,8 @@ const PitayaModelRegistry = Object.freeze([
     id: 'yolov8n-disease-seg', name: 'YOLOv8-Nano Disease Segmentation',
     role: 'disease-segmenter', available: false,
     status: 'awaiting-evaluated-export', modelPath: null, sha256: null,
-    inputSize: 640, preprocessing: 'rgb-zero-to-one', outputContract: 'yolov8-disease-segmentation-v1',
-    classes: Object.freeze(['Healthy', 'Anthracnose', 'Stem Canker', 'Soft Rot',
+    inputSize: 128, preprocessing: 'rgb-zero-to-one', outputContract: 'yolov8-disease-segmentation-v1',
+    classes: Object.freeze(['Anthracnose', 'Stem Canker', 'Soft Rot',
       'Pest Damage', 'Sunburn', 'Fungal Spots'])
   })
 ]);

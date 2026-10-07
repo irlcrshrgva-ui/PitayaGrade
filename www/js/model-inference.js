@@ -300,7 +300,7 @@ const ModelInference = {
     const className = model.classes[dominantClass];
     const bestConfidence = retained[0].confidence;
     let areaPercent = null;
-    if (className !== 'Healthy' && fruitBox &&
+    if (fruitBox &&
         [fruitBox.x, fruitBox.y, fruitBox.right, fruitBox.bottom].every(Number.isFinite)) {
       const left = Math.max(0, Math.min(maskWidth, Math.floor(fruitBox.x * maskWidth)));
       const top = Math.max(0, Math.min(maskHeight, Math.floor(fruitBox.y * maskHeight)));
@@ -332,9 +332,9 @@ const ModelInference = {
     return {
       name: className,
       confidence: bestConfidence,
-      isHealthy: className === 'Healthy',
-      areaPercent: className === 'Healthy' ? 0 : areaPercent,
-      severityMeasured: className === 'Healthy' || Number.isFinite(areaPercent),
+      isHealthy: false,
+      areaPercent,
+      severityMeasured: Number.isFinite(areaPercent),
       analysisMethod: 'YOLOv8 disease segmentation ONNX'
     };
   },

@@ -139,8 +139,10 @@ replace the app's existing four-grade model.
 and supports YOLOv8n-seg training. See the preparation guide for its separate
 manifest contract and Healthy negative samples. The app contains the runtime
 integration contract for its evaluated ONNX export, but the selector remains
-disabled and HSV remains active until that real asset is registered. The training
-workflow and integration code do not establish model accuracy.
+disabled and HSV remains active until that real asset is registered. Successful
+training emits a checked 128×128, six-symptom ONNX candidate and contract record;
+Healthy remains a reviewed negative sample rather than a seventh output class.
+The training, export and integration code do not establish model accuracy.
 
 The deployed web model is stored under `www/model/`. Large training datasets and framework checkpoints are intentionally excluded from Git because the local project is several gigabytes. Dataset sources, licenses, splitting procedures, preprocessing, and final evaluation results should be documented before the capstone release.
 

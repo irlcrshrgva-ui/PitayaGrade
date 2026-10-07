@@ -19,6 +19,12 @@ dominant symptom class, combines retained masks and measures affected area only
 inside a valid detected fruit region. The real segmentation asset is not present,
 so HSV remains the labeled fallback and no disease-model result is claimed.
 
+The training-to-app contract is now aligned at 128x128 with six symptom classes.
+`Healthy` is a reviewed negative sample with no mask, not an output class. Completed
+training automatically creates a checked single-file ONNX candidate and metadata;
+runtime verification, held-out evidence and explicit registry activation remain
+separate release gates.
+
 The selectable-model path now includes a checked four-grade classifier output
 contract for MobileNetV2, ResNet50 and EfficientNet-B3. Its 224x224 ImageNet
 normalization matches the retained trainer; classification-only results still pass
@@ -44,9 +50,9 @@ any supplied generated provenance before training. The mask-based coverage tool
 computes union area inside an aligned fruit mask without claiming whole-fruit
 severity or diagnosis. See the preparation guide for both commands and limitations.
 
-Local verification: 62 JavaScript checks, 75 Python checks and Android
+Local verification: 62 JavaScript checks, 77 Python checks and Android
 build/lint pass. The current debug APK SHA-256 is
-`6ff54e9a2af6f0907b8e68888210e9339593576b8d1d75de24cdd15b755ed425`.
+`bffd03bd610781dc68b22d7468db1d3eca608eec75cbeb4790a3b49691fe9bc8`.
 GitHub automation builds debug artifacts.
 No Android hardware is connected. The public review manifest has 3,050 images and
 zero reviewed target-grade labels; training/evaluation and field/UAT remain blocked

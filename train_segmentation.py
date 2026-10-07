@@ -1,6 +1,7 @@
 """Manuscript symptom segmentation from genuine reviewed fruit-ROI polygons."""
 import json
 from scripts.reviewed_segmentation import SYMPTOMS, segmentation_arguments, prepare_segmentation_dataset
+from scripts.segmentation_onnx import export_segmentation_onnx
 from train_yolo import train_detector
 
 
@@ -26,12 +27,16 @@ def main(argv=None):
         'scheduler': {'name': 'ReduceLROnPlateau', 'patience': 5, 'factor': .5},
         'earlyStopping': {'monitor': 'val/total_loss', 'patience': 10},
         'limitations': ['Review metadata cannot establish label truth or crop provenance.',
-                        'Full preprocessing, field evaluation, coverage denominator and app integration remain unfinished.']
+                        'Export compatibility does not establish accuracy, field performance or release readiness.']
     }
     (args.run_dir / 'training-context.json').write_text(json.dumps(context, indent=2) + '\n', encoding='utf-8')
     best = train_detector(data_yaml, args.run_dir, YOLO, 0 if torch.cuda.is_available() else 'cpu',
                           ManuscriptSegmentationTrainer, initial_weights='yolov8n-seg.pt')
-    print(f'Research checkpoint: {best}. Not exported or integrated into the app.')
+    candidate = args.run_dir / 'yolov8n-disease-seg.onnx'
+    record = export_segmentation_onnx(best, candidate, YOLO, list(SYMPTOMS), input_size=128)
+    print(f'Research checkpoint: {best}')
+    print(f'Checked ONNX candidate: {candidate} ({record["sha256"]})')
+    print('The export is not selectable until held-out evidence and bundled runtime verification pass.')
 
 
 if __name__ == '__main__':

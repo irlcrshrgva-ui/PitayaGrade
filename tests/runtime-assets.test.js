@@ -53,9 +53,14 @@ test('candidate verifier rejects incompatible quality and segmentation outputs',
   const quality = { outputContract:'quality-softmax-v1', classes:['A','B','C','D'] };
   assert.deepEqual(validateContract(quality, { output:{ dims:[1,4], data:new Float32Array(4) } }), [[1,4]]);
   assert.throws(() => validateContract(quality, { output:{ dims:[1,3], data:new Float32Array(3) } }), /Expected quality/);
-  const segmenter = { outputContract:'yolov8-disease-segmentation-v1', classes:['Healthy','Disease'] };
+  const segmenter = { outputContract:'yolov8-disease-segmentation-v1',
+    classes:['Anthracnose','Stem Canker','Soft Rot','Pest Damage','Sunburn','Fungal Spots'] };
+  assert.deepEqual(validateContract(segmenter, {
+    detections:{ dims:[1,42,336], data:new Float32Array(42 * 336) },
+    prototypes:{ dims:[1,32,32,32], data:new Float32Array(32 * 32 * 32) }
+  }), [[1,42,336], [1,32,32,32]]);
   assert.throws(() => validateContract(segmenter, {
-    output:{ dims:[1,38,100], data:new Float32Array(3800) }
+    output:{ dims:[1,43,336], data:new Float32Array(43 * 336) }
   }), /mask prototypes/);
 });
 

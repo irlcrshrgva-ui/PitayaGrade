@@ -37,6 +37,9 @@ test('only verified bundled models can be selected', () => {
   assert.equal(instance.selectModel('efficientnet-b3-quality'), false);
   const disease = instance.MODELS.find(item => item.id === 'yolov8n-disease-seg');
   assert.deepEqual(Array.from(instance.getDiseaseModelCatalog(), item => item.id), ['yolov8n-disease-seg']);
+  assert.deepEqual(Array.from(disease.classes), ['Anthracnose', 'Stem Canker', 'Soft Rot',
+    'Pest Damage', 'Sunburn', 'Fungal Spots']);
+  assert.equal(disease.inputSize, 128);
   disease.available = true;
   assert.equal(instance.canSelectModel(disease), false);
   assert.equal(instance.selectModel(disease.id), false);
@@ -49,7 +52,7 @@ test('disease segmentation contract decodes class and fruit-relative mask covera
   const channels = 4 + disease.classes.length + maskChannels;
   const data = new Float32Array(channels);
   data[0] = 320; data[1] = 320; data[2] = 640; data[3] = 640;
-  data[4 + 1] = 0.9; // Anthracnose
+  data[4] = 0.9; // Anthracnose
   data[4 + disease.classes.length] = 10;
   const outputs = {
     detections: { dims:[1, channels, 1], data },

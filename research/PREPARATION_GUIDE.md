@@ -309,10 +309,21 @@ No masks are inferred from disease labels, boxes or image heuristics.
 Omit `--prepare-only` with a fresh run directory to train using the pinned ML
 dependencies. Training uses 128-pixel inputs, batch 32, the same 10/30-epoch phases
 and validation-loss scheduler as detection. Its loss includes box, mask, class,
-DFL and semantic components. Held-out evaluation runs after training; no exported
-model is installed in the application. No predicted regions does not by itself
-establish a Healthy diagnosis. Fruit-surface coverage/severity, verified crop
-provenance, preprocessing, field evaluation and deployment remain unfinished.
+DFL and semantic components. Held-out evaluation runs after training. A successful
+run also writes `yolov8n-disease-seg.onnx` and its JSON contract record. The export
+must contain one fixed `[1,3,128,128]` input, six symptom classes, one detection
+output and one mask-prototype output; `Healthy` is deliberately not an output class.
+
+Before registration, run:
+
+```text
+node scripts/verify-model-candidate.js yolov8n-disease-seg segmentation_results/reviewed-001/yolov8n-disease-seg.onnx
+```
+
+That WebAssembly check establishes runtime compatibility only. The file is not
+installed or made selectable automatically. No predicted regions does not by
+itself establish a Healthy diagnosis. Fruit-surface coverage/severity calibration,
+verified crop provenance, preprocessing and field evaluation remain unfinished.
 
 ## Research preprocessing previews
 

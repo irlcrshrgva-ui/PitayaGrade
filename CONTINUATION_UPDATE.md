@@ -1,5 +1,23 @@
 # Project continuation update
 
+## 2026-10-07 continuation: segmentation export contract correction
+
+- Corrected the disease pipeline contract to match its reviewed trainer: six
+  symptom mask classes at 128x128. `Healthy` remains a reviewed negative sample,
+  not a seventh segmentation output. This fixes a registry mismatch that would
+  have rejected a genuine trainer export at runtime.
+- Added an automatic post-training ONNX export. It uses a temporary checkpoint
+  copy, refuses overwrites, checks the single-file graph, fixed input, detection
+  channels, prototype tensor and class order, then records the output shapes and
+  SHA-256. Export compatibility does not establish accuracy or enable the model.
+- Documented the exact WebAssembly candidate-verification and later registration
+  gate. No historical or synthetic checkpoint was installed.
+- Verification: all 62 JavaScript and 77 lightweight Python tests pass. Capacitor
+  synchronization, Android debug assembly and lint succeed. The rebuilt APK SHA-256
+  is `bffd03bd610781dc68b22d7468db1d3eca608eec75cbeb4790a3b49691fe9bc8`.
+  The two new Python checks use a synthetic ONNX graph and do not establish
+  research performance.
+
 ## 2026-10-07 continuation: separate disease-model runtime path
 
 - Added an independent disease-segmentation selector and runtime session so the
