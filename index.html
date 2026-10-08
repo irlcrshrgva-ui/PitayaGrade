@@ -478,6 +478,7 @@
         <button class="btn btn-primary btn-full" id="generateReportBtn">📄 Generate Report</button>
         <button class="btn btn-secondary" id="exportCSVBtn" style="flex-shrink:0">CSV</button>
       </div>
+      <button class="btn btn-secondary btn-full" id="exportRejectionsBtn" style="margin-top:-14px;margin-bottom:24px">Export Rejection Testing CSV</button>
 
       <div id="reportPreviewArea"></div>
     </section>
@@ -502,6 +503,18 @@
             </div>
           </div>
           <select class="btn btn-sm btn-secondary" id="languageSelect" aria-label="Language" data-no-translate><option value="en">English</option><option value="fil">Filipino</option></select>
+        </div>
+        <div class="settings-item" id="installAppRow" style="display:none">
+          <div class="settings-item-left">
+            <div class="settings-item-icon">
+              <svg class="icon-svg" viewBox="0 0 24 24"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+            </div>
+            <div>
+              <div class="settings-item-label">Install Web App</div>
+              <div class="settings-item-sub" id="installAppStatus">Waiting for browser install support</div>
+            </div>
+          </div>
+          <button class="btn btn-sm btn-secondary" id="installAppBtn" disabled>Install</button>
         </div>
         <div class="settings-item">
           <div class="settings-item-left">
@@ -614,7 +627,7 @@
             </div>
             <div>
               <div class="settings-item-label" style="color:var(--color-error)">Clear All Data</div>
-              <div class="settings-item-sub">Remove all scan records</div>
+              <div class="settings-item-sub">Remove all scan records and rejection testing feedback</div>
             </div>
           </div>
           <span class="settings-item-right">&#8250;</span>

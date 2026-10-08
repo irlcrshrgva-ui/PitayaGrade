@@ -137,6 +137,38 @@ test('human field validation is explicit, constrained, timestamped and exportabl
   assert.match(exported, /Human Verdict.*Actual Object.*Observed Grade.*Reviewer/s);
   assert.match(exported, /"incorrect","not-dragon-fruit","Not Applicable","Tester 01"/);
 });
+test('rejection feedback is validated and kept separate from graded scan analytics', () => {
+  const a = app();
+  const rejected = a.Scanner._buildRejectionResult(['No green scale tips detected']);
+  assert.throws(() => a.ScanStore.saveRejectionFeedback(rejected, {
+    actualObject: '', reviewer: '', notes: '', model: 'YOLOv8-Nano', threshold: 65
+  }), /actual object.*reviewer/i);
+  const saved = a.ScanStore.saveRejectionFeedback(rejected, {
+    actualObject: 'not-dragon-fruit', reviewer: 'Tester 02', notes: 'Face in frame',
+    model: 'YOLOv8-Nano', threshold: 65
+  }, 'data:image/jpeg;base64,test');
+  assert.equal(saved.actualObject, 'not-dragon-fruit');
+  assert.equal(a.ScanStore.getScans().length, 0);
+  assert.equal(a.ScanStore.getRejections().length, 1);
+  assert.equal(a.ScanStore.getRejections()[0].notes, 'Face in frame');
+  assert.ok(a.events.includes('pg:rejections-changed'));
+});
+test('rejection testing feedback exports as its own CSV and clear removes both stores', async () => {
+  const a = app(); let exported;
+  const rejected = a.Scanner._buildRejectionResult(['Threshold not met']);
+  a.ScanStore.saveRejectionFeedback(rejected, {
+    actualObject: 'dragon-fruit', reviewer: 'Tester 03', notes: 'False rejection',
+    model: 'YOLOv8-Nano', threshold: 70
+  });
+  nativeReports(a, { saveCsv: async options => { exported = options; return { cancelled: false }; } });
+  await a.ReportsManager.exportRejectionCSV();
+  assert.match(exported.filename, /^PitayaGrade_Rejection_Testing_/);
+  assert.match(exported.data, /Actual Object.*Detection Reasons.*Reviewer/s);
+  assert.match(exported.data, /"dragon-fruit".*"False rejection"/s);
+  a.ScanStore.clear();
+  assert.equal(a.ScanStore.getScans().length, 0);
+  assert.equal(a.ScanStore.getRejections().length, 0);
+});
 test('quota failure preserves records and does not broadcast success', () => {
   const a = app(); a.data.set('pg_scans', JSON.stringify([scan()]));
   a.localStorage.setItem = () => { throw new Error('QuotaExceededError'); };

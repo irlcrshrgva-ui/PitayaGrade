@@ -13,6 +13,12 @@ behavior still requires target-browser and device evidence. Saved scans now acce
 explicit human field validation and export it with reports. These observer-entered
 records remain distinct from expert ground truth and formal held-out predictions.
 
+Rejected images now have a separate, exportable testing-feedback store for actual
+object, reviewer and capture notes. This supports collection of real false-rejection
+and negative-image evidence without mixing unrecognized images into grade analytics.
+The read-only `npm run readiness` gate reports missing model assets, reviewed labels,
+formal Week 4 evidence and release signing instead of inferring completion.
+
 The bundled detector now has a conservative fruit-signature rejection gate because
 its four grade classes cannot express a true background/person class. The configured
 confidence threshold is also applied to actual ONNX inference. Synthetic face-like
@@ -68,9 +74,9 @@ any supplied generated provenance before training. The mask-based coverage tool
 computes union area inside an aligned fruit mask without claiming whole-fruit
 severity or diagnosis. See the preparation guide for both commands and limitations.
 
-Local verification: 67 JavaScript checks, 80 Python checks and Android
+Local verification: 72 JavaScript checks, 80 Python checks and Android
 build/lint pass. The current debug APK SHA-256 is
-`10f7a16c37c1dbadeeed5740a6527fc9b44c5e1506176cdc1216bd88b385b88b`.
+`aed76d6e5431c4fc01e99eeb079b13c5f4b7e5f53b5bfed54709f6bce834a5b8`.
 GitHub automation builds debug artifacts.
 No Android hardware is connected. The public review manifest has 3,050 images and
 zero reviewed target-grade labels; training/evaluation and field/UAT remain blocked

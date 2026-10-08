@@ -41,6 +41,50 @@ const ScanStore = {
       (review.actualObject !== 'not-dragon-fruit' || review.actualGrade === 'Not Applicable');
   },
 
+  validRejection(record) {
+    return record && /^[\w-]+$/.test(String(record.id)) && Number.isFinite(Date.parse(record.timestamp)) &&
+      Array.isArray(record.reasons) && record.reasons.length > 0 && record.reasons.every(reason => typeof reason === 'string') &&
+      ['dragon-fruit', 'not-dragon-fruit', 'unsure'].includes(record.actualObject) &&
+      typeof record.reviewer === 'string' && record.reviewer.trim().length > 0 && record.reviewer.length <= 100 &&
+      typeof record.notes === 'string' && record.notes.length <= 500 && Number.isFinite(Date.parse(record.reviewedAt)) &&
+      typeof record.model === 'string' && Number.isFinite(record.threshold) && record.threshold >= 0 && record.threshold <= 100 &&
+      (record.thumbnail == null || typeof record.thumbnail === 'string');
+  },
+
+  getRejections(strict = false) {
+    const records = this.read('pg_rejections', [], Array.isArray, strict);
+    const valid = records.filter(record => this.validRejection(record));
+    if (valid.length !== records.length) {
+      this.warnings.add('pg_rejections');
+      if (strict) throw new Error('Some rejection feedback is invalid. Existing feedback was preserved.');
+    }
+    return valid.sort((a, b) => Date.parse(b.timestamp) - Date.parse(a.timestamp));
+  },
+
+  saveRejectionFeedback(result, values, thumbnail = '') {
+    const record = {
+      id: result?.id,
+      timestamp: result?.timestamp,
+      reasons: Array.isArray(result?.disease?.symptoms) ? result.disease.symptoms.slice(0, 10) : [],
+      actualObject: String(values?.actualObject || ''),
+      reviewer: String(values?.reviewer || '').trim(),
+      notes: String(values?.notes || '').trim(),
+      reviewedAt: new Date().toISOString(),
+      model: String(values?.model || 'Unknown'),
+      threshold: Number(values?.threshold),
+      thumbnail
+    };
+    if (!this.validRejection(record)) {
+      throw new Error('Choose the actual object and enter the reviewer before saving.');
+    }
+    const records = this.getRejections(true).filter(item => String(item.id) !== String(record.id));
+    records.unshift(record);
+    if (records.length > 200) records.length = 200;
+    localStorage.setItem('pg_rejections', JSON.stringify(records));
+    window.dispatchEvent(new Event('pg:rejections-changed'));
+    return record;
+  },
+
   getScans(strict = false) {
     const scans = this.read('pg_scans', [], Array.isArray, strict);
     const valid = scans.filter(scan => this.validScan(scan));
@@ -91,7 +135,9 @@ const ScanStore = {
 
   clear() {
     localStorage.removeItem('pg_scans');
+    localStorage.removeItem('pg_rejections');
     this.warnings.delete('pg_scans');
+    this.warnings.delete('pg_rejections');
     this.changed();
   },
 

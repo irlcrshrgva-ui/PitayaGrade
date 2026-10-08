@@ -712,6 +712,21 @@ a { text-decoration: none; color: inherit; }
   width: 100%;
 }
 
+.validation-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font: inherit;
+}
+
+.validation-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
 .btn-sm {
   padding: 8px 16px;
   font-size: 12px;

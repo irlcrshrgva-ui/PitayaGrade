@@ -22,12 +22,16 @@ const ReportsManager = {
     ['reportFrom', 'reportTo'].forEach(id => document.getElementById(id)?.addEventListener('change', () => this.invalidate()));
     const generateBtn = document.getElementById('generateReportBtn');
     const csvBtn = document.getElementById('exportCSVBtn');
+    const rejectionBtn = document.getElementById('exportRejectionsBtn');
 
     if (generateBtn) {
       generateBtn.addEventListener('click', () => this.generateReport());
     }
     if (csvBtn) {
       csvBtn.addEventListener('click', () => this.exportCSV());
+    }
+    if (rejectionBtn) {
+      rejectionBtn.addEventListener('click', () => this.exportRejectionCSV());
     }
   },
 
@@ -253,6 +257,51 @@ const ReportsManager = {
       }
     } catch (error) {
       ToastManager.show('Report could not be exported. Please try again.', 'error');
+    } finally {
+      this.exporting = false;
+      if (button) button.disabled = false;
+    }
+  },
+
+  async exportRejectionCSV() {
+    if (this.exporting) return;
+    const records = ScanStore.getRejections();
+    if (records.length === 0) {
+      ToastManager.show('No rejection testing feedback to export', 'warning');
+      return;
+    }
+    const headers = ['Scan Date', 'Scan Time', 'Actual Object', 'Detection Reasons', 'Model', 'Threshold', 'Reviewer', 'Reviewed At', 'Testing Notes'];
+    let csv = '\uFEFF' + headers.join(',') + '\r\n';
+    records.forEach(record => {
+      const date = new Date(record.timestamp);
+      csv += [date.toLocaleDateString('en-PH'), date.toLocaleTimeString('en-PH'), record.actualObject,
+        record.reasons.join(' | '), record.model, record.threshold + '%', record.reviewer,
+        record.reviewedAt, record.notes].map(cell => this._csvCell(cell)).join(',') + '\r\n';
+    });
+
+    this.exporting = true;
+    const button = document.getElementById('exportRejectionsBtn');
+    if (button) button.disabled = true;
+    try {
+      const filename = `PitayaGrade_Rejection_Testing_${ScanStore.localDate()}.csv`;
+      const native = this._nativePlugin();
+      if (native) {
+        const result = await native.saveCsv({ data: csv, filename });
+        if (!result.cancelled) ToastManager.show('Rejection testing CSV exported', 'success');
+        return;
+      }
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      try {
+        link.href = url; link.download = filename;
+        document.body.appendChild(link); link.click();
+        ToastManager.show('Rejection testing CSV download requested', 'success');
+      } finally {
+        link.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+      }
+    } catch (error) {
+      ToastManager.show('Rejection testing feedback could not be exported.', 'error');
     } finally {
       this.exporting = false;
       if (button) button.disabled = false;

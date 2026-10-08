@@ -8,6 +8,7 @@ const Scanner = {
   currentImage: null,
   currentImageData: null,
   currentFileName: '',
+  currentResult: null,
   isProcessing: false,
   imageRequest: 0,
 
@@ -925,6 +926,7 @@ const Scanner = {
   },
 
   _displayResult(result) {
+    this.currentResult = result;
     const area = document.getElementById('resultArea');
     area.style.display = 'block';
 
@@ -963,6 +965,26 @@ const Scanner = {
                 <svg class="icon-svg" style="width:16px;height:16px" viewBox="0 0 24 24"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
                 Try Again
               </button>
+            </div>
+            <div class="result-section" style="margin-top:18px;padding-top:16px;border-top:1px solid var(--border-subtle)">
+              <div class="result-section-title">Rejection Testing Feedback</div>
+              <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;margin-bottom:10px">
+                For testing only. Save what was actually in the image; this stays separate from graded scan records.
+              </div>
+              <label for="rejectionActualObject" style="font-size:12px;color:var(--text-secondary)">Actual object</label>
+              <select id="rejectionActualObject" class="validation-input" style="margin:5px 0 9px">
+                <option value="">Select...</option><option value="dragon-fruit">Dragon fruit</option>
+                <option value="not-dragon-fruit">Not a dragon fruit</option><option value="unsure">Unsure</option>
+              </select>
+              <label for="rejectionReviewer" style="font-size:12px;color:var(--text-secondary)">Reviewer</label>
+              <input id="rejectionReviewer" class="validation-input" maxlength="100" placeholder="Name or approved reviewer code" style="margin:5px 0 9px">
+              <label for="rejectionNotes" style="font-size:12px;color:var(--text-secondary)">Testing notes</label>
+              <textarea id="rejectionNotes" class="validation-input" maxlength="500" rows="2" placeholder="Optional: lighting, distance, background, or device" style="margin:5px 0 9px;resize:vertical"></textarea>
+              <label style="display:flex;align-items:flex-start;gap:8px;font-size:12px;color:var(--text-secondary);margin-bottom:10px">
+                <input type="checkbox" id="includeRejectionThumbnail" style="margin-top:2px">
+                <span>Include a small local thumbnail for research review. Leave off when a person is visible unless your study permits retaining the image.</span>
+              </label>
+              <button class="btn btn-secondary btn-full" id="saveRejectionFeedbackBtn" onclick="Scanner.saveRejectionFeedback()">Save Rejection Feedback</button>
             </div>
           </div>
         </div>
@@ -1120,6 +1142,33 @@ const Scanner = {
     area.scrollIntoView({ behavior: 'smooth', block: 'start' });
   },
 
+  saveRejectionFeedback() {
+    const result = this.currentResult;
+    if (!result || result.isDragonFruit !== false) return;
+    try {
+      const preview = document.getElementById('scannerPreview');
+      let thumbnail = '';
+      if (preview && document.getElementById('includeRejectionThumbnail')?.checked) {
+        const canvas = document.createElement('canvas');
+        canvas.width = 80; canvas.height = 80;
+        canvas.getContext('2d').drawImage(preview, 0, 0, 80, 80);
+        thumbnail = canvas.toDataURL('image/jpeg', 0.6);
+      }
+      ScanStore.saveRejectionFeedback(result, {
+        actualObject: document.getElementById('rejectionActualObject')?.value,
+        reviewer: document.getElementById('rejectionReviewer')?.value,
+        notes: document.getElementById('rejectionNotes')?.value,
+        model: typeof ModelInference !== 'undefined' ? ModelInference.getSelectedModel()?.name || 'Unknown' : 'Unknown',
+        threshold: Number(PitayaApp?.settings?.threshold ?? 0)
+      }, thumbnail);
+      const button = document.getElementById('saveRejectionFeedbackBtn');
+      if (button) { button.disabled = true; button.textContent = 'Rejection Feedback Saved'; }
+      ToastManager.show('Rejection feedback saved separately', 'success');
+    } catch (error) {
+      ToastManager.show(error.message || 'Rejection feedback could not be saved.', 'warning');
+    }
+  },
+
   _saveScan(result) {
     if (result.isDragonFruit === false) return; // Skip saving unrecognized scans to keep history clean
     const scans = ScanStore.getScans(true);
@@ -1164,6 +1213,7 @@ const Scanner = {
     this.imageRequest++;
     this.currentImage = null;
     this.currentImageData = null;
+    this.currentResult = null;
 
     const preview = document.getElementById('scannerPreview');
     const placeholder = document.getElementById('scanPlaceholder');

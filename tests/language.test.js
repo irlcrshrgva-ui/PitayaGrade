@@ -83,3 +83,25 @@ test('destructive confirmations use the selected language and preserve cancellat
   a.manager.confirm('Delete this scan record?');
   assert.equal(a.confirmations[1], 'Delete this scan record?');
 });
+
+test('human validation interface translates while research values remain stable', () => {
+  const a = setup();
+  const values = [
+    'Human Field Validation', 'Prediction verdict', 'Correct', 'Incorrect', 'Unsure',
+    'Actual object', 'Dragon fruit', 'Not a dragon fruit', 'Observed grade',
+    'Not Applicable', 'Reviewer', 'Name or approved reviewer code',
+    'Validation notes', 'Save Human Validation', 'Last saved: 10/8/2026, 6:30:00 PM',
+    '3 (1 correct, 1 incorrect, 1 unsure)', 'Grade B'
+  ];
+  const nodes = values.map(value => a.add(value));
+  a.manager.setLanguage('fil');
+  assert.deepEqual(nodes.map(node => node.nodeValue), [
+    'Manwal na Pagpapatunay sa Aktuwal na Paggamit', 'Pasya sa prediksyon', 'Tama', 'Mali', 'Hindi tiyak',
+    'Aktuwal na bagay', 'Dragon fruit', 'Hindi dragon fruit', 'Naobserbahang grado',
+    'Hindi naaangkop', 'Tagasuri', 'Pangalan o aprubadong code ng tagasuri',
+    'Mga tala ng pagpapatunay', 'I-save ang Manwal na Pagpapatunay', 'Huling na-save: 10/8/2026, 6:30:00 PM',
+    '3 (1 tama, 1 mali, 1 hindi tiyak)', 'Grade B'
+  ]);
+  a.manager.setLanguage('en');
+  assert.deepEqual(nodes.map(node => node.nodeValue), values);
+});

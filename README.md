@@ -99,6 +99,17 @@ The test suite executes the actual shipped detector with its WASM backend as
 well as checking application workflows. This is a runtime test, not an accuracy
 evaluation. `npm run test:inference` runs that check on its own.
 
+Run `npm run readiness` for the evidence-based release gate. It intentionally
+reports BLOCKED until genuine reviewed labels, every evaluated model asset,
+completed Week 4 evidence and team-controlled Android release signing exist.
+
+Rejected images can be labeled during testing and exported from Reports as a
+separate rejection-testing CSV. They never enter graded scan history or analytics.
+Thumbnail retention is opt-in and should remain off for people unless the approved
+study protocol permits keeping that image.
+The hosted HTTPS version exposes an Install control in Settings when the browser
+offers installation and reports when an updated service worker is waiting.
+
 The pinned ONNX Runtime Web 1.19.0 bundle includes its JavaScript loader,
 `ort-wasm-simd-threaded.mjs` and matching WASM binary. Builds verify all three
 against `www/runtime-assets.json` so missing/mismatched runtime files cannot be

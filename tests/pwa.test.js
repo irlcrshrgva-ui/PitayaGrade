@@ -33,3 +33,12 @@ test('packaged web files include exact PWA sources', () => {
     );
   }
 });
+
+test('web UI exposes install readiness and reports waiting service-worker updates', () => {
+  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  const app = fs.readFileSync(path.join(root, 'js/app.js'), 'utf8');
+  assert.match(html, /id="installAppBtn"/);
+  assert.match(app, /beforeinstallprompt/);
+  assert.match(app, /registration\.waiting/);
+  assert.match(app, /update is ready\. Reload the page/);
+});

@@ -1,5 +1,26 @@
 # Project continuation update
 
+## 2026-10-08 continuation: test evidence, install flow and release gate
+
+- Rejected images now accept structured testing feedback: actual object, reviewer,
+  timestamp and optional capture notes. These records use a separate local store
+  and separate CSV export, so negative-image and false-rejection evidence cannot
+  silently contaminate graded scan analytics.
+- Completed Filipino coverage for the human-validation and rejection-feedback
+  controls while preserving stored research values in English.
+- Added an in-app web installation control that activates only when the browser
+  supplies a valid install prompt, plus a notification when a newer service worker
+  is waiting. The cache version was advanced so hosted clients can receive this
+  update.
+- Added `npm run readiness`, a read-only release gate that verifies the full model
+  catalog, checksums for enabled assets, genuine reviewed target labels, completed
+  Week 4 evidence, Android build presence and release signing. It currently reports
+  BLOCKED instead of treating templates or synthetic checks as research results.
+- Verification: all 72 JavaScript checks and 80 lightweight Python checks pass.
+  Capacitor synchronization, Android debug assembly and lint succeed. The rebuilt
+  APK SHA-256 is
+  `aed76d6e5431c4fc01e99eeb079b13c5f4b7e5f53b5bfed54709f6bce834a5b8`.
+
 ## 2026-10-08 continuation: installable web app and field validation
 
 - Added a scoped web manifest and service worker for the public GitHub Pages app.

@@ -241,12 +241,12 @@ const PitayaApp = {
         if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); clearBtn.click(); }
       });
       clearBtn.addEventListener('click', () => {
-        if (LanguageManager.confirm('Are you sure you want to delete all scan records? This cannot be undone.')) {
+        if (LanguageManager.confirm('Delete all scan records and rejection testing feedback? This cannot be undone.')) {
           try {
             ScanStore.clear();
             document.getElementById('detailModal').classList.remove('open');
             document.getElementById('modalBackdrop').classList.remove('open');
-            ToastManager.show('All scan records cleared', 'info');
+            ToastManager.show('All local testing records cleared', 'info');
           } catch (error) { ToastManager.show('Unable to clear scan records.', 'error'); }
         }
       });
@@ -317,14 +317,62 @@ const PitayaApp = {
   }
 };
 
+const WebAppInstall = {
+  promptEvent: null,
+  init() {
+    const row = document.getElementById('installAppRow');
+    const button = document.getElementById('installAppBtn');
+    const status = document.getElementById('installAppStatus');
+    if (!row || !button || !status) return;
+    const standalone = window.matchMedia?.('(display-mode: standalone)').matches || navigator.standalone === true;
+    if (standalone) return;
+    row.style.display = 'flex';
+    window.addEventListener('beforeinstallprompt', event => {
+      event.preventDefault();
+      this.promptEvent = event;
+      button.disabled = false;
+      status.textContent = 'Install for quick access and offline app files';
+    });
+    button.addEventListener('click', async () => {
+      if (!this.promptEvent) return;
+      button.disabled = true;
+      try {
+        await this.promptEvent.prompt();
+        const choice = await this.promptEvent.userChoice;
+        this.promptEvent = null;
+        status.textContent = choice.outcome === 'accepted' ? 'Installation accepted' : 'Install from the browser menu when ready';
+      } catch (error) {
+        button.disabled = false;
+        status.textContent = 'Install from the browser menu when ready';
+      }
+    });
+    window.addEventListener('appinstalled', () => {
+      this.promptEvent = null;
+      row.style.display = 'none';
+      ToastManager.show('PitayaGrade installed', 'success');
+    });
+  }
+};
+
 // Initialize on DOM ready
 document.addEventListener('DOMContentLoaded', () => {
   PitayaApp.init();
+  WebAppInstall.init();
   const isLocalPreview = ['localhost', '127.0.0.1'].includes(window.location.hostname);
   if ('serviceWorker' in navigator && location.protocol === 'https:' && !isLocalPreview) {
-    navigator.serviceWorker.register('./service-worker.js').catch(error => {
-      console.warn('Offline web support could not be enabled:', error);
-    });
+    navigator.serviceWorker.register('./service-worker.js').then(registration => {
+      const reportReadyUpdate = () => {
+        if (registration.waiting && navigator.serviceWorker.controller) {
+          ToastManager.show('A PitayaGrade update is ready. Reload the page to use it.', 'info', 8000);
+        }
+      };
+      reportReadyUpdate();
+      registration.addEventListener('updatefound', () => {
+        registration.installing?.addEventListener('statechange', event => {
+          if (event.target.state === 'installed') reportReadyUpdate();
+        });
+      });
+    }).catch(error => console.warn('Offline web support could not be enabled:', error));
   }
 });
 
