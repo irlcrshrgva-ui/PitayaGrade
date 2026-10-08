@@ -1,0 +1,19 @@
+{
+  "name": "PitayaGrade – Dragon Fruit Quality Grading",
+  "short_name": "PitayaGrade",
+  "description": "Local AI-assisted quality grading and visible-symptom assessment for dragon fruit.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0E1525",
+  "theme_color": "#0E1525",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "assets/logo.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

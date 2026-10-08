@@ -56,6 +56,7 @@ At minimum, test:
 - selection and persistence of each genuinely bundled model;
 - recognized and unrecognized images;
 - prediction, confidence, method and model identity in saved records;
+- save human field validation for tested records and export the resulting CSV;
 - history search and notes;
 - analytics and date-bounded reports;
 - notification preferences and notification read state;
@@ -65,6 +66,10 @@ At minimum, test:
 
 Mark a test `Blocked` when its required model, device feature or reviewed input is
 missing. A blocked test is not a pass.
+
+Human field-validation entries in the app are observer evidence for this device
+workflow. Do not merge them into an expert-reviewed model test set unless the
+reviewer, protocol and sample provenance satisfy the approved research method.
 
 ## 4. User acceptance testing
 

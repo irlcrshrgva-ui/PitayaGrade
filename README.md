@@ -45,6 +45,11 @@ The preview is published from `www/` after updates reach the `main` branch. Came
 access requires browser permission. Records and settings remain local to each
 browser/device and are not synchronized to a server.
 
+The HTTPS preview is installable as a web app. Its interface shell is cached for
+offline reuse, while the large ONNX model and WebAssembly runtime become available
+offline after they have been loaded successfully at least once. This does not
+replace clean-install/offline-first testing on the target Android hardware.
+
 ```bash
 npm ci
 npm start
@@ -85,6 +90,10 @@ non-fruit negative images or establish real-world specificity.
 New scans retain their analysis methods and report physical size as not measured.
 Existing records are preserved, including earlier framing-based size estimates.
 Symptom guidance describes possible signs to inspect, not confirmed findings.
+Saved scan details include an optional human field-validation form. It records a
+constrained verdict, actual object, observed grade, reviewer identifier, timestamp
+and notes, then includes those fields in CSV exports. This is traceable field
+feedback; it is not automatically an expert annotation or accuracy result.
 
 The test suite executes the actual shipped detector with its WASM backend as
 well as checking application workflows. This is a runtime test, not an accuracy

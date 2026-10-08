@@ -169,6 +169,10 @@ const HistoryManager = {
     });
 
     const confClass = scan.grade.confidence > 0.85 ? 'high' : scan.grade.confidence > 0.7 ? 'medium' : 'low';
+    const review = record.review || {
+      verdict: 'unsure', actualObject: 'unsure', actualGrade: 'Unsure', reviewer: '', notes: ''
+    };
+    const selected = (actual, expected) => actual === expected ? ' selected' : '';
 
     body.innerHTML = `
       <div style="text-align:center;margin-bottom:16px">
@@ -323,6 +327,36 @@ const HistoryManager = {
       ` : ''}
 
       <div class="result-section" style="margin-top:16px">
+        <div class="result-section-title">Human Field Validation</div>
+        <p style="font-size:12px;color:var(--text-secondary);margin:0 0 10px">
+          Enter a real observer's assessment. This feedback supports field testing but is not automatically expert ground truth.
+        </p>
+        <label for="reviewVerdict" style="font-size:12px;color:var(--text-secondary)">Prediction verdict</label>
+        <select id="reviewVerdict" class="search-input" style="width:100%;margin:4px 0 8px">
+          <option value="correct"${selected(review.verdict, 'correct')}>Correct</option>
+          <option value="incorrect"${selected(review.verdict, 'incorrect')}>Incorrect</option>
+          <option value="unsure"${selected(review.verdict, 'unsure')}>Unsure</option>
+        </select>
+        <label for="reviewObject" style="font-size:12px;color:var(--text-secondary)">Actual object</label>
+        <select id="reviewObject" class="search-input" style="width:100%;margin:4px 0 8px">
+          <option value="dragon-fruit"${selected(review.actualObject, 'dragon-fruit')}>Dragon fruit</option>
+          <option value="not-dragon-fruit"${selected(review.actualObject, 'not-dragon-fruit')}>Not a dragon fruit</option>
+          <option value="unsure"${selected(review.actualObject, 'unsure')}>Unsure</option>
+        </select>
+        <label for="reviewGrade" style="font-size:12px;color:var(--text-secondary)">Observed grade</label>
+        <select id="reviewGrade" class="search-input" style="width:100%;margin:4px 0 8px">
+          ${['Grade A', 'Grade B', 'Grade C', 'Reject', 'Not Applicable', 'Unsure'].map(value =>
+            `<option value="${value}"${selected(review.actualGrade, value)}>${value}</option>`).join('')}
+        </select>
+        <label for="reviewerName" style="font-size:12px;color:var(--text-secondary)">Reviewer</label>
+        <input id="reviewerName" class="search-input" maxlength="100" value="${ScanStore.escape(review.reviewer)}" style="width:100%;margin:4px 0 8px" placeholder="Name or approved reviewer code">
+        <label for="reviewNotes" style="font-size:12px;color:var(--text-secondary)">Validation notes</label>
+        <textarea id="reviewNotes" class="search-input" rows="2" maxlength="500" style="width:100%;margin-top:4px">${ScanStore.escape(review.notes)}</textarea>
+        ${record.review ? `<div style="font-size:11px;color:var(--text-tertiary);margin-top:6px">Last saved: ${new Date(record.review.reviewedAt).toLocaleString('en-PH')}</div>` : ''}
+        <button class="btn btn-secondary btn-full" id="saveReviewBtn" style="margin-top:8px">Save Human Validation</button>
+      </div>
+
+      <div class="result-section" style="margin-top:16px">
         <label class="result-section-title" for="scanNotes">Notes</label>
         <textarea id="scanNotes" class="search-input" rows="3" maxlength="2000" style="width:100%;padding:12px">${ScanStore.escape(scan.notes)}</textarea>
         <button class="btn btn-primary btn-full" id="saveNotesBtn" style="margin-top:8px">Save Notes</button>
@@ -339,6 +373,22 @@ const HistoryManager = {
       try {
         ScanStore.updateNotes(id, document.getElementById('scanNotes').value);
         ToastManager.show('Notes saved', 'success');
+      } catch (error) { ToastManager.show(error.message, 'error'); }
+    });
+    document.getElementById('reviewObject').addEventListener('change', event => {
+      if (event.target.value === 'not-dragon-fruit') document.getElementById('reviewGrade').value = 'Not Applicable';
+    });
+    document.getElementById('saveReviewBtn').addEventListener('click', () => {
+      try {
+        ScanStore.updateReview(id, {
+          verdict: document.getElementById('reviewVerdict').value,
+          actualObject: document.getElementById('reviewObject').value,
+          actualGrade: document.getElementById('reviewGrade').value,
+          reviewer: document.getElementById('reviewerName').value,
+          notes: document.getElementById('reviewNotes').value
+        });
+        ToastManager.show('Human validation saved', 'success');
+        this.showDetail(id);
       } catch (error) { ToastManager.show(error.message, 'error'); }
     });
   },

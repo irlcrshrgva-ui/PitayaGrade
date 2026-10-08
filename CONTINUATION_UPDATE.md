@@ -1,5 +1,22 @@
 # Project continuation update
 
+## 2026-10-08 continuation: installable web app and field validation
+
+- Added a scoped web manifest and service worker for the public GitHub Pages app.
+  The application shell is available offline after installation; the large ONNX
+  model and WASM runtime are cached after their first successful use. Local preview
+  remains uncached to prevent stale development builds.
+- Added structured human field validation to saved scan details: prediction
+  verdict, actual object, observed grade, reviewer identifier, timestamp and notes.
+  Values are constrained, stored locally and included in CSV exports. Reports show
+  validation counts without presenting them as model accuracy or expert labels.
+- Browser QA confirmed that the validation form fits the mobile detail sheet and
+  remains visibly labeled as field feedback rather than expert ground truth.
+- Verification: all 67 JavaScript checks and 80 lightweight Python checks pass.
+  Capacitor synchronization, Android debug assembly and lint succeed. The rebuilt
+  APK SHA-256 is
+  `10f7a16c37c1dbadeeed5740a6527fc9b44c5e1506176cdc1216bd88b385b88b`.
+
 ## 2026-10-07 continuation: face false-positive safety gate
 
 - Confirmed the structural false-positive risk: the bundled detector has only four

@@ -25,7 +25,20 @@ const ScanStore = {
       scan.details && typeof scan.details === 'object' &&
       (scan.disease.symptoms == null || (Array.isArray(scan.disease.symptoms) && scan.disease.symptoms.every(s => typeof s === 'string'))) &&
       (scan.recommendations == null || (Array.isArray(scan.recommendations) && scan.recommendations.every(r => r && typeof r.text === 'string'))) &&
-      (scan.notes == null || typeof scan.notes === 'string');
+      (scan.notes == null || typeof scan.notes === 'string') && this.validReview(scan.review);
+  },
+
+  validReview(review) {
+    if (review == null) return true;
+    const grades = ['Grade A', 'Grade B', 'Grade C', 'Reject', 'Not Applicable', 'Unsure'];
+    return review && typeof review === 'object' &&
+      ['correct', 'incorrect', 'unsure'].includes(review.verdict) &&
+      ['dragon-fruit', 'not-dragon-fruit', 'unsure'].includes(review.actualObject) &&
+      grades.includes(review.actualGrade) &&
+      typeof review.reviewer === 'string' && review.reviewer.trim().length > 0 && review.reviewer.length <= 100 &&
+      typeof review.notes === 'string' && review.notes.length <= 500 &&
+      Number.isFinite(Date.parse(review.reviewedAt)) &&
+      (review.actualObject !== 'not-dragon-fruit' || review.actualGrade === 'Not Applicable');
   },
 
   getScans(strict = false) {
@@ -51,6 +64,29 @@ const ScanStore = {
     if (!scan) throw new Error('This record no longer exists.');
     scan.notes = notes;
     this.saveScans(scans);
+  },
+
+  updateReview(id, values) {
+    const scans = this.getScans(true);
+    const scan = scans.find(item => String(item.id) === String(id));
+    if (!scan) throw new Error('This record no longer exists.');
+    const actualObject = String(values?.actualObject || '');
+    const review = {
+      verdict: String(values?.verdict || ''),
+      actualObject,
+      actualGrade: actualObject === 'not-dragon-fruit'
+        ? 'Not Applicable'
+        : String(values?.actualGrade || ''),
+      reviewer: String(values?.reviewer || '').trim(),
+      notes: String(values?.notes || '').trim(),
+      reviewedAt: new Date().toISOString()
+    };
+    if (!this.validReview(review)) {
+      throw new Error('Complete the validation fields using the available options. Reviewer is required.');
+    }
+    scan.review = review;
+    this.saveScans(scans);
+    return review;
   },
 
   clear() {

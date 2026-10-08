@@ -5,7 +5,13 @@ project owner on 2026-09-19. Features beyond that document require an explicit
 owner request and approval. This audit does not revise the manuscript or approve
 changes to the research design.
 
-## Current status — 2026-10-07
+## Current status — 2026-10-08
+
+The public web build is now installable and caches its application shell. Large
+inference assets are cached only after first successful use, so offline-first
+behavior still requires target-browser and device evidence. Saved scans now accept
+explicit human field validation and export it with reports. These observer-entered
+records remain distinct from expert ground truth and formal held-out predictions.
 
 The bundled detector now has a conservative fruit-signature rejection gate because
 its four grade classes cannot express a true background/person class. The configured
@@ -62,9 +68,9 @@ any supplied generated provenance before training. The mask-based coverage tool
 computes union area inside an aligned fruit mask without claiming whole-fruit
 severity or diagnosis. See the preparation guide for both commands and limitations.
 
-Local verification: 63 JavaScript checks, 80 Python checks and Android
+Local verification: 67 JavaScript checks, 80 Python checks and Android
 build/lint pass. The current debug APK SHA-256 is
-`bf803e568456e4d794875d7f1075d6345150c82005b5bf72a02f29cc7741866f`.
+`10f7a16c37c1dbadeeed5740a6527fc9b44c5e1506176cdc1216bd88b385b88b`.
 GitHub automation builds debug artifacts.
 No Android hardware is connected. The public review manifest has 3,050 images and
 zero reviewed target-grade labels; training/evaluation and field/UAT remain blocked

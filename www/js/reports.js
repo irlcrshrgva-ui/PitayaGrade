@@ -101,6 +101,9 @@ const ReportsManager = {
 
     const avgConfidence = (totalConfidence / total * 100).toFixed(1);
     const healthy = total - Object.values(diseases).reduce((a, b) => a + b, 0);
+    const reviewed = scans.filter(scan => scan.review);
+    const correctReviews = reviewed.filter(scan => scan.review.verdict === 'correct').length;
+    const incorrectReviews = reviewed.filter(scan => scan.review.verdict === 'incorrect').length;
     const fromStr = document.getElementById('reportFrom').value;
     const toStr = document.getElementById('reportTo').value;
 
@@ -120,6 +123,7 @@ const ReportsManager = {
           <tr><td>Average Confidence</td><td>${avgConfidence}%</td></tr>
           <tr><td>Healthy Fruits</td><td>${healthy} (${((healthy/total)*100).toFixed(1)}%)</td></tr>
           <tr><td>Fruits with estimated disease symptoms</td><td>${total - healthy} (${(((total-healthy)/total)*100).toFixed(1)}%)</td></tr>
+          <tr><td>Human field validations</td><td>${reviewed.length} (${correctReviews} correct, ${incorrectReviews} incorrect, ${reviewed.length - correctReviews - incorrectReviews} unsure)</td></tr>
         </table>
 
         <h3 style="font-size:14px;margin:16px 0 8px;color:#333;border-bottom:2px solid #E91E63;padding-bottom:4px">Quality Grade Distribution</h3>
@@ -192,7 +196,7 @@ const ReportsManager = {
       return;
     }
 
-    const headers = ['Date', 'Time', 'Grade', 'Grade Confidence', 'Disease', 'Disease Confidence', 'Size', 'Color Uniformity', 'Surface Condition', 'Processing Mode', 'Processing Time', 'Notes'];
+    const headers = ['Date', 'Time', 'Grade', 'Grade Confidence', 'Disease', 'Disease Confidence', 'Size', 'Color Uniformity', 'Surface Condition', 'Processing Mode', 'Processing Time', 'Notes', 'Human Verdict', 'Actual Object', 'Observed Grade', 'Reviewer', 'Reviewed At', 'Validation Notes'];
     
     const rows = scans.map(s => {
       const d = new Date(s.timestamp);
@@ -208,7 +212,13 @@ const ReportsManager = {
         s.details.surfaceCondition,
         s.details.processingMode,
         s.details.processingTime,
-        s.notes || ''
+        s.notes || '',
+        s.review?.verdict || '',
+        s.review?.actualObject || '',
+        s.review?.actualGrade || '',
+        s.review?.reviewer || '',
+        s.review?.reviewedAt || '',
+        s.review?.notes || ''
       ];
     });
 

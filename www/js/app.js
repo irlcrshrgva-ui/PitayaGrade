@@ -320,6 +320,12 @@ const PitayaApp = {
 // Initialize on DOM ready
 document.addEventListener('DOMContentLoaded', () => {
   PitayaApp.init();
+  const isLocalPreview = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+  if ('serviceWorker' in navigator && location.protocol === 'https:' && !isLocalPreview) {
+    navigator.serviceWorker.register('./service-worker.js').catch(error => {
+      console.warn('Offline web support could not be enabled:', error);
+    });
+  }
 });
 
 /* ======================================   First-Time Tutorial

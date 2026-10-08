@@ -112,6 +112,31 @@ test('notes persist, participate in search, and notify related views', () => {
   assert.equal(a.events.length, 2);
   assert.throws(() => a.ScanStore.updateNotes(1, 'a'.repeat(2001)), /2,000/);
 });
+test('human field validation is explicit, constrained, timestamped and exportable', async () => {
+  const a = app(); a.ScanStore.saveScans([scan()]);
+  assert.throws(() => a.ScanStore.updateReview(1, {
+    verdict: 'correct', actualObject: 'dragon-fruit', actualGrade: 'Grade A', reviewer: '', notes: ''
+  }), /Reviewer is required/);
+  const review = a.ScanStore.updateReview(1, {
+    verdict: 'incorrect', actualObject: 'not-dragon-fruit', actualGrade: 'Grade B',
+    reviewer: 'Tester 01', notes: 'Person in frame'
+  });
+  assert.equal(review.actualGrade, 'Not Applicable');
+  assert.ok(Number.isFinite(Date.parse(review.reviewedAt)));
+  const saved = a.ScanStore.getScans()[0];
+  assert.equal(saved.review.reviewer, 'Tester 01');
+  assert.equal(saved.review.verdict, 'incorrect');
+  assert.equal(a.events.length, 2);
+
+  let exported;
+  nativeReports(a, { saveCsv: async options => { exported = options.data; return { cancelled: false }; } });
+  const record = a.ScanStore.getScans()[0];
+  record.review = review;
+  a.ScanStore.saveScans([record]);
+  await a.ReportsManager.exportCSV();
+  assert.match(exported, /Human Verdict.*Actual Object.*Observed Grade.*Reviewer/s);
+  assert.match(exported, /"incorrect","not-dragon-fruit","Not Applicable","Tester 01"/);
+});
 test('quota failure preserves records and does not broadcast success', () => {
   const a = app(); a.data.set('pg_scans', JSON.stringify([scan()]));
   a.localStorage.setItem = () => { throw new Error('QuotaExceededError'); };
