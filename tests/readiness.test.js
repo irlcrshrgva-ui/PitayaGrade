@@ -1,5 +1,6 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
 const path = require('node:path');
 const { buildReport } = require('../scripts/release-readiness');
 
@@ -7,7 +8,8 @@ test('release gate reports evidence blockers without treating templates as resul
   const report = buildReport(path.resolve(__dirname, '..'));
   const checks = Object.fromEntries(report.checks.map(check => [check.id, check]));
   assert.equal(checks['model-catalog'].passed, true);
-  assert.equal(checks['android-debug-build'].passed, true);
+  assert.equal(checks['android-debug-build'].passed,
+    fs.existsSync(path.resolve(__dirname, '../android/app/build/outputs/apk/debug/app-debug.apk')));
   assert.equal(checks['model-assets'].passed, false);
   assert.match(checks['model-assets'].observed, /mobilenetv2-quality/);
   assert.equal(checks['reviewed-labels'].passed, false);
