@@ -16,10 +16,14 @@
   catalog, checksums for enabled assets, genuine reviewed target labels, completed
   Week 4 evidence, Android build presence and release signing. It currently reports
   BLOCKED instead of treating templates or synthetic checks as research results.
+- Updated Capacitor Android, Core and CLI from 8.3.1 to 8.5.3 after the hosted
+  security audit identified a critical internal-proxy advisory in the older line.
+  The high/critical audit gate is clear; three transitive moderate advisories remain
+  in Capacitor CLI development tooling and are not shipped in the app runtime.
 - Verification: all 72 JavaScript checks and 80 lightweight Python checks pass.
   Capacitor synchronization, Android debug assembly and lint succeed. The rebuilt
   APK SHA-256 is
-  `aed76d6e5431c4fc01e99eeb079b13c5f4b7e5f53b5bfed54709f6bce834a5b8`.
+  `0beddc6f81a5f0fa5d046c670421d7e977cb3da53232987b0022ff832275f101`.
 
 ## 2026-10-08 continuation: installable web app and field validation
 

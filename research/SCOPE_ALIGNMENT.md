@@ -18,6 +18,8 @@ object, reviewer and capture notes. This supports collection of real false-rejec
 and negative-image evidence without mixing unrecognized images into grade analytics.
 The read-only `npm run readiness` gate reports missing model assets, reviewed labels,
 formal Week 4 evidence and release signing instead of inferring completion.
+Capacitor Android/Core/CLI are pinned to 8.5.3, clearing the critical advisory that
+affected the earlier 8.3.1 runtime. Moderate CLI-only transitive findings remain.
 
 The bundled detector now has a conservative fruit-signature rejection gate because
 its four grade classes cannot express a true background/person class. The configured
@@ -76,7 +78,7 @@ severity or diagnosis. See the preparation guide for both commands and limitatio
 
 Local verification: 72 JavaScript checks, 80 Python checks and Android
 build/lint pass. The current debug APK SHA-256 is
-`aed76d6e5431c4fc01e99eeb079b13c5f4b7e5f53b5bfed54709f6bce834a5b8`.
+`0beddc6f81a5f0fa5d046c670421d7e977cb3da53232987b0022ff832275f101`.
 GitHub automation builds debug artifacts.
 No Android hardware is connected. The public review manifest has 3,050 images and
 zero reviewed target-grade labels; training/evaluation and field/UAT remain blocked
