@@ -68,6 +68,19 @@ late camera-stream cleanup. A real camera/device test is still required.
 - Dataset/public inspection dependency: `pyarrow==26.0.0` is now pinned in
   `requirements-training.txt`.
 
+## Manuscript consistency
+
+The implementation description and Chapter 5 were audited against the active
+application. Unsupported legacy accuracy, UAT, device-speed, reliability,
+resource-use and manual-comparison numbers were removed instead of being retained
+as placeholders. Chapter 5 now reports only the verified software-test counts and
+measured package sizes, while clearly leaving model, device and UAT findings empty.
+
+Chapter 4 now distinguishes the deployed YOLOv8-Nano ONNX plus heuristic workflow
+from the proposed EfficientNet-B3 and disease-segmentation stages. It also states
+that physical size, early disease detection and superiority to manual inspection
+have not been established.
+
 ## Items deliberately left open
 
 - Approval of labels, masks, class definitions and source groups.

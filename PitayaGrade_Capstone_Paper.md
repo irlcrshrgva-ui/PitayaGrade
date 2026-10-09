@@ -582,35 +582,35 @@ This chapter provides a comprehensive description of the PitayaGrade system's fe
 
 ### 4.1.1 AI-Based Image Analysis
 
-PitayaGrade's foundational capability is its AI-powered image analysis engine, which transforms raw dragon fruit images captured by a smartphone camera into actionable quality and health assessments. The system leverages deep convolutional neural networks that have been trained to recognize patterns in dragon fruit visual attributes with a level of consistency and precision that surpasses manual inspection.
+PitayaGrade's implemented image-analysis engine accepts a captured or uploaded image, runs the selected checksum-verified ONNX asset locally and presents the result with its method and limitations. The current package contains one YOLOv8-Nano grade-detection asset plus clearly labeled image heuristics for disease-related visual cues. No retained evaluation shows that this implementation surpasses manual inspection.
 
-The image analysis engine processes each captured image through a multi-stage pipeline. First, the raw image undergoes preprocessing to correct for lighting variations, remove background noise, and standardize the input format. The preprocessed image is then analyzed by two specialized neural network models operating in parallel (or sequentially in offline mode): one dedicated to quality grading and the other to disease detection. Each model produces a probability distribution across its respective output classes, and the system synthesizes these outputs into a comprehensive assessment report.
+The intended research architecture is a multi-stage detector-to-crop pipeline with a separate EfficientNet-B3 quality classifier and YOLOv8-Nano disease-segmentation model. Those second-stage assets are not enabled until reviewed labels, held-out evaluation, compatible ONNX exports and checksums exist. Research preprocessing previews are likewise separate from the deployed runtime unless explicitly integrated and retested.
 
 The engine is designed with a modular architecture that allows individual components, such as the preprocessing pipeline or the classification models, to be updated or replaced independently. This modularity ensures that PitayaGrade can evolve alongside advances in machine learning techniques and expand to accommodate new quality criteria or disease categories as they become relevant.
 
 ### 4.1.2 Automatic Quality Grading
 
-The automatic quality grading feature classifies each scanned dragon fruit into one of four standardized grades based on a multi-factorial assessment of external visual attributes:
+The active model can return one of four configured grade labels for a recognized fruit. These outputs are prototype estimates and have not yet been validated against the manuscript's reviewed grade definitions. The intended grading criteria are:
 
-**Size Assessment.** The system estimates the fruit's relative size by analyzing the proportion of the image frame occupied by the segmented fruit region. While absolute dimensional measurement from a single 2D image is inherently limited, relative size classification (large, medium, small) is achievable with high reliability, particularly when the camera-to-subject distance is approximately standardized through the viewfinder guide.
+**Size Assessment.** Physical size is not measured by the active application. A single uncalibrated image cannot establish fruit dimensions, so current records display size as not measured.
 
-**Color Analysis.** Color uniformity and ripeness indicators are evaluated by analyzing the hue, saturation, and value (HSV) distributions across the fruit surface. For red-fleshed varieties, the system assesses the intensity and uniformity of the magenta-red outer skin coloring. For white-fleshed varieties, the system evaluates the green-to-pink transition gradient that indicates maturation stage. Deviations from expected color profiles, such as uneven coloring, premature yellowing, or pale patches, contribute to grade reduction.
+**Color Analysis.** The prototype summarizes HSV-derived color and maturity cues for interpretation. These heuristics do not replace the pending reviewed quality classifier or establish internal flesh variety from an exterior photograph.
 
-**Surface Condition Evaluation.** The model examines the fruit surface for textural irregularities, including scarring, cracking, wrinkling, and mechanical damage. Surface smoothness is a key differentiator between premium (Grade A) and standard (Grade B) classifications. The trained CNN has learned to distinguish between cosmetic surface variations that do not affect edibility and structural defects that indicate quality degradation.
+**Surface Condition Evaluation.** The prototype reports image-derived surface cues. It has not been shown to distinguish cosmetic variation from structural damage with agricultural reliability.
 
-**Shape Analysis.** Dragon fruit shape conformity is assessed based on learned representations of typical fruit morphology. Misshapen fruits, those with irregular protuberances, asymmetrical growth patterns, or stunted development, receive lower grade assignments.
+**Shape Analysis.** The detector produces a fruit region used by the visual gate. Shape conformity is a proposed grading factor rather than a separately validated active measurement.
 
-The grading output includes both the assigned grade and a confidence score expressed as a percentage, enabling farmers to exercise judgment in borderline cases where the model's certainty is lower.
+The interface preserves the model score and detection threshold for transparency. That score is not a calibrated probability of grade correctness and must not be interpreted as research accuracy.
 
 ### 4.1.3 Disease Detection
 
-The disease detection feature identifies six categories of pathological conditions and defects commonly observed in Philippine dragon fruit cultivation:
+The planned disease-segmentation task contains six visible symptom or defect categories. The active application does not yet run an evaluated disease model; it presents heuristic visual cues for inspection instead of confirmed diagnoses.
 
-**Anthracnose (*Colletotrichum gloeosporioides*).** This fungal disease manifests as circular, sunken lesions with dark brown to black coloring on the fruit surface. In advanced stages, lesions develop concentric ring patterns with pinkish spore masses. The model has been trained to detect anthracnose from its earliest visible stages, when lesions appear as small, water-soaked spots that are easily overlooked during manual inspection.
+**Anthracnose (*Colletotrichum gloeosporioides*).** This target category covers reviewed visible symptoms such as circular, sunken lesions with dark brown to black coloring. No early-stage detection claim has been validated.
 
 **Stem Canker (*Neoscytalidium dimidiatum*).** Stem canker produces chlorotic (yellowed) spots that progress to necrotic lesions with a characteristic bleached center surrounded by a dark margin. While primarily a cladode disease, stem canker can affect fruit surfaces and pedicles, compromising fruit quality and shelf life.
 
-**Soft Rot (*Erwinia* spp.).** Bacterial soft rot causes water-soaked, mushy areas on the fruit surface that rapidly expand under warm, humid conditions. The model identifies the characteristic translucent, waterlogged appearance of early soft rot infections, enabling farmers to remove infected fruits before the pathogen spreads to adjacent fruits.
+**Soft Rot (*Erwinia* spp.).** This target category covers expert-reviewed visible soft-rot cues. The application has not established pathogen identity or early-stage sensitivity from images.
 
 **Pest Damage.** Visible damage from common dragon fruit pests, including mealybugs, scale insects, and fruit flies, is detected based on characteristic feeding marks, frass deposits, and surface deformations. Pest damage patterns are typically distinguished from disease symptoms by their mechanical, irregular appearance.
 
@@ -622,7 +622,7 @@ The disease detection feature identifies six categories of pathological conditio
 
 The prototype can flag visible color and surface patterns for inspection, but it has not been trained or validated to identify pre-symptomatic or early-stage disease. Early-detection performance must not be claimed without reviewed longitudinal examples and expert ground truth.
 
-The early identification module operates by lowering the classification confidence threshold for disease categories and flagging fruits that exhibit subtle visual anomalies suggestive of early-stage infection, even when the model's confidence does not meet the standard detection threshold. When early-stage indicators are detected, the system issues a "monitor" recommendation rather than a definitive disease diagnosis, prompting the farmer to re-scan the fruit at a later date and consult with agricultural extension personnel if symptoms progress.
+No separate early-identification model or lower-threshold disease workflow is enabled. A future implementation may provide a cautious monitor recommendation, but only after an approved protocol evaluates false positives and early-stage sensitivity.
 
 No retained expert-reviewed early-stage subset currently supports that claim. Future work should define symptom onset, review labels with qualified agricultural experts and evaluate early-stage sensitivity separately from general disease performance.
 
@@ -769,206 +769,69 @@ PitayaGrade enables farmers to generate and share structured reports summarizing
 
 # Chapter 5: Results and Discussion — Evaluation Pending
 
-> **Do not cite the numerical tables in this chapter as results.** They are legacy
-> placeholders from the proposed study design and have no retained prediction files,
-> reviewed test manifest, device logs, participant records or approvals to support
-> them. Replace each table through the traceable process in
-> `research/WEEK4_EVALUATION_PLAN.md` before final submission.
+> **Evidence status (10 October 2026).** This chapter reports verified software
+> checks only. Model metrics, physical-device results, UAT findings and comparisons
+> remain absent until their retained evidence is produced through
+> `research/WEEK4_EVALUATION_PLAN.md`.
 
 ## 5.1 System Testing Results
 
-PitayaGrade has completed automated software regression testing and Android debug assembly/lint checks. Formal model evaluation, physical-device verification, field testing and user acceptance testing remain pending. The table below is an unverified planning scaffold and must be replaced by retained test evidence.
+PitayaGrade has completed automated software regression testing and Android debug assembly/lint checks. Formal model evaluation, physical-device verification, field testing and user acceptance testing remain pending. The table below contains only retained software-verification evidence.
 
 ### 5.1.1 Functional Testing
 
-The verified automated suite currently covers application workflows, storage integrity, localization, notifications, report safety, runtime assets and actual ONNX/WASM execution. It does not test a physical camera, Android lifecycle behavior, real model accuracy or field operation. The historical counts below are not verified results.
+The verified automated suite currently covers application workflows, storage integrity, localization, notifications, report safety, runtime assets and actual ONNX/WASM execution. It does not test a physical camera, Android lifecycle behavior, real model accuracy or field operation.
 
-| Test Category | Test Cases | Passed | Failed | Pass Rate |
-|---|---|---|---|---|
-| Image Capture and Preprocessing | 24 | 23 | 1 | 95.8% |
-| Quality Grading (Online) | 20 | 20 | 0 | 100% |
-| Quality Grading (Offline) | 20 | 19 | 1 | 95.0% |
-| Disease Detection (Online) | 20 | 20 | 0 | 100% |
-| Disease Detection (Offline) | 20 | 19 | 1 | 95.0% |
-| Alert and Notification | 16 | 16 | 0 | 100% |
-| Record-Keeping and Sync | 18 | 17 | 1 | 94.4% |
-| Dashboard Analytics | 10 | 10 | 0 | 100% |
-| Report Export | 8 | 8 | 0 | 100% |
-| **Total** | **156** | **152** | **4** | **97.4%** |
+| Verified check | Result on 10 October 2026 | What the result establishes |
+|---|---:|---|
+| JavaScript application and runtime tests | 72 passed, 0 failed | Browser workflows, storage safeguards, model selection, report export, packaged assets and bundled ONNX/WASM execution behave as asserted. |
+| Python research-tool tests | 80 passed, 0 failed | Data validation, preprocessing, training-policy, export-contract and evaluation utilities behave as asserted on their test fixtures. |
+| GitHub application verification | Passed | The repository's software and Android verification workflow completed successfully for commit `756da2b`. |
+| GitHub Pages deployment | Passed | The packaged web application was published successfully for the same commit. |
 
-**Table 5.1.** Functional Testing Results Summary
+**Table 5.1.** Verified Software Evidence
 
-The four failed test cases were attributed to the following issues:
-1. Image preprocessing failed on an extremely overexposed image captured under direct midday sunlight (addressed by adjusting the CLAHE parameters).
-2. Offline quality grading produced an incorrect classification for a borderline Grade B/C fruit due to TFLite quantization artifacts (documented as a known limitation).
-3. Offline disease detection timed out on a low-specification device (Xiaomi Redmi 9A) due to insufficient RAM (minimum device requirements updated accordingly).
-4. Cloud synchronization encountered a conflict when the same scan was edited simultaneously on two devices (resolved by implementing last-write-wins conflict resolution).
-
-All critical and high-severity defects were resolved during the testing period. The remaining issues were classified as low-severity and documented for future iterations.
+These results establish software behavior only. They do not measure grading accuracy, disease-segmentation performance, physical-phone reliability or field usability.
 
 ### 5.1.2 User Acceptance Testing
 
-User acceptance testing has not yet been conducted. It must begin only after adviser or institutional approval of the procedure and consent process. Anonymous task-level observations should be recorded using `research/week4/uat-template.csv`. The participant counts and ratings below are unverified placeholders.
-
-| Evaluation Criterion | Mean Rating (1-5 Likert Scale) | Interpretation |
-|---|---|---|
-| Ease of Use | 4.3 | Very Good |
-| Usefulness | 4.6 | Excellent |
-| Speed of Results | 4.5 | Excellent |
-| Accuracy of Grading (Perceived) | 4.1 | Very Good |
-| Accuracy of Disease Detection (Perceived) | 4.0 | Good |
-| Visual Clarity of Results | 4.4 | Very Good |
-| Willingness to Adopt | 4.5 | Excellent |
-| Overall Satisfaction | 4.4 | Very Good |
-
-**Table 5.2.** User Acceptance Testing Results
-
-The drafted SUS score of **78.3** is not supported by retained participant responses and must be replaced after approved UAT; it is not a study finding.
-
-Key qualitative feedback from participants included:
-- Farmers appreciated the speed of results and the visual presentation of grades.
-- The bilingual (English/Filipino) interface was valued by farmers with limited English proficiency.
-- Agricultural extension workers noted the potential for PitayaGrade to supplement their farm visit advisory activities.
-- Suggestions for improvement included adding voice-based result announcements and increasing the font size of result text for older users.
+User acceptance testing has not yet been conducted. It must begin only after adviser or institutional approval of the procedure and consent process. Anonymous task-level observations should be recorded using `research/week4/uat-template.csv`. No participant count, rating, SUS score or qualitative feedback is reported before those records exist.
 
 ## 5.2 Accuracy of the Machine Learning Model
 
 ### 5.2.1 Quality Grading Model Performance
 
-The deployed grading model has not yet been evaluated against a reviewed, leakage-free held-out test manifest. The values below are unverified placeholders. Final metrics must be generated from complete prediction exports using `scripts/summarize_model_evaluation.py`.
-
-| Class | Precision | Recall | F1-Score | Support |
-|---|---|---|---|---|
-| Grade A | 0.961 | 0.948 | 0.954 | 487 |
-| Grade B | 0.932 | 0.941 | 0.936 | 512 |
-| Grade C | 0.918 | 0.924 | 0.921 | 468 |
-| Reject | 0.957 | 0.963 | 0.960 | 408 |
-| **Overall** | **0.943** | **0.943** | **0.943** | **1,875** |
-
-**Table 5.3.** Quality Grading Model Classification Report
-
-The drafted **94.3%** value is unsupported and must be replaced by the generated held-out evaluation report; it is not a study finding.
-
-**Confusion Matrix Analysis.** The confusion matrix (Table 5.4) reveals that the most common misclassification pattern occurs between Grade B and Grade C, which is expected given the inherent visual similarity between these adjacent grade categories. Misclassifications between Grade A and Reject are rare (less than 0.5%), indicating that the model reliably distinguishes between the highest and lowest quality extremes.
-
-| Predicted | Grade A | Grade B | Grade C | Reject |
-|---|---|---|---|---|
-| **Grade A** | 462 | 18 | 5 | 2 |
-| **Grade B** | 12 | 482 | 15 | 3 |
-| **Grade C** | 3 | 21 | 433 | 11 |
-| **Reject** | 1 | 4 | 10 | 393 |
-
-**Table 5.4.** Quality Grading Confusion Matrix (Rows = Actual, Columns = Predicted)
-
-The drafted cross-validation values are unsupported. Cross-validation has not established model stability.
+The deployed grading model has not yet been evaluated against a reviewed, leakage-free held-out test manifest. Final accuracy, precision, recall, F1-score, support and the confusion matrix must be generated from complete retained prediction exports using `scripts/summarize_model_evaluation.py`. No numerical quality-model result is currently reported.
 
 ### 5.2.2 Disease Detection Model Performance
 
-The intended disease-segmentation model has not yet been supplied as an evaluated app asset. Current disease results include image heuristics and must not be reported as validated diagnoses. The values below are unverified placeholders.
-
-| Class | Precision | Recall | F1-Score | Support |
-|---|---|---|---|---|
-| Healthy | 0.968 | 0.972 | 0.970 | 534 |
-| Anthracnose | 0.921 | 0.908 | 0.914 | 228 |
-| Stem Canker | 0.904 | 0.889 | 0.896 | 198 |
-| Soft Rot | 0.912 | 0.923 | 0.917 | 182 |
-| Pest Damage | 0.893 | 0.876 | 0.884 | 194 |
-| Sunburn | 0.928 | 0.941 | 0.934 | 271 |
-| Fungal Spots | 0.889 | 0.872 | 0.880 | 268 |
-| **Overall** | **0.917** | **0.917** | **0.917** | **1,875** |
-
-**Table 5.5.** Disease Detection Model Classification Report
-
-The drafted **91.7%** value is unsupported. Disease-segmentation accuracy remains unevaluated.
-
-**Analysis of Results.** The model demonstrated the highest performance on the Healthy class (F1 = 0.970) and Sunburn (F1 = 0.934), both of which have relatively distinctive visual characteristics. Performance was lowest for Fungal Spots (F1 = 0.880) and Pest Damage (F1 = 0.884), which can present with high visual variability and, in some cases, resemble each other's symptoms. The distinction between early-stage anthracnose and general fungal spots was identified as the most challenging classification boundary.
+The intended disease-segmentation model has not yet been supplied as an evaluated app asset. Current disease results include image heuristics and must not be reported as validated diagnoses. No disease-model precision, recall, F1-score, support, coverage metric or class comparison is currently reported.
 
 ### 5.2.3 AUC-ROC Performance
 
-The Area Under the Receiver Operating Characteristic (AUC-ROC) score for each class provides an assessment of the model's discriminative ability across all classification thresholds:
-
-| Model | Class | AUC-ROC |
-|---|---|---|
-| Quality Grading | Grade A | 0.987 |
-| Quality Grading | Grade B | 0.971 |
-| Quality Grading | Grade C | 0.963 |
-| Quality Grading | Reject | 0.991 |
-| Disease Detection | Healthy | 0.994 |
-| Disease Detection | Anthracnose | 0.967 |
-| Disease Detection | Stem Canker | 0.958 |
-| Disease Detection | Soft Rot | 0.971 |
-| Disease Detection | Pest Damage | 0.952 |
-| Disease Detection | Sunburn | 0.978 |
-| Disease Detection | Fungal Spots | 0.948 |
-
-**Table 5.6.** AUC-ROC Scores by Model and Class
-
-The drafted AUC-ROC values are unsupported and must be removed or replaced by traceable one-vs-rest calculations from retained prediction scores.
+AUC-ROC has not been calculated. It may be reported only if the final prediction export retains valid per-class scores and the approved protocol requires traceable one-vs-rest calculations.
 
 ## 5.3 Performance Evaluation
 
 ### 5.3.1 Processing Speed
 
-Inference speed has not yet been measured on the listed physical devices. The table below is an unverified test target; final measurements must identify the APK and model hashes, device, Android version and repeated-run protocol.
-
-| Device | Mode | Avg. Inference Time | Total Processing Time |
-|---|---|---|---|
-| Samsung Galaxy A54 (Mid-range) | Online | 0.8 sec | 2.1 sec |
-| Samsung Galaxy A54 (Mid-range) | Offline | 1.2 sec | 1.8 sec |
-| Xiaomi Redmi Note 12 (Budget) | Online | 0.8 sec | 2.3 sec |
-| Xiaomi Redmi Note 12 (Budget) | Offline | 1.6 sec | 2.2 sec |
-| Samsung Galaxy S23 (Flagship) | Online | 0.7 sec | 1.9 sec |
-| Samsung Galaxy S23 (Flagship) | Offline | 0.6 sec | 1.2 sec |
-
-**Table 5.7.** Processing Speed by Device and Mode
-
-The drafted device timings are unsupported. Whether the application meets a real-time requirement must be determined from repeated physical-device tests.
+Inference speed has not yet been measured on physical devices. Final measurements must identify the signed APK and model hashes, device model, Android version, warm-up rule, repetition count and summary statistic. Whether the application meets a real-time requirement remains unevaluated.
 
 ### 5.3.2 Reliability
 
-A 500-scan physical-device stress test has not yet been performed. The table below is an unverified planning placeholder.
-
-| Metric | Result |
-|---|---|
-| Total Scans Attempted | 500 |
-| Successful Completions | 497 |
-| Failures | 3 (0.6%) |
-| Mean Time Between Failures | 166 scans |
-| Memory Leak | None detected |
-| Application Crashes | 0 |
-
-**Table 5.8.** Reliability Testing Results
-
-The drafted stress-test failures and automatic cloud-to-offline retry behavior are unsupported and do not describe the active local-only inference path.
+A repeated physical-device stress test has not yet been performed. Completion counts, failures, crashes, memory behavior and recovery observations must be taken from `device-test.csv`; no reliability rate is currently reported.
 
 ### 5.3.3 Model Size and Resource Utilization
 
-| Metric | Full TF Model | TFLite Model |
-|---|---|---|
-| Model Size | 14.2 MB | 3.5 MB |
-| RAM Usage (Inference) | 180 MB | 62 MB |
-| CPU Utilization (Peak) | N/A (GPU) | 45% (mid-range) |
-| Battery Impact | N/A (cloud) | ~0.3% per scan |
-
-**Table 5.9.** Model Size and Resource Utilization
-
-No retained TFLite asset or resource profile supports this table. The active ONNX package must be measured on target phones before compatibility is claimed.
+The bundled `best.onnx` asset is 12,267,617 bytes (11.70 MiB) with SHA-256 `3E4E7A138EECC1DA53FC0F14C9400D100E79F61CF0AA2F971C8256A8AFE4796A`. The packaged threaded WASM runtime is 11,018,122 bytes (10.51 MiB). RAM, CPU and battery use have not been measured on target phones. No TFLite resource result is applicable to the active ONNX/WASM implementation.
 
 ## 5.4 Benefits Compared to Manual Grading
 
-A controlled comparison with manual graders has not yet been conducted. The values below are unverified planning placeholders and cannot support claims of superiority, cost savings or early disease detection.
+A controlled comparison with manual graders has not yet been conducted. No claim of superiority, cost savings or early disease detection is supported.
 
 ### 5.4.1 Speed
 
-| Metric | PitayaGrade | Manual Grading |
-|---|---|---|
-| Average time per fruit | 2.1 seconds | 15-25 seconds |
-| Fruits processed per hour | ~1,700 | ~180 |
-| Throughput improvement | **9.4x faster** | Baseline |
-
-**Table 5.10.** Speed Comparison
-
-The drafted 9.4-times comparison is unsupported. Throughput must be measured under a controlled protocol before any speed advantage is claimed.
+Throughput must be measured under a controlled protocol before any speed advantage is claimed. No time-per-fruit or fruits-per-hour comparison is currently reported.
 
 ### 5.4.2 Consistency
 
