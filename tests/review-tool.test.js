@@ -73,3 +73,15 @@ test('browser review application parses as JavaScript', () => {
   const source = fs.readFileSync(path.join(__dirname, '..', 'review-tool', 'app.js'), 'utf8');
   assert.doesNotThrow(() => new vm.Script(source));
 });
+
+test('packaged Review Desk supports local image folders without publishing the dataset', () => {
+  const root = path.join(__dirname, '..');
+  const source = fs.readFileSync(path.join(root, 'review-tool', 'app.js'), 'utf8');
+  const packaged = fs.readFileSync(path.join(root, 'www', 'review-tool', 'app.js'), 'utf8');
+  assert.equal(packaged, source);
+  assert.match(source, /datasetFolder/);
+  assert.match(source, /webkitRelativePath/);
+  assert.ok(fs.existsSync(path.join(root, 'www', 'research', 'public-review-manifest.json')));
+  assert.ok(fs.existsSync(path.join(root, 'www', 'research', 'source-group-suggestions-2026-10-10.json')));
+  assert.equal(fs.existsSync(path.join(root, 'www', 'dataset')), false);
+});

@@ -56,6 +56,14 @@ human review, device testing, UAT and release-signing work.
 
 ## Run the web application
 
+### Online dataset Review Desk
+
+The review interface is published with GitHub Pages at
+`https://irlcrshrgva-ui.github.io/PitayaGrade/review-tool/`. Dataset images are
+deliberately excluded from the public repository. On the review page, choose
+**Load local dataset folder** and select `dataset/public/prepared` from a local
+project copy. Reviews remain in that browser until they are exported.
+
 Public web preview: <https://irlcrshrgva-ui.github.io/PitayaGrade/>
 
 The preview is published from `www/` after updates reach the `main` branch. Camera
