@@ -42,7 +42,8 @@ area only when a valid fruit region is available.
 Run `npm run progress` to calculate the retained-deliverable readiness score.
 The current evidence-based estimate is **80/100**; it is a project-management
 measure, not model accuracy. Its weights, basis and remaining 20% are documented
-in `research/COMPLETION_SCORECARD.md`.
+in `research/COMPLETION_SCORECARD.md`. The actionable team checklist is in
+`research/FINAL_20_PERCENT_CHECKLIST.md`.
 
 The editable defense presentation is available at
 `deliverables/PitayaGrade_Defense_Deck_v1.pptx`.

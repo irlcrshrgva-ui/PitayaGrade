@@ -21,6 +21,8 @@ cannot be replaced by source code, simulated values or generated evidence.
 
 ## Definition of the remaining 20%
 
+Use `research/FINAL_20_PERCENT_CHECKLIST.md` as the team's working checklist.
+
 1. Complete expert or approved human review of target labels and source groups.
 2. Train, export and evaluate MobileNetV2, ResNet50, EfficientNet-B3 and the
    YOLOv8-Nano disease-segmentation model from reviewed data.
