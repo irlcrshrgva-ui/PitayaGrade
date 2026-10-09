@@ -158,7 +158,7 @@ const ReportsManager = {
 
         <h3 style="font-size:14px;margin:16px 0 8px;color:#333;border-bottom:2px solid #E91E63;padding-bottom:4px">Recent Scan Log</h3>
         <table>
-          <tr><th>Date</th><th>Grade</th><th>Confidence</th><th>Disease</th><th>Size</th><th>Notes</th></tr>
+          <tr><th>Date</th><th>Grade</th><th>Confidence</th><th>Disease</th><th>Model / Method</th><th>Size</th><th>Notes</th></tr>
           ${scans.slice(0, 20).map(s => {
             const d = new Date(s.timestamp);
             return `
@@ -167,12 +167,13 @@ const ReportsManager = {
                 <td>${s.grade.label}</td>
                 <td>${(s.grade.confidence*100).toFixed(1)}%</td>
                 <td>${ScanStore.escape(s.disease.name)}</td>
+                <td>${ScanStore.escape(s.details.modelUsed || s.details.processingMode || 'Not recorded')}</td>
                 <td>${ScanStore.escape(s.details.size)}</td>
                 <td data-no-translate>${ScanStore.escape(s.notes)}</td>
               </tr>
             `;
           }).join('')}
-          ${scans.length > 20 ? `<tr><td colspan="6" style="text-align:center;color:#999">... and ${scans.length - 20} more records</td></tr>` : ''}
+          ${scans.length > 20 ? `<tr><td colspan="7" style="text-align:center;color:#999">... and ${scans.length - 20} more records</td></tr>` : ''}
         </table>
 
         <div style="margin-top:20px;padding-top:12px;border-top:1px solid #ddd;text-align:center">
@@ -200,7 +201,7 @@ const ReportsManager = {
       return;
     }
 
-    const headers = ['Date', 'Time', 'Grade', 'Grade Confidence', 'Disease', 'Disease Confidence', 'Size', 'Color Uniformity', 'Surface Condition', 'Processing Mode', 'Processing Time', 'Notes', 'Human Verdict', 'Actual Object', 'Observed Grade', 'Reviewer', 'Reviewed At', 'Validation Notes'];
+    const headers = ['Date', 'Time', 'Grade', 'Grade Confidence', 'Disease', 'Disease Confidence', 'Size', 'Color Uniformity', 'Surface Condition', 'Processing Mode', 'Model / Method', 'Processing Time', 'Notes', 'Human Verdict', 'Actual Object', 'Observed Grade', 'Reviewer', 'Reviewed At', 'Validation Notes'];
     
     const rows = scans.map(s => {
       const d = new Date(s.timestamp);
@@ -215,6 +216,7 @@ const ReportsManager = {
         s.details.colorUniformity,
         s.details.surfaceCondition,
         s.details.processingMode,
+        s.details.modelUsed,
         s.details.processingTime,
         s.notes || '',
         s.review?.verdict || '',

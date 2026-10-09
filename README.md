@@ -48,6 +48,9 @@ in `research/COMPLETION_SCORECARD.md`. The actionable team checklist is in
 The editable defense presentation is available at
 `deliverables/PitayaGrade_Defense_Deck_v1.pptx`.
 
+The latest autonomous dataset and application checks are recorded in
+`research/AUTONOMOUS_VERIFICATION_2026-10-10.md`.
+
 ## Run the web application
 
 Public web preview: <https://irlcrshrgva-ui.github.io/PitayaGrade/>

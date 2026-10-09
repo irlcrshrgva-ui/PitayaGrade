@@ -54,17 +54,19 @@
 
 ## 5. Verify application integration
 
-- [ ] Confirm every enabled model appears in the correct selector.
-- [ ] Confirm unavailable models remain disabled and clearly explained.
-- [ ] Test photo-mode inference for every enabled model.
+- [x] Confirm every enabled model appears in the correct selector.
+- [x] Confirm unavailable models remain disabled and clearly explained.
+- [x] Test photo-mode inference for every enabled model.
 - [ ] Test live-camera inference for every enabled model.
 - [ ] Test clear dragon-fruit images under varied backgrounds and lighting.
 - [ ] Test faces, hands, empty scenes and unrelated objects as negative cases.
-- [ ] Confirm rejected images are not saved as graded dragon fruit.
-- [ ] Confirm history, analytics, reports and CSV exports identify the selected model and method.
-- [ ] Re-run all automated JavaScript and Python tests.
+- [x] Confirm rejected images are not saved as graded dragon fruit.
+- [x] Confirm history, analytics, reports and CSV exports identify the selected model and method.
+- [x] Re-run all automated JavaScript and Python tests.
 
 **Evidence required:** passing test logs, negative-case results, screenshots and integration test records.
+
+Repository verification evidence: `research/AUTONOMOUS_VERIFICATION_2026-10-10.md`.
 
 ## 6. Test on physical Android devices
 

@@ -10,3 +10,4 @@ opencv-python==5.0.0.93
 onnx==1.23.0
 onnxscript==0.7.2
 onnxruntime==1.23.2
+pyarrow==26.0.0

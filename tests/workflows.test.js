@@ -224,8 +224,10 @@ test('blocked print is reported without a crash', () => {
 test('report notes render as text, not executable markup', () => {
   const a = app(); a.element('reportFrom').value = a.element('reportTo').value = a.ScanStore.localDate();
   const record = scan(); record.notes = '<img src=x onerror=alert(1)>';
+  record.details.modelUsed = 'YOLOv8-Nano ONNX + HSV image heuristics';
   a.ScanStore.saveScans([record]); a.ReportsManager.generateReport();
   assert.match(a.element('reportPreviewArea').innerHTML, /&lt;img/);
+  assert.match(a.element('reportPreviewArea').innerHTML, /YOLOv8-Nano ONNX \+ HSV image heuristics/);
   assert.ok(!a.element('reportPreviewArea').innerHTML.includes('<img src=x'));
 });
 test('report disease names and size fields cannot introduce markup', () => {
@@ -334,6 +336,8 @@ function nativeReports(a, plugin) {
     isPluginAvailable: name => name === 'ReportExport', registerPlugin: () => plugin };
   a.element('reportFrom').value = a.element('reportTo').value = a.ScanStore.localDate();
   const record = scan(); record.notes = '=SUM(1,2)\nPreserve this note';
+  record.details.processingMode = 'Local (ONNX / image analysis)';
+  record.details.modelUsed = 'YOLOv8-Nano ONNX + HSV image heuristics';
   a.ScanStore.saveScans([record]);
 }
 
@@ -343,6 +347,8 @@ test('Android CSV uses the save dialog and preserves CSV escaping', async () => 
   const original = a.data.get('pg_scans');
   await a.ReportsManager.exportCSV();
   assert.match(saved.filename, /^PitayaGrade_Report_\d{4}-\d{2}-\d{2}\.csv$/);
+  assert.match(saved.data, /Processing Mode,Model \/ Method,Processing Time/);
+  assert.match(saved.data, /"YOLOv8-Nano ONNX \+ HSV image heuristics"/);
   assert.ok(saved.data.startsWith('\uFEFF'));
   assert.ok(saved.data.includes('"\'=SUM(1,2)\nPreserve this note"'));
   assert.equal(a.messages.at(-1), 'CSV exported successfully');
