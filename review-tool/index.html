@@ -36,6 +36,11 @@
         <span id="suggestionText">Load a proposal file to see review assistance.</span>
         <button id="useSuggestion" disabled>Use proposal as draft</button>
       </section>
+      <section class="suggestion" aria-live="polite">
+        <strong>Possible source group</strong>
+        <span id="sourceSuggestionText">Load source-group suggestions to see visually similar records.</span>
+        <button id="useSourceSuggestion" disabled>Use group as draft</button>
+      </section>
       <div class="actions">
         <button id="save" class="primary">Save review &amp; next</button>
         <button id="clear">Clear this draft</button>
@@ -62,8 +67,9 @@
       <button id="exportCsv">Export current task CSV</button>
       <button id="backup">Export draft backup</button>
       <label class="import">Load model proposals<input id="proposalFile" type="file" accept="application/json"></label>
+      <label class="import">Load source-group suggestions<input id="groupProposalFile" type="file" accept="application/json"></label>
       <label class="import">Restore draft backup<input id="restore" type="file" accept="application/json"></label>
-      <p class="warning">A proposal is not a reviewed label and is never saved automatically. A qualified reviewer remains responsible for label truth.</p>
+      <p class="warning">A label or source-group proposal is never saved automatically. Visual similarity does not prove that images show the same physical fruit. A qualified reviewer remains responsible for both decisions.</p>
     </aside>
   </main>
 

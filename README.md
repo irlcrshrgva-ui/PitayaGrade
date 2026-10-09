@@ -51,6 +51,9 @@ The editable defense presentation is available at
 The latest autonomous dataset and application checks are recorded in
 `research/AUTONOMOUS_VERIFICATION_2026-10-10.md`.
 
+Team members should follow `research/TEAM_HANDOFF_NEXT_STEPS.md` for the remaining
+human review, device testing, UAT and release-signing work.
+
 ## Run the web application
 
 Public web preview: <https://irlcrshrgva-ui.github.io/PitayaGrade/>

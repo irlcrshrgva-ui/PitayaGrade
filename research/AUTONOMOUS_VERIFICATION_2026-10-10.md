@@ -63,8 +63,8 @@ late camera-stream cleanup. A real camera/device test is still required.
 
 ## Automated verification result
 
-- JavaScript: 72 passed, 0 failed.
-- Python: 80 passed, 0 failed.
+- JavaScript: 73 passed, 0 failed.
+- Python: 82 passed, 0 failed.
 - Dataset/public inspection dependency: `pyarrow==26.0.0` is now pinned in
   `requirements-training.txt`.
 
@@ -88,4 +88,13 @@ have not been established.
 - Live-camera inference on physical Android devices.
 - Formal held-out metrics for the four missing models.
 - UAT, adviser approval, release signing and signed-build installation.
+
+## Source-group review assistance
+
+`scripts/suggest_source_groups.py` now creates review-only perceptual-similarity
+groups without changing the manifest. On the current 3,050-row manifest it found
+1,369 candidate pairs forming 721 groups; 369 groups cross candidate splits and
+therefore deserve priority human inspection. These are possible matches, not
+approved source groups. The Review Desk can load the generated JSON and copy a
+suggestion into a draft only after a reviewer inspects it.
 

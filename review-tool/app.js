@@ -3,10 +3,11 @@
   const els = Object.fromEntries(['status','task','filter','reviewer','sourceGroup','labels','save','clear',
     'progressText','progressPercent','progress','image','imageError','recordId','split','sourceLabel',
     'imagePath','previous','next','position','exportJson','exportCsv','backup','restore','proposalFile',
-    'suggestionText','useSuggestion','toast']
+    'suggestionText','useSuggestion','groupProposalFile','sourceSuggestionText','useSourceSuggestion','toast']
     .map(id => [id, document.getElementById(id)]));
   let manifest = [], rows = [], index = 0;
   let suggestions = {};
+  let sourceSuggestions = {};
   let drafts = readDrafts();
 
   function readDrafts() {
@@ -61,6 +62,11 @@
         ? `${proposal.proposedLabel} at ${(proposal.confidence * 100).toFixed(1)}% — confirm visually before saving.`
         : `No label reached the threshold (${(proposal.confidence * 100).toFixed(1)}% best confidence).`)
       : 'No model proposal loaded for this record.';
+    const sourceProposal = sourceSuggestions[row.id];
+    els.useSourceSuggestion.disabled = !sourceProposal;
+    els.sourceSuggestionText.textContent = sourceProposal
+      ? `${sourceProposal.suggestedSourceGroup} · ${sourceProposal.memberCount} visually similar records${sourceProposal.crossesCandidateSplits ? ' · crosses candidate splits' : ''}. Confirm the physical source before saving.`
+      : 'No source-group suggestion loaded for this record.';
     els.imageError.hidden = true; els.image.hidden = false; els.image.src = '/' + row.image.replace(/^\/+/, '');
   }
   function selectedLabel() { return document.querySelector('input[name="reviewedLabel"]:checked')?.value || ''; }
@@ -88,6 +94,11 @@
       .find(input => input.value === proposal.proposedLabel);
     if (radio) { radio.checked = true; toast('Proposal copied to the draft; review it before saving'); }
   });
+  els.useSourceSuggestion.addEventListener('click', () => {
+    const proposal = sourceSuggestions[current()?.id]; if (!proposal) return;
+    els.sourceGroup.value = proposal.suggestedSourceGroup;
+    toast('Source-group proposal copied to the draft; confirm the physical source before saving');
+  });
   els.clear.addEventListener('click', () => { const row=current(); if (!row || !drafts[row.id]) return; if (confirm('Clear this local draft review?')) { delete drafts[row.id]; persist(); rebuild(); } });
   els.image.addEventListener('error', () => { els.image.hidden = true; els.imageError.hidden = false; });
   els.reviewer.addEventListener('change', () => localStorage.setItem('pitayagrade_reviewer_id', els.reviewer.value));
@@ -99,6 +110,11 @@
     suggestions = ReviewState.suggestionMap(record, manifest); rebuild();
     toast(`${Object.keys(suggestions).length} unverified proposals loaded locally`);
   } catch(e) { toast(e.message); } finally { els.proposalFile.value=''; } });
+  els.groupProposalFile.addEventListener('change', async () => { try {
+    const record = JSON.parse(await els.groupProposalFile.files[0].text());
+    sourceSuggestions = ReviewState.sourceSuggestionMap(record, manifest); render();
+    toast(`${Object.keys(sourceSuggestions).length} source-group suggestions loaded locally`);
+  } catch(e) { toast(e.message); } finally { els.groupProposalFile.value=''; } });
   els.restore.addEventListener('change', async () => { try { const value=JSON.parse(await els.restore.files[0].text()); if (!value || typeof value!=='object' || Array.isArray(value)) throw new Error('Invalid draft backup'); drafts=value; ReviewState.mergeDrafts(manifest,drafts); persist(); rebuild(); toast('Draft backup restored'); } catch(e) { toast(e.message); } finally { els.restore.value=''; } });
 
   try {

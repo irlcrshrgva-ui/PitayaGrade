@@ -68,6 +68,33 @@
     return result;
   }
 
+  function sourceSuggestionMap(record, manifest) {
+    if (!record || record.schemaVersion !== 1 ||
+        record.purpose !== 'review assistance only; perceptual similarity is not source identity' ||
+        !Array.isArray(record.groups)) throw new Error('Unsupported source-group suggestion file');
+    const known = new Map(manifest.map(row => [row.id, row]));
+    const result = {};
+    for (const group of record.groups) {
+      if (!group || typeof group.suggestedSourceGroup !== 'string' ||
+          !/^candidate-source-\d{4,}$/.test(group.suggestedSourceGroup) ||
+          group.humanReviewRequired !== true || !Array.isArray(group.members) || group.members.length < 2) {
+        throw new Error('Invalid source-group suggestion');
+      }
+      for (const member of group.members) {
+        if (!member || !known.has(member.id) || result[member.id]) {
+          throw new Error('Source-group suggestion IDs must be unique known records');
+        }
+        result[member.id] = {
+          suggestedSourceGroup: group.suggestedSourceGroup,
+          crossesCandidateSplits: group.crossesCandidateSplits === true,
+          memberCount: group.members.length,
+          humanReviewRequired: true
+        };
+      }
+    }
+    return result;
+  }
+
   function csv(rows) {
     const fields = ['id', 'image', 'candidateSplit', 'sourceDataset', 'sourceLabel',
       'reviewedLabel', 'reviewedSourceGroup', 'reviewer', 'reviewedAt'];
@@ -78,5 +105,5 @@
     return [fields.join(','), ...rows.map(row => fields.map(field => escape(row[field])).join(','))].join('\r\n') + '\r\n';
   }
 
-  return { LABELS, validateDraft, mergeDrafts, progress, suggestionMap, csv };
+  return { LABELS, validateDraft, mergeDrafts, progress, suggestionMap, sourceSuggestionMap, csv };
 });

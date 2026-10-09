@@ -197,6 +197,26 @@ The current format covers positive fruit images; negative-background evaluation
 and field validation still need to be designed/documented before claiming reliable
 non-fruit rejection.
 
+### Review likely same-source images
+
+Generate non-authoritative perceptual-similarity groups before asking reviewers to
+freeze the dataset partitions:
+
+```text
+python scripts/suggest_source_groups.py --output research/source-group-suggestions-YYYY-MM-DD.json
+```
+
+The command also writes a CSV with the same base name. In the local Review Desk,
+choose **Load source-group suggestions** and open the generated JSON. The tool may
+copy a candidate group into the draft field, but it never saves or approves the
+group automatically. Reviewers must inspect the images and confirm whether they
+show the same physical fruit or capture sequence. Give priority to suggestions
+marked as crossing candidate splits.
+
+Perceptual hashes can produce false matches and can miss transformed or visually
+dissimilar frames of the same fruit. The output is review assistance, not proof of
+dataset independence.
+
 For training, install PyTorch and Ultralytics separately, omit `--prepare-only`,
 and choose another **new** run directory. The script uses 128-pixel inputs and
 batch size 32, with 10 frozen-backbone epochs followed by 30 epochs that unfreeze

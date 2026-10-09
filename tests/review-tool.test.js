@@ -35,6 +35,28 @@ test('model proposals remain separate and require explicit human review', () => 
     proposedLabel:'Fresh' }] }, manifest), /incompatible/);
 });
 
+test('source-group proposals remain separate and require explicit human review', () => {
+  const manifest = [
+    { id:'quality:1', task:'quality', image:'dataset/public/prepared/quality/a.jpg', reviewedSourceGroup:null },
+    { id:'quality:2', task:'quality', image:'dataset/public/prepared/quality/b.jpg', reviewedSourceGroup:null }
+  ];
+  const proposals = state.sourceSuggestionMap({
+    schemaVersion: 1,
+    purpose: 'review assistance only; perceptual similarity is not source identity',
+    groups: [{
+      suggestedSourceGroup: 'candidate-source-0001',
+      humanReviewRequired: true,
+      crossesCandidateSplits: true,
+      members: [{ id:'quality:1' }, { id:'quality:2' }]
+    }]
+  }, manifest);
+  assert.equal(proposals['quality:1'].suggestedSourceGroup, 'candidate-source-0001');
+  assert.equal(proposals['quality:1'].crossesCandidateSplits, true);
+  assert.equal(manifest[0].reviewedSourceGroup, null);
+  assert.throws(() => state.sourceSuggestionMap({ schemaVersion:1, groups:[] }, manifest),
+    /Unsupported source-group suggestion file/);
+});
+
 test('review server exposes only the tool, manifest and prepared images', () => {
   assert.ok(server.resolveRequestPath('/').endsWith(path.join('review-tool','index.html')));
   assert.ok(server.resolveRequestPath('/research/public-review-manifest.json'));

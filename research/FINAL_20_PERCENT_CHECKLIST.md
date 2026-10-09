@@ -11,6 +11,10 @@
 - [ ] Confirm that images from the same fruit, farm, session or source stay in only one dataset split.
 - [ ] Record the approved evaluation protocol and acceptance criteria.
 
+Review aid prepared: `research/source-group-suggestions-2026-10-10.json` flags
+possible same-source images, including cross-split candidates, but does not approve
+or apply any group.
+
 **Evidence required:** approved class guide, reviewer list, source-grouping record and evaluation protocol.
 
 ## 2. Complete dataset review

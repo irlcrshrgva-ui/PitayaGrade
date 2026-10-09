@@ -784,8 +784,8 @@ The verified automated suite currently covers application workflows, storage int
 
 | Verified check | Result on 10 October 2026 | What the result establishes |
 |---|---:|---|
-| JavaScript application and runtime tests | 72 passed, 0 failed | Browser workflows, storage safeguards, model selection, report export, packaged assets and bundled ONNX/WASM execution behave as asserted. |
-| Python research-tool tests | 80 passed, 0 failed | Data validation, preprocessing, training-policy, export-contract and evaluation utilities behave as asserted on their test fixtures. |
+| JavaScript application and runtime tests | 73 passed, 0 failed | Browser workflows, storage safeguards, model selection, report export, review assistance, packaged assets and bundled ONNX/WASM execution behave as asserted. |
+| Python research-tool tests | 82 passed, 0 failed | Data validation, perceptual source-group suggestions, preprocessing, training-policy, export-contract and evaluation utilities behave as asserted on their test fixtures. |
 | GitHub application verification | Passed | The repository's software and Android verification workflow completed successfully for commit `756da2b`. |
 | GitHub Pages deployment | Passed | The packaged web application was published successfully for the same commit. |
 
