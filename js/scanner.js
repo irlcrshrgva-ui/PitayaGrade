@@ -645,11 +645,11 @@ const Scanner = {
   },
 
   // ============================================================
-  // Main Result Generator - Dual-Stage Pipeline Orchestrator
-  // Coordinates the full YOLOv8 + EfficientNet pipeline:
-  //   Stage 1: Grid-based object detection and ROI extraction
-  //   Stage 2A: Per-pixel disease segmentation within ROI
-  //   Stage 2B: 6-dimensional compound quality grading within ROI
+  // Main Result Generator - Implemented Local Pipeline
+  // Coordinates the bundled YOLOv8 grade detector with image heuristics:
+  //   Stage 1: trained object detection and ROI extraction
+  //   Stage 2A: available disease segmentation or HSV symptom estimate
+  //   Stage 2B: image-derived maturity and surface descriptors
   // All classification decisions are deterministic (no Math.random)
   // ============================================================
   _generateResult(modelResult, imageData = this.currentImageData, diseaseModelResult = null) {

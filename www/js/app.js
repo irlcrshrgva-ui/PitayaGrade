@@ -365,6 +365,17 @@ document.addEventListener('DOMContentLoaded', () => {
   WebAppInstall.init();
   const isLocalPreview = ['localhost', '127.0.0.1'].includes(window.location.hostname);
   if ('serviceWorker' in navigator && location.protocol === 'https:' && !isLocalPreview) {
+    const hadController = Boolean(navigator.serviceWorker.controller);
+    let refreshingForUpdate = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (!hadController || refreshingForUpdate) return;
+      if (Scanner.isProcessing || LiveScanner.isActive) {
+        ToastManager.show('PitayaGrade updated. Reload after the current scan to use the new version.', 'info', 10000);
+        return;
+      }
+      refreshingForUpdate = true;
+      window.location.reload();
+    });
     navigator.serviceWorker.register('./service-worker.js').then(registration => {
       const reportReadyUpdate = () => {
         if (registration.waiting && navigator.serviceWorker.controller) {

@@ -1,7 +1,7 @@
 /* =============================================
    PitayaGrade - Live Camera Scanner Module
    Real-time dragon fruit analysis via camera feed
-   Dual-stage YOLOv8 + EfficientNet-B3 inference overlay with HUD status display
+   Bundled YOLOv8 grade inference with image-estimate HUD display
    ============================================= */
 
 const LiveScanner = {
