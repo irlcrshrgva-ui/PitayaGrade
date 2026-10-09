@@ -1,6 +1,7 @@
 # Dependencies and temporary tooling
 node_modules/
 _ort_tmp/
+.codex-build/
 
 # Android / Gradle generated files
 android/.gradle/

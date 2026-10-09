@@ -8,6 +8,7 @@
     "build": "node scripts/sync-web.js",
     "sync:android": "npm run build && cap sync android",
     "test:inference": "node scripts/smoke-inference.js",
+    "progress": "node scripts/capstone-progress.js",
     "readiness": "node scripts/release-readiness.js",
     "test": "node --test tests/*.test.js"
   },
