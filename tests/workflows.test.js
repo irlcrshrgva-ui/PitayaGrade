@@ -75,6 +75,16 @@ test('unrecognized results do not invent classifier confidence or save a grade',
   assert.match(a.element('resultArea').innerHTML, /No grading confidence is available/);
   assert.doesNotMatch(a.element('resultArea').innerHTML, /99\.4%/);
   assert.equal(a.ScanStore.getScans().length, 0);
+
+  const scored = a.Scanner._generateResult({ isDragonFruit:false, confidence:.42,
+    confidenceThreshold:.5, modelName:'YOLOv8-Nano' });
+  a.Scanner._displayResult(scored);
+  assert.equal(scored.grade.confidence, 0);
+  assert.equal(scored.details.detectionScore, .42);
+  assert.equal(scored.details.detectionThreshold, .5);
+  assert.match(a.element('resultArea').innerHTML, /Model object score:[\s\S]*42\.0%/);
+  assert.match(a.element('resultArea').innerHTML, /Required:[\s\S]*50%/);
+  assert.match(a.element('resultArea').innerHTML, /not a quality-grade confidence/);
 });
 
 test('history treats saved fields as text and never renders stored recommendation markup', () => {

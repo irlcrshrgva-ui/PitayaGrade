@@ -123,6 +123,9 @@ const LiveScanner = {
 
       this.isActive = true;
       if (typeof ModelInference !== 'undefined') ModelInference.load(PitayaApp.settings.selectedModel);
+      const modelBadge = document.getElementById('hudModel');
+      const selectedModel = typeof ModelInference !== 'undefined' ? ModelInference.getSelectedModel() : null;
+      if (modelBadge) modelBadge.textContent = `${selectedModel?.name || 'Grade model'} + HSV`;
       this.lastFpsTime = performance.now();
       this.frameCount = 0;
 
@@ -215,7 +218,11 @@ const LiveScanner = {
         frame, PitayaApp.settings.selectedDiseaseModel, model?.box || null);
       if (!this.isActive || request !== this.cameraRequest) return;
       const result = Scanner._generateResult(model, pixels, diseaseModel);
-      result.detectedObject = result.isDragonFruit ? 'Dragon Fruit' + (model ? '' : ' (heuristic)') : 'Unrecognized';
+      result.detectedObject = result.isDragonFruit
+        ? 'Dragon Fruit' + (model ? '' : ' (heuristic)')
+        : model && Number.isFinite(model.confidence)
+          ? `No match (${Math.round(model.confidence * 100)}%)`
+          : 'Unrecognized';
       this._smoothResult(result);
       this._updateHud();
       this.frameCount++;

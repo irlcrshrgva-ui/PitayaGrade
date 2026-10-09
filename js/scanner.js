@@ -608,7 +608,7 @@ const Scanner = {
   // Constructs a standardized rejection response when the
   // YOLOv8 detection stage fails to identify a dragon fruit ROI
   // ============================================================
-  _buildRejectionResult(reasons) {
+  _buildRejectionResult(reasons, diagnostics = {}) {
     let brightness = 0.5;
     if (this.currentImageData) {
       const data = this.currentImageData.data;
@@ -634,7 +634,9 @@ const Scanner = {
         surfaceCondition: 'Unknown', brightness: (brightness * 100).toFixed(0) + '%',
         processingMode: 'Local (ONNX / image analysis)',
         processingTime: 'N/A',
-        modelUsed: 'No grade assigned'
+        modelUsed: diagnostics.modelName ? `${diagnostics.modelName} ONNX (no grade assigned)` : 'No grade assigned',
+        detectionScore: Number.isFinite(diagnostics.confidence) ? diagnostics.confidence : null,
+        detectionThreshold: Number.isFinite(diagnostics.threshold) ? diagnostics.threshold : null
       },
       recommendations: [
         { type: 'red', icon: '<svg class="icon-svg" viewBox="0 0 24 24" style="width:16px;height:16px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>', text: 'No dragon fruit detected. Please reposition the camera and capture a clear, centered shot of a white-fleshed or red-fleshed dragon fruit.' }
@@ -651,11 +653,18 @@ const Scanner = {
   // All classification decisions are deterministic (no Math.random)
   // ============================================================
   _generateResult(modelResult, imageData = this.currentImageData, diseaseModelResult = null) {
+    const rejectionDiagnostics = {
+      confidence: modelResult?.confidence,
+      threshold: modelResult?.confidenceThreshold,
+      modelName: modelResult?.modelName
+    };
     if (modelResult && !modelResult.isDragonFruit) {
-      return this._buildRejectionResult(['The model did not detect a dragon fruit above its confidence threshold']);
+      return this._buildRejectionResult(
+        ['The model did not detect a dragon fruit above its confidence threshold'],
+        rejectionDiagnostics);
     }
     if (!imageData) {
-      return this._buildRejectionResult(['No image data available for analysis']);
+      return this._buildRejectionResult(['No image data available for analysis'], rejectionDiagnostics);
     }
 
     const data = imageData.data;
@@ -673,7 +682,7 @@ const Scanner = {
       return this._buildRejectionResult([
         'YOLOv8 grid detection found insufficient dragon fruit pixel clusters',
         'No valid region-of-interest (ROI) could be established in the image frame'
-      ]);
+      ], rejectionDiagnostics);
     }
 
     // Impostor detection using grid-level color analysis
@@ -702,17 +711,17 @@ const Scanner = {
 
     const requiresVisualGate = !modelResult || modelResult.classificationOnly || modelResult.requiresVisualGate !== false;
     if (requiresVisualGate && (colorVariance < 0.03 || colorVariance > 0.92 || brightness < 0.09 || brightness > 0.97)) {
-      return this._buildRejectionResult(['Flat surface, solid background, or extreme exposure detected']);
+      return this._buildRejectionResult(['Flat surface, solid background, or extreme exposure detected'], rejectionDiagnostics);
     }
 
     // Require broad pink/red skin plus either green scales or strong magenta/red
     // skin. Green is optional because ripe, damaged, and tightly cropped fruits
     // can legitimately have no visible green tips.
     if (requiresVisualGate && avgPinkRatio < 0.06) {
-      return this._buildRejectionResult(['Insufficient pink/magenta skin color detected — not a dragon fruit']);
+      return this._buildRejectionResult(['Insufficient pink/magenta skin color detected — not a dragon fruit'], rejectionDiagnostics);
     }
     if (requiresVisualGate && avgGreenRatio < 0.01 && avgMagentaRatio < 0.08) {
-      return this._buildRejectionResult(['No green scales or strong magenta/red fruit skin detected']);
+      return this._buildRejectionResult(['No green scales or strong magenta/red fruit skin detected'], rejectionDiagnostics);
     }
 
     // === STAGE 2A: YOLOv8-Seg Disease Segmentation ===
@@ -933,6 +942,14 @@ const Scanner = {
     area.style.display = 'block';
 
     if (result.isDragonFruit === false) {
+      const hasDetectionScore = Number.isFinite(result.details.detectionScore);
+      const detectionEvidence = hasDetectionScore ? `
+        <div style="padding:10px 12px;border-radius:10px;background:var(--bg-tertiary);font-size:12px;color:var(--text-secondary);margin-bottom:12px">
+          Model object score: <strong>${(result.details.detectionScore * 100).toFixed(1)}%</strong>
+          ${Number.isFinite(result.details.detectionThreshold)
+            ? `&nbsp;·&nbsp; Required: <strong>${(result.details.detectionThreshold * 100).toFixed(0)}%</strong>` : ''}
+          <div style="margin-top:4px">This is an object-detection score, not a quality-grade confidence.</div>
+        </div>` : '';
       area.innerHTML = `
         <div class="result-card critical-alert-card" style="border-top: 4px solid var(--color-error)">
           <div class="result-header grade-reject" style="padding: 24px">
@@ -946,6 +963,7 @@ const Scanner = {
               <div style="font-size:13px;color:var(--text-secondary);line-height:1.5;margin-bottom:12px">
                 The assessment could not verify a dragon fruit in this image. Check the image and detection threshold, then try again.
               </div>
+              ${detectionEvidence}
               <div class="symptoms-list">
                 ${result.disease.symptoms.map(sym => `
                   <div class="symptom-item alert">
@@ -958,7 +976,7 @@ const Scanner = {
             <div class="result-section">
               <div class="result-section-title">Recommendations</div>
               <div class="recommendation-card red">
-                <span class="recommendation-icon">âš ï¸</span>
+                <span class="recommendation-icon"><svg class="icon-svg" viewBox="0 0 24 24" style="width:18px;height:18px"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span>
                 <span class="recommendation-text">Please capture a clear, centered, and well-lit photo of a white-fleshed or red-fleshed dragon fruit on the vine, keeping background clutter to a minimum.</span>
               </div>
             </div>
