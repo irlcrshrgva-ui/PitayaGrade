@@ -53,6 +53,18 @@ function faceLikePixels() {
   }
   return { width:128, height:128, data };
 }
+function ripeFruitWithoutGreenPixels() {
+  const width = 128, height = 128;
+  const data = new Uint8ClampedArray(width * height * 4);
+  for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
+    const offset = (y * width + x) * 4;
+    const fruit = x >= 24 && x < 104 && y >= 20 && y < 108;
+    const stripe = (x + y) % 11 < 4;
+    const color = fruit ? (stripe ? [180, 20, 90] : [230, 28, 112]) : [32, 35, 40];
+    data[offset] = color[0]; data[offset + 1] = color[1]; data[offset + 2] = color[2]; data[offset + 3] = 255;
+  }
+  return { width, height, data };
+}
 
 test('unrecognized results do not invent classifier confidence or save a grade', () => {
   const a = app();
@@ -254,6 +266,11 @@ test('trained detection requires a plausible fruit signature and rejects face-li
   assert.match(result.details.processingMode, /^Local/);
   assert.doesNotMatch(result.details.modelUsed, /EfficientNet|TFLite|Cloud/);
   assert.ok(result.disease.symptoms.every(text => !/confirmed|verified/.test(text)));
+  const ripeFruit = a.Scanner._generateResult({ isDragonFruit: true, grade: 'Grade C', confidence: .8,
+    requiresVisualGate:true, box: { x: .2, y: .15, right: .82, bottom: .85 }, inferenceMs: 20 },
+  ripeFruitWithoutGreenPixels());
+  assert.equal(ripeFruit.isDragonFruit, true);
+  assert.equal(ripeFruit.grade.label, 'Grade C');
   const segmented = a.Scanner._generateResult({ isDragonFruit: true, grade: 'Grade B', confidence: .8,
     requiresVisualGate:true, box: { x: .25, y: .25, right: .75, bottom: .75 },
     inferenceMs: 20, modelName:'YOLOv8-Nano' }, pixels,

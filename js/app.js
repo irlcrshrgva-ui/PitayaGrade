@@ -8,7 +8,8 @@ const PitayaApp = {
     language: 'en',
     offlineMode: false,
     scanAlerts: true,
-    threshold: 65,
+    threshold: 50,
+    detectorTuningVersion: 2,
     selectedModel: 'yolov8-nano',
     selectedDiseaseModel: 'yolov8n-disease-seg'
   },
@@ -16,8 +17,11 @@ const PitayaApp = {
   init() {
     // Load settings
     const saved = ScanStore.read('pg_settings', {}, value => value && typeof value === 'object' && !Array.isArray(value));
+    const migrateLegacyThreshold = saved.detectorTuningVersion !== 2 && Number(saved.threshold) === 65;
     this.settings = { ...this.settings, ...saved };
-    this.settings.threshold = Number.isFinite(Number(this.settings.threshold)) ? Math.max(10, Math.min(95, Number(this.settings.threshold))) : 65;
+    if (migrateLegacyThreshold) this.settings.threshold = 50;
+    this.settings.threshold = Number.isFinite(Number(this.settings.threshold)) ? Math.max(10, Math.min(95, Number(this.settings.threshold))) : 50;
+    this.settings.detectorTuningVersion = 2;
     this.settings.offlineMode = this.settings.offlineMode === true;
     this.settings.scanAlerts = this.settings.scanAlerts !== false;
     this.settings.language = this.settings.language === 'fil' ? 'fil' : 'en';
@@ -35,6 +39,7 @@ const PitayaApp = {
     DashboardManager.init();
     HistoryManager.init();
     ReportsManager.init();
+    if (migrateLegacyThreshold) this._saveSettings();
 
     // Bind navigation
     this._bindNav();

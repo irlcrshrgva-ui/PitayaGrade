@@ -259,7 +259,7 @@ const Scanner = {
 
     for (let gy = 0; gy < gridH; gy++) {
       for (let gx = 0; gx < gridW; gx++) {
-        let pinkCount = 0, greenCount = 0, darkCount = 0, whiteCount = 0;
+        let pinkCount = 0, magentaCount = 0, greenCount = 0, darkCount = 0, whiteCount = 0;
         let totalPixels = 0;
         let cellBrightness = 0;
 
@@ -274,6 +274,9 @@ const Scanner = {
             // Dragon fruit pink/magenta skin (H wraps around 360)
             if ((hsv.h >= 270 || hsv.h <= 30) && hsv.s > 15 && hsv.v > 25) {
               pinkCount++;
+              // Ripe pitaya can have no visible green tips. A narrower magenta/red
+              // band distinguishes that skin from orange/tan human skin.
+              if (hsv.h >= 300 || hsv.h <= 10) magentaCount++;
             }
             // Dragon fruit green scale tips
             else if (hsv.h >= 55 && hsv.h <= 175 && hsv.s > 15 && hsv.v > 20) {
@@ -293,6 +296,7 @@ const Scanner = {
         if (totalPixels === 0) continue;
 
         const pinkRatio = pinkCount / totalPixels;
+        const magentaRatio = magentaCount / totalPixels;
         const greenRatio = greenCount / totalPixels;
         const whiteRatio = whiteCount / totalPixels;
         // Weighted dragon fruit score: pink skin is strongest indicator,
@@ -300,7 +304,7 @@ const Scanner = {
         const dragonFruitScore = pinkRatio * 2.5 + greenRatio * 1.0 + whiteRatio * 0.5;
 
         grid.push({
-          gx, gy, pinkRatio, greenRatio, whiteRatio,
+          gx, gy, pinkRatio, magentaRatio, greenRatio, whiteRatio,
           dragonFruitScore,
           avgBrightness: cellBrightness / totalPixels,
           darkRatio: darkCount / totalPixels
@@ -679,6 +683,7 @@ const Scanner = {
     );
 
     const avgPinkRatio = roiCells.reduce((s, c) => s + c.pinkRatio, 0) / roiCells.length;
+    const avgMagentaRatio = roiCells.reduce((s, c) => s + c.magentaRatio, 0) / roiCells.length;
     const avgGreenRatio = roiCells.reduce((s, c) => s + c.greenRatio, 0) / roiCells.length;
 
     // Global image quality validation
@@ -700,17 +705,14 @@ const Scanner = {
       return this._buildRejectionResult(['Flat surface, solid background, or extreme exposure detected']);
     }
 
-    // Dragonfruit has both pink skin AND green scale tips — require both
+    // Require broad pink/red skin plus either green scales or strong magenta/red
+    // skin. Green is optional because ripe, damaged, and tightly cropped fruits
+    // can legitimately have no visible green tips.
     if (requiresVisualGate && avgPinkRatio < 0.06) {
       return this._buildRejectionResult(['Insufficient pink/magenta skin color detected — not a dragon fruit']);
     }
-    if (requiresVisualGate && avgGreenRatio < 0.02) {
-      return this._buildRejectionResult(['No green scale tips detected — not a dragon fruit']);
-    }
-    // Pink-to-green ratio must be within the biological range of pitaya (3:1 to 20:1)
-    const pinkToGreen = avgGreenRatio > 0 ? avgPinkRatio / avgGreenRatio : 999;
-    if (requiresVisualGate && (pinkToGreen < 1.5 || pinkToGreen > 25)) {
-      return this._buildRejectionResult(['Pink-to-green color ratio outside dragon fruit biological range']);
+    if (requiresVisualGate && avgGreenRatio < 0.01 && avgMagentaRatio < 0.08) {
+      return this._buildRejectionResult(['No green scales or strong magenta/red fruit skin detected']);
     }
 
     // === STAGE 2A: YOLOv8-Seg Disease Segmentation ===
