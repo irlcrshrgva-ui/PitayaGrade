@@ -78,7 +78,7 @@ severity or diagnosis. See the preparation guide for both commands and limitatio
 
 Local verification: 72 JavaScript checks, 80 Python checks and Android
 build/lint pass. The current debug APK SHA-256 is
-`1710bcb6a153f56208494382987d4111233be7dbbeb36d2e4390bba75790f488`.
+`06a62fe961f36506e5b9b02198a9e3bc527ed9f807501a92045bbc2397791fcc`.
 The runtime gate audit accepted 228 of 240 evenly sampled known-fruit images at
 the corrected 50% cutoff, compared with 176 under the legacy gate. This is a
 development regression check, not held-out accuracy evidence.
