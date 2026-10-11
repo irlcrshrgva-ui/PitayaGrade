@@ -63,6 +63,8 @@ The review interface is published with GitHub Pages at
 deliberately excluded from the public repository. On the review page, choose
 **Load local dataset folder** and select `dataset/public/prepared` from a local
 project copy. Reviews remain in that browser until they are exported.
+For the three-member workflow, each person selects their assigned reviewer ID
+before loading the extracted package folder. Assignment rows do not overlap.
 
 Public web preview: <https://irlcrshrgva-ui.github.io/PitayaGrade/>
 

@@ -1,12 +1,13 @@
 (async function () {
   const STORAGE = 'pitayagrade_review_drafts_v1';
-  const els = Object.fromEntries(['status','task','filter','reviewer','sourceGroup','labels','save','clear',
+  const els = Object.fromEntries(['status','task','assignment','filter','reviewer','sourceGroup','labels','save','clear',
     'progressText','progressPercent','progress','image','imageError','recordId','split','sourceLabel',
     'imagePath','previous','next','position','exportJson','exportCsv','backup','restore','proposalFile',
     'suggestionText','useSuggestion','groupProposalFile','sourceSuggestionText','useSourceSuggestion','toast',
     'datasetFolder','datasetStatus']
     .map(id => [id, document.getElementById(id)]));
-  let manifest = [], rows = [], index = 0;
+  let allManifest = [], manifest = [], rows = [], index = 0;
+  let assignmentConfig = null;
   let suggestions = {};
   let sourceSuggestions = {};
   let localImages = new Map();
@@ -61,6 +62,21 @@
     }
     index = Math.min(index, Math.max(0, rows.length - 1));
     render();
+  }
+  function applyAssignment() {
+    const selected = els.assignment.value;
+    const assignment = assignmentConfig?.assignments?.find(item => item.reviewerId === selected);
+    if (assignment) {
+      const allowed = new Set(assignment.recordIds);
+      manifest = allManifest.filter(row => allowed.has(row.id));
+      els.reviewer.value = assignment.reviewerId;
+      localStorage.setItem('pitayagrade_reviewer_id', assignment.reviewerId);
+    } else {
+      manifest = allManifest;
+    }
+    index = 0;
+    els.status.textContent = `${manifest.length.toLocaleString()} assigned records loaded`;
+    rebuild();
   }
   function renderLabels(task, selected) {
     els.labels.innerHTML = '';
@@ -117,7 +133,9 @@
   }
   function dateTag() { return new Date().toISOString().slice(0,10); }
 
-  els.task.addEventListener('change', () => { index = 0; rebuild(); }); els.filter.addEventListener('change', () => { index = 0; rebuild(); });
+  els.task.addEventListener('change', () => { index = 0; rebuild(); });
+  els.assignment.addEventListener('change', applyAssignment);
+  els.filter.addEventListener('change', () => { index = 0; rebuild(); });
   els.previous.addEventListener('click', () => { index = Math.max(0, index - 1); render(); });
   els.next.addEventListener('click', () => { index = Math.min(rows.length - 1, index + 1); render(); });
   els.save.addEventListener('click', saveReview);
@@ -143,7 +161,7 @@
     render();
     if (count) toast(`${count.toLocaleString()} local dataset images loaded`);
   });
-  els.exportJson.addEventListener('click', () => { try { download(`pitayagrade-reviewed-${dateTag()}.json`, JSON.stringify(ReviewState.mergeDrafts(manifest,drafts),null,2)+'\n','application/json'); } catch(e) { toast(e.message); } });
+  els.exportJson.addEventListener('click', () => { try { const owner = els.assignment.value === 'all' ? 'coordinator' : els.assignment.value; download(`pitayagrade-reviewed-${owner}-${dateTag()}.json`, JSON.stringify(ReviewState.mergeDrafts(manifest,drafts),null,2)+'\n','application/json'); } catch(e) { toast(e.message); } });
   els.exportCsv.addEventListener('click', () => { try { const merged=ReviewState.mergeDrafts(manifest,drafts).filter(r=>r.task===els.task.value); download(`${els.task.value}-review-${dateTag()}.csv`,ReviewState.csv(merged),'text/csv'); } catch(e) { toast(e.message); } });
   els.backup.addEventListener('click', () => download(`review-draft-${dateTag()}.json`, JSON.stringify(drafts,null,2)+'\n','application/json'));
   els.proposalFile.addEventListener('change', async () => { try {
@@ -161,13 +179,26 @@
   try {
     const response = await fetch(new URL('../research/public-review-manifest.json', window.location.href), { cache:'no-store' });
     if (!response.ok) throw new Error(`Manifest request failed (${response.status})`);
-    manifest = await response.json();
-    if (!Array.isArray(manifest) || !manifest.length) throw new Error('Manifest is empty or invalid');
+    allManifest = await response.json();
+    if (!Array.isArray(allManifest) || !allManifest.length) throw new Error('Manifest is empty or invalid');
+    manifest = allManifest;
     els.reviewer.value = localStorage.getItem('pitayagrade_reviewer_id') || '';
+    try {
+      const assignmentResponse = await fetch(new URL('../research/review-assignments-3.json', window.location.href), { cache:'no-store' });
+      if (assignmentResponse.ok) {
+        assignmentConfig = await assignmentResponse.json();
+        for (const assignment of assignmentConfig.assignments || []) {
+          const option = document.createElement('option');
+          option.value = assignment.reviewerId;
+          option.textContent = `${assignment.reviewerId} (${assignment.recordCount.toLocaleString()} records)`;
+          els.assignment.appendChild(option);
+        }
+      }
+    } catch { /* Coordinator view remains available without assignments. */ }
     els.status.textContent = `${manifest.length.toLocaleString()} candidate records loaded`;
     try {
       const groupResponse = await fetch(new URL('../research/source-group-suggestions-2026-10-10.json', window.location.href), { cache:'no-store' });
-      if (groupResponse.ok) sourceSuggestions = ReviewState.sourceSuggestionMap(await groupResponse.json(), manifest);
+      if (groupResponse.ok) sourceSuggestions = ReviewState.sourceSuggestionMap(await groupResponse.json(), allManifest);
     } catch { /* Review remains usable without optional suggestions. */ }
     rebuild();
   } catch (error) { els.status.textContent = error.message; els.status.style.color = '#ff9bad'; }
