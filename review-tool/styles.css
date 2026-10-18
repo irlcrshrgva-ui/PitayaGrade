@@ -12,6 +12,8 @@ input,select,button,.import { width:100%; border:1px solid var(--line); border-r
 input,select { margin-top:6px; } button,.import { cursor:pointer; font-weight:750; margin-bottom:9px; } button:hover,.import:hover { border-color:var(--green); }
 button.primary { background:linear-gradient(135deg,var(--accent),#d83478); border:0; }
 .primary-import { background:linear-gradient(135deg,#197d62,#125b49); border:0; color:#fff; }
+.guide-link { display:block; margin:0 0 14px; padding:11px 12px; border:1px solid var(--green); border-radius:10px; color:var(--green); text-align:center; text-decoration:none; font-weight:750; }
+.guide-link:hover { background:#16362d; }
 .labels { display:grid; gap:7px; }.labels label { display:flex; align-items:center; gap:8px; margin:0; padding:9px 10px; border:1px solid var(--line); border-radius:10px; color:var(--text); }.labels input { width:auto; margin:0; }
 .hint,.warning,.export-panel p { color:var(--muted); font-size:13px; }.warning { border-left:3px solid #f4b942; padding-left:10px; }
 .suggestion { display:grid; gap:8px; margin:0 0 15px; padding:11px; border:1px dashed #6d7151; border-radius:11px; background:#181c13; }

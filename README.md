@@ -53,6 +53,8 @@ The latest autonomous dataset and application checks are recorded in
 
 Team members should follow `research/TEAM_HANDOFF_NEXT_STEPS.md` for the remaining
 human review, device testing, UAT and release-signing work.
+The exact at-home procedure and three-way workload are documented in
+`research/THREE_MEMBER_DATASET_REVIEW_GUIDE.md`.
 
 ## Run the web application
 
