@@ -26,6 +26,7 @@ yolo_dataset/labels/
 training_results/*.pth
 training_results/**/dataset/
 training_results/**/*.pth
+training_results/mendeley-*/
 yolo_results/**/dataset/
 yolo_results/**/weights/
 yolo_results/train/weights/

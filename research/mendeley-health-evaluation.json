@@ -1,0 +1,394 @@
+{
+  "status": "experimental-evaluated-image-classifier",
+  "task": "health",
+  "classes": [
+    "fruit_bad_unspecified",
+    "fruit_good_source",
+    "leaf_bad_unspecified",
+    "leaf_good_source"
+  ],
+  "architecture": "ImageNet MobileNetV3-small frozen encoder + trained linear head",
+  "preprocessing": {
+    "size": 160,
+    "resize": "bilinear stretch",
+    "orientation": "EXIF upright RGB",
+    "mean": [
+      0.485,
+      0.456,
+      0.406
+    ],
+    "std": [
+      0.229,
+      0.224,
+      0.225
+    ]
+  },
+  "manifestSha256": "2c3caa9185fb94b081929285cd53fa86199c4f24a44d5f8067758cb611299256",
+  "seed": 42,
+  "epochs": 40,
+  "startedAtUtc": "2026-10-20T17:45:47.206067+00:00",
+  "python": "3.12.14",
+  "torch": "2.14.0+cpu",
+  "selectedEpoch": 33,
+  "selectionMetric": "minimum validation cross-entropy",
+  "history": [
+    {
+      "epoch": 1,
+      "validationLoss": 0.573247492313385,
+      "validationAccuracy": 0.8113207817077637
+    },
+    {
+      "epoch": 2,
+      "validationLoss": 0.4522170126438141,
+      "validationAccuracy": 0.8364779949188232
+    },
+    {
+      "epoch": 3,
+      "validationLoss": 0.4075472950935364,
+      "validationAccuracy": 0.8522012829780579
+    },
+    {
+      "epoch": 4,
+      "validationLoss": 0.37958016991615295,
+      "validationAccuracy": 0.8584905862808228
+    },
+    {
+      "epoch": 5,
+      "validationLoss": 0.39521849155426025,
+      "validationAccuracy": 0.849056601524353
+    },
+    {
+      "epoch": 6,
+      "validationLoss": 0.3656008839607239,
+      "validationAccuracy": 0.8647798895835876
+    },
+    {
+      "epoch": 7,
+      "validationLoss": 0.3516307771205902,
+      "validationAccuracy": 0.8616352081298828
+    },
+    {
+      "epoch": 8,
+      "validationLoss": 0.34798043966293335,
+      "validationAccuracy": 0.8584905862808228
+    },
+    {
+      "epoch": 9,
+      "validationLoss": 0.3421591520309448,
+      "validationAccuracy": 0.8647798895835876
+    },
+    {
+      "epoch": 10,
+      "validationLoss": 0.3397514820098877,
+      "validationAccuracy": 0.8616352081298828
+    },
+    {
+      "epoch": 11,
+      "validationLoss": 0.3343864679336548,
+      "validationAccuracy": 0.8710691928863525
+    },
+    {
+      "epoch": 12,
+      "validationLoss": 0.32196128368377686,
+      "validationAccuracy": 0.8710691928863525
+    },
+    {
+      "epoch": 13,
+      "validationLoss": 0.3439579904079437,
+      "validationAccuracy": 0.8522012829780579
+    },
+    {
+      "epoch": 14,
+      "validationLoss": 0.3196415305137634,
+      "validationAccuracy": 0.8742138147354126
+    },
+    {
+      "epoch": 15,
+      "validationLoss": 0.31500595808029175,
+      "validationAccuracy": 0.8805031180381775
+    },
+    {
+      "epoch": 16,
+      "validationLoss": 0.3402301073074341,
+      "validationAccuracy": 0.8742138147354126
+    },
+    {
+      "epoch": 17,
+      "validationLoss": 0.32300475239753723,
+      "validationAccuracy": 0.8679245114326477
+    },
+    {
+      "epoch": 18,
+      "validationLoss": 0.30933088064193726,
+      "validationAccuracy": 0.8867924809455872
+    },
+    {
+      "epoch": 19,
+      "validationLoss": 0.32142287492752075,
+      "validationAccuracy": 0.8742138147354126
+    },
+    {
+      "epoch": 20,
+      "validationLoss": 0.3091834783554077,
+      "validationAccuracy": 0.8836477994918823
+    },
+    {
+      "epoch": 21,
+      "validationLoss": 0.3090462386608124,
+      "validationAccuracy": 0.8773584961891174
+    },
+    {
+      "epoch": 22,
+      "validationLoss": 0.3142341375350952,
+      "validationAccuracy": 0.8773584961891174
+    },
+    {
+      "epoch": 23,
+      "validationLoss": 0.3091954290866852,
+      "validationAccuracy": 0.8899371027946472
+    },
+    {
+      "epoch": 24,
+      "validationLoss": 0.31086301803588867,
+      "validationAccuracy": 0.8867924809455872
+    },
+    {
+      "epoch": 25,
+      "validationLoss": 0.31577345728874207,
+      "validationAccuracy": 0.8867924809455872
+    },
+    {
+      "epoch": 26,
+      "validationLoss": 0.30979517102241516,
+      "validationAccuracy": 0.8805031180381775
+    },
+    {
+      "epoch": 27,
+      "validationLoss": 0.325177401304245,
+      "validationAccuracy": 0.8805031180381775
+    },
+    {
+      "epoch": 28,
+      "validationLoss": 0.30949780344963074,
+      "validationAccuracy": 0.8773584961891174
+    },
+    {
+      "epoch": 29,
+      "validationLoss": 0.30943748354911804,
+      "validationAccuracy": 0.8836477994918823
+    },
+    {
+      "epoch": 30,
+      "validationLoss": 0.3258742094039917,
+      "validationAccuracy": 0.8867924809455872
+    },
+    {
+      "epoch": 31,
+      "validationLoss": 0.31341353058815,
+      "validationAccuracy": 0.8867924809455872
+    },
+    {
+      "epoch": 32,
+      "validationLoss": 0.3100191652774811,
+      "validationAccuracy": 0.8899371027946472
+    },
+    {
+      "epoch": 33,
+      "validationLoss": 0.3085634112358093,
+      "validationAccuracy": 0.893081784248352
+    },
+    {
+      "epoch": 34,
+      "validationLoss": 0.3195246458053589,
+      "validationAccuracy": 0.8805031180381775
+    },
+    {
+      "epoch": 35,
+      "validationLoss": 0.32049909234046936,
+      "validationAccuracy": 0.8899371027946472
+    },
+    {
+      "epoch": 36,
+      "validationLoss": 0.31080329418182373,
+      "validationAccuracy": 0.8867924809455872
+    },
+    {
+      "epoch": 37,
+      "validationLoss": 0.3162095844745636,
+      "validationAccuracy": 0.8836477994918823
+    },
+    {
+      "epoch": 38,
+      "validationLoss": 0.3160555958747864,
+      "validationAccuracy": 0.8867924809455872
+    },
+    {
+      "epoch": 39,
+      "validationLoss": 0.3245847225189209,
+      "validationAccuracy": 0.8836477994918823
+    },
+    {
+      "epoch": 40,
+      "validationLoss": 0.3256834149360657,
+      "validationAccuracy": 0.8867924809455872
+    }
+  ],
+  "limitations": [
+    "dHash distance <=4 plus decoded pixel and file hashes group visual duplicates across both sources.",
+    "No plant/session IDs supplied; visually distinct photos of one plant may remain across splits.",
+    "Publisher image-level labels are not independently verified diagnoses, grades, or segmentation masks.",
+    "The first archive has only Good/Bad fruit/leaf folders. Its health task stays separate from named conditions.",
+    "Experimental source-label prediction, not a validated field diagnosis.",
+    "No lesion masks, affected-area estimates, quality grades, or treatment recommendations.",
+    "Softmax scores are uncalibrated; no out-of-distribution rejection was validated."
+  ],
+  "validation": {
+    "count": 318,
+    "metrics": {
+      "fruit_bad_unspecified": {
+        "precision": 0.9473684210526315,
+        "recall": 0.8571428571428571,
+        "f1-score": 0.9,
+        "support": 42.0
+      },
+      "fruit_good_source": {
+        "precision": 0.875,
+        "recall": 0.9545454545454546,
+        "f1-score": 0.9130434782608695,
+        "support": 44.0
+      },
+      "leaf_bad_unspecified": {
+        "precision": 0.8863636363636364,
+        "recall": 0.8297872340425532,
+        "f1-score": 0.8571428571428571,
+        "support": 94.0
+      },
+      "leaf_good_source": {
+        "precision": 0.8888888888888888,
+        "recall": 0.927536231884058,
+        "f1-score": 0.9078014184397163,
+        "support": 138.0
+      },
+      "accuracy": 0.8930817610062893,
+      "macro avg": {
+        "precision": 0.8994052365762891,
+        "recall": 0.8922529444037307,
+        "f1-score": 0.8944969384608608,
+        "support": 318.0
+      },
+      "weighted avg": {
+        "precision": 0.8939444093366636,
+        "recall": 0.8930817610062893,
+        "f1-score": 0.8925218155961876,
+        "support": 318.0
+      }
+    },
+    "confusionMatrix": [
+      [
+        36,
+        6,
+        0,
+        0
+      ],
+      [
+        1,
+        42,
+        0,
+        1
+      ],
+      [
+        1,
+        0,
+        78,
+        15
+      ],
+      [
+        0,
+        0,
+        10,
+        128
+      ]
+    ]
+  },
+  "test": {
+    "count": 318,
+    "metrics": {
+      "fruit_bad_unspecified": {
+        "precision": 0.8809523809523809,
+        "recall": 0.8809523809523809,
+        "f1-score": 0.8809523809523809,
+        "support": 42.0
+      },
+      "fruit_good_source": {
+        "precision": 0.8780487804878049,
+        "recall": 0.8181818181818182,
+        "f1-score": 0.8470588235294118,
+        "support": 44.0
+      },
+      "leaf_bad_unspecified": {
+        "precision": 0.8426966292134831,
+        "recall": 0.7978723404255319,
+        "f1-score": 0.819672131147541,
+        "support": 94.0
+      },
+      "leaf_good_source": {
+        "precision": 0.863013698630137,
+        "recall": 0.9130434782608695,
+        "f1-score": 0.8873239436619719,
+        "support": 138.0
+      },
+      "accuracy": 0.8616352201257862,
+      "macro avg": {
+        "precision": 0.8661778723209514,
+        "recall": 0.8525125044551501,
+        "f1-score": 0.8587518198228264,
+        "support": 318.0
+      },
+      "weighted avg": {
+        "precision": 0.8614576097436785,
+        "recall": 0.8616352201257862,
+        "f1-score": 0.8609134364418715,
+        "support": 318.0
+      }
+    },
+    "confusionMatrix": [
+      [
+        37,
+        5,
+        0,
+        0
+      ],
+      [
+        5,
+        36,
+        2,
+        1
+      ],
+      [
+        0,
+        0,
+        75,
+        19
+      ],
+      [
+        0,
+        0,
+        12,
+        126
+      ]
+    ]
+  },
+  "onnxParityMaxAbsoluteError": 1.239776611328125e-05,
+  "runtimeProbe": {
+    "input": "zero-normalized-tensor",
+    "logits": [
+      -1.253149390220642,
+      0.3904895484447479,
+      1.6610013246536255,
+      2.5518269538879395
+    ],
+    "absoluteTolerance": 0.001
+  },
+  "modelSha256": "2c266ebfff10d9659c77f1b19ac04adf689aaf33689d85caead8def41eae994b",
+  "completedAtUtc": "2026-10-20T17:49:54.263187+00:00"
+}

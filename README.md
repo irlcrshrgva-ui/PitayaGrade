@@ -27,6 +27,17 @@ Once an evaluated segmentation asset is registered, the same photo and live-scan
 paths load it independently, decode its masks, and report fruit-relative affected
 area only when a valid fruit region is available.
 
+## Experimental disease image classification
+
+The two Mendeley datasets are integrated through checksum-verified download,
+source-preserving class mapping, cross-source visual deduplication and deterministic
+70/15/15 image-group partitions. Settings → **Disease label lab** opens the
+separate desktop-browser classifier interface. Its outputs do not affect grades
+or disease-area estimates. See `research/MENDELEY_DISEASE_INTEGRATION.md` for
+licenses, actual archive labels, commands and limitations. The first archive has
+only four broad Good/Bad fruit/leaf folders; its health task stays separate from
+the second dataset's eight condition labels. Neither dataset supplies lesion masks.
+
 ## Main directories
 
 - `www/` — production web assets packaged by Capacitor

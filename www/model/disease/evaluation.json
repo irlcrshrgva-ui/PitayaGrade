@@ -1,0 +1,562 @@
+{
+  "status": "experimental-evaluated-image-classifier",
+  "task": "disease",
+  "classes": [
+    "fruit_black_rot",
+    "fruit_fungi",
+    "healthy_fruit",
+    "healthy_stem_leaf",
+    "stem_canker",
+    "stem_rust",
+    "stem_scab",
+    "stem_sunburn"
+  ],
+  "architecture": "ImageNet MobileNetV3-small frozen encoder + trained linear head",
+  "preprocessing": {
+    "size": 160,
+    "resize": "bilinear stretch",
+    "orientation": "EXIF upright RGB",
+    "mean": [
+      0.485,
+      0.456,
+      0.406
+    ],
+    "std": [
+      0.229,
+      0.224,
+      0.225
+    ]
+  },
+  "manifestSha256": "2c3caa9185fb94b081929285cd53fa86199c4f24a44d5f8067758cb611299256",
+  "seed": 42,
+  "epochs": 40,
+  "startedAtUtc": "2026-10-20T17:42:54.059635+00:00",
+  "python": "3.12.14",
+  "torch": "2.14.0+cpu",
+  "selectedEpoch": 24,
+  "selectionMetric": "minimum validation cross-entropy",
+  "history": [
+    {
+      "epoch": 1,
+      "validationLoss": 1.0131586790084839,
+      "validationAccuracy": 0.6802574992179871
+    },
+    {
+      "epoch": 2,
+      "validationLoss": 0.9542944431304932,
+      "validationAccuracy": 0.6888412237167358
+    },
+    {
+      "epoch": 3,
+      "validationLoss": 0.8906707763671875,
+      "validationAccuracy": 0.725321888923645
+    },
+    {
+      "epoch": 4,
+      "validationLoss": 0.7947888970375061,
+      "validationAccuracy": 0.7446351647377014
+    },
+    {
+      "epoch": 5,
+      "validationLoss": 0.7392685413360596,
+      "validationAccuracy": 0.7596566677093506
+    },
+    {
+      "epoch": 6,
+      "validationLoss": 0.70069819688797,
+      "validationAccuracy": 0.766094446182251
+    },
+    {
+      "epoch": 7,
+      "validationLoss": 0.726360023021698,
+      "validationAccuracy": 0.7618025541305542
+    },
+    {
+      "epoch": 8,
+      "validationLoss": 0.6788668632507324,
+      "validationAccuracy": 0.7896995544433594
+    },
+    {
+      "epoch": 9,
+      "validationLoss": 0.6655392050743103,
+      "validationAccuracy": 0.7875536680221558
+    },
+    {
+      "epoch": 10,
+      "validationLoss": 0.6926472783088684,
+      "validationAccuracy": 0.7639485001564026
+    },
+    {
+      "epoch": 11,
+      "validationLoss": 0.6629035472869873,
+      "validationAccuracy": 0.7811158895492554
+    },
+    {
+      "epoch": 12,
+      "validationLoss": 0.6608558893203735,
+      "validationAccuracy": 0.778969943523407
+    },
+    {
+      "epoch": 13,
+      "validationLoss": 0.6678597331047058,
+      "validationAccuracy": 0.7682403326034546
+    },
+    {
+      "epoch": 14,
+      "validationLoss": 0.6306565403938293,
+      "validationAccuracy": 0.7918455004692078
+    },
+    {
+      "epoch": 15,
+      "validationLoss": 0.6541231274604797,
+      "validationAccuracy": 0.778969943523407
+    },
+    {
+      "epoch": 16,
+      "validationLoss": 0.6864376664161682,
+      "validationAccuracy": 0.7510729432106018
+    },
+    {
+      "epoch": 17,
+      "validationLoss": 0.6407220959663391,
+      "validationAccuracy": 0.7811158895492554
+    },
+    {
+      "epoch": 18,
+      "validationLoss": 0.6306813359260559,
+      "validationAccuracy": 0.7854077219963074
+    },
+    {
+      "epoch": 19,
+      "validationLoss": 0.6502718925476074,
+      "validationAccuracy": 0.7811158895492554
+    },
+    {
+      "epoch": 20,
+      "validationLoss": 0.6447091698646545,
+      "validationAccuracy": 0.7682403326034546
+    },
+    {
+      "epoch": 21,
+      "validationLoss": 0.6593654751777649,
+      "validationAccuracy": 0.7575107216835022
+    },
+    {
+      "epoch": 22,
+      "validationLoss": 0.6462071537971497,
+      "validationAccuracy": 0.7682403326034546
+    },
+    {
+      "epoch": 23,
+      "validationLoss": 0.6286136507987976,
+      "validationAccuracy": 0.7854077219963074
+    },
+    {
+      "epoch": 24,
+      "validationLoss": 0.5869981646537781,
+      "validationAccuracy": 0.7896995544433594
+    },
+    {
+      "epoch": 25,
+      "validationLoss": 0.6545191407203674,
+      "validationAccuracy": 0.7596566677093506
+    },
+    {
+      "epoch": 26,
+      "validationLoss": 0.5915405750274658,
+      "validationAccuracy": 0.783261775970459
+    },
+    {
+      "epoch": 27,
+      "validationLoss": 0.607554018497467,
+      "validationAccuracy": 0.783261775970459
+    },
+    {
+      "epoch": 28,
+      "validationLoss": 0.6220489144325256,
+      "validationAccuracy": 0.783261775970459
+    },
+    {
+      "epoch": 29,
+      "validationLoss": 0.6706557869911194,
+      "validationAccuracy": 0.7467811107635498
+    },
+    {
+      "epoch": 30,
+      "validationLoss": 0.6160940527915955,
+      "validationAccuracy": 0.766094446182251
+    },
+    {
+      "epoch": 31,
+      "validationLoss": 0.5919373631477356,
+      "validationAccuracy": 0.7939913868904114
+    },
+    {
+      "epoch": 32,
+      "validationLoss": 0.6056576371192932,
+      "validationAccuracy": 0.7939913868904114
+    },
+    {
+      "epoch": 33,
+      "validationLoss": 0.6383686661720276,
+      "validationAccuracy": 0.7768240571022034
+    },
+    {
+      "epoch": 34,
+      "validationLoss": 0.6333642601966858,
+      "validationAccuracy": 0.7682403326034546
+    },
+    {
+      "epoch": 35,
+      "validationLoss": 0.6171415448188782,
+      "validationAccuracy": 0.7682403326034546
+    },
+    {
+      "epoch": 36,
+      "validationLoss": 0.6285104155540466,
+      "validationAccuracy": 0.7896995544433594
+    },
+    {
+      "epoch": 37,
+      "validationLoss": 0.601540207862854,
+      "validationAccuracy": 0.7854077219963074
+    },
+    {
+      "epoch": 38,
+      "validationLoss": 0.6256610155105591,
+      "validationAccuracy": 0.7682403326034546
+    },
+    {
+      "epoch": 39,
+      "validationLoss": 0.6096897125244141,
+      "validationAccuracy": 0.7896995544433594
+    },
+    {
+      "epoch": 40,
+      "validationLoss": 0.6147796511650085,
+      "validationAccuracy": 0.7811158895492554
+    }
+  ],
+  "limitations": [
+    "dHash distance <=4 plus decoded pixel and file hashes group visual duplicates across both sources.",
+    "No plant/session IDs supplied; visually distinct photos of one plant may remain across splits.",
+    "Publisher image-level labels are not independently verified diagnoses, grades, or segmentation masks.",
+    "The first archive has only Good/Bad fruit/leaf folders. Its health task stays separate from named conditions.",
+    "Experimental source-label prediction, not a validated field diagnosis.",
+    "No lesion masks, affected-area estimates, quality grades, or treatment recommendations.",
+    "Softmax scores are uncalibrated; no out-of-distribution rejection was validated."
+  ],
+  "validation": {
+    "count": 466,
+    "metrics": {
+      "fruit_black_rot": {
+        "precision": 0.8260869565217391,
+        "recall": 0.95,
+        "f1-score": 0.8837209302325582,
+        "support": 40.0
+      },
+      "fruit_fungi": {
+        "precision": 0.8421052631578947,
+        "recall": 0.5925925925925926,
+        "f1-score": 0.6956521739130435,
+        "support": 27.0
+      },
+      "healthy_fruit": {
+        "precision": 0.8611111111111112,
+        "recall": 0.9117647058823529,
+        "f1-score": 0.8857142857142857,
+        "support": 34.0
+      },
+      "healthy_stem_leaf": {
+        "precision": 0.8571428571428571,
+        "recall": 0.7769784172661871,
+        "f1-score": 0.8150943396226416,
+        "support": 139.0
+      },
+      "stem_canker": {
+        "precision": 0.6666666666666666,
+        "recall": 0.5882352941176471,
+        "f1-score": 0.625,
+        "support": 17.0
+      },
+      "stem_rust": {
+        "precision": 0.3888888888888889,
+        "recall": 0.35,
+        "f1-score": 0.3684210526315789,
+        "support": 20.0
+      },
+      "stem_scab": {
+        "precision": 0.8307692307692308,
+        "recall": 0.864,
+        "f1-score": 0.8470588235294118,
+        "support": 125.0
+      },
+      "stem_sunburn": {
+        "precision": 0.6578947368421053,
+        "recall": 0.78125,
+        "f1-score": 0.7142857142857143,
+        "support": 64.0
+      },
+      "accuracy": 0.7896995708154506,
+      "macro avg": {
+        "precision": 0.7413332138875618,
+        "recall": 0.7268526262323475,
+        "f1-score": 0.7293684149911542,
+        "support": 466.0
+      },
+      "weighted avg": {
+        "precision": 0.792410908587827,
+        "recall": 0.7896995708154506,
+        "f1-score": 0.7878409968559681,
+        "support": 466.0
+      }
+    },
+    "confusionMatrix": [
+      [
+        38,
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        7,
+        16,
+        4,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        1,
+        0,
+        31,
+        0,
+        2,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        108,
+        1,
+        2,
+        15,
+        13
+      ],
+      [
+        0,
+        0,
+        1,
+        2,
+        10,
+        1,
+        2,
+        1
+      ],
+      [
+        0,
+        0,
+        0,
+        4,
+        1,
+        7,
+        2,
+        6
+      ],
+      [
+        0,
+        0,
+        0,
+        6,
+        1,
+        4,
+        108,
+        6
+      ],
+      [
+        0,
+        1,
+        0,
+        6,
+        0,
+        4,
+        3,
+        50
+      ]
+    ]
+  },
+  "test": {
+    "count": 466,
+    "metrics": {
+      "fruit_black_rot": {
+        "precision": 0.8409090909090909,
+        "recall": 0.925,
+        "f1-score": 0.8809523809523809,
+        "support": 40.0
+      },
+      "fruit_fungi": {
+        "precision": 0.75,
+        "recall": 0.5555555555555556,
+        "f1-score": 0.6382978723404256,
+        "support": 27.0
+      },
+      "healthy_fruit": {
+        "precision": 0.8648648648648649,
+        "recall": 0.9411764705882353,
+        "f1-score": 0.9014084507042254,
+        "support": 34.0
+      },
+      "healthy_stem_leaf": {
+        "precision": 0.813953488372093,
+        "recall": 0.7553956834532374,
+        "f1-score": 0.7835820895522388,
+        "support": 139.0
+      },
+      "stem_canker": {
+        "precision": 0.5294117647058824,
+        "recall": 0.5294117647058824,
+        "f1-score": 0.5294117647058824,
+        "support": 17.0
+      },
+      "stem_rust": {
+        "precision": 0.3125,
+        "recall": 0.25,
+        "f1-score": 0.2777777777777778,
+        "support": 20.0
+      },
+      "stem_scab": {
+        "precision": 0.7777777777777778,
+        "recall": 0.784,
+        "f1-score": 0.7808764940239044,
+        "support": 125.0
+      },
+      "stem_sunburn": {
+        "precision": 0.6363636363636364,
+        "recall": 0.765625,
+        "f1-score": 0.6950354609929078,
+        "support": 64.0
+      },
+      "accuracy": 0.7510729613733905,
+      "macro avg": {
+        "precision": 0.6907225778741681,
+        "recall": 0.6882705592878638,
+        "f1-score": 0.6859177863812178,
+        "support": 466.0
+      },
+      "weighted avg": {
+        "precision": 0.7502806842810836,
+        "recall": 0.7510729613733905,
+        "f1-score": 0.7482517647533933,
+        "support": 466.0
+      }
+    },
+    "confusionMatrix": [
+      [
+        37,
+        3,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        7,
+        15,
+        5,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        2,
+        32,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        105,
+        4,
+        5,
+        12,
+        13
+      ],
+      [
+        0,
+        0,
+        0,
+        4,
+        9,
+        0,
+        4,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        2,
+        0,
+        5,
+        7,
+        6
+      ],
+      [
+        0,
+        0,
+        0,
+        11,
+        3,
+        4,
+        98,
+        9
+      ],
+      [
+        0,
+        0,
+        0,
+        7,
+        1,
+        2,
+        5,
+        49
+      ]
+    ]
+  },
+  "onnxParityMaxAbsoluteError": 1.049041748046875e-05,
+  "runtimeProbe": {
+    "input": "zero-normalized-tensor",
+    "logits": [
+      0.5150516033172607,
+      -0.41897067427635193,
+      0.25882330536842346,
+      4.00065279006958,
+      1.2559523582458496,
+      3.097181558609009,
+      0.2691802978515625,
+      3.685929536819458
+    ],
+    "absoluteTolerance": 0.001
+  },
+  "modelSha256": "7bbe06f290efd14d472e6da24de81131f8958c9911f01dee30b19b2890e6474e",
+  "completedAtUtc": "2026-10-20T17:44:41.999828+00:00"
+}

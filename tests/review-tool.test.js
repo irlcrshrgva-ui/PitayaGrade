@@ -35,6 +35,16 @@ test('model proposals remain separate and require explicit human review', () => 
     proposedLabel:'Fresh' }] }, manifest), /incompatible/);
 });
 
+test('maturity proposals use their own labels and never populate reviewed evidence', () => {
+  const manifest = [{id:'maturity:1', task:'maturity', reviewedLabel:null}];
+  const proposal = {id:'maturity:1', proposedLabel:'Mature Dragon Fruit', confidence:.9, reviewPriority:.1,
+    modelSha256:'b'.repeat(64), status:'unverified-model-proposal', humanReviewRequired:true};
+  assert.equal(state.suggestionMap({schemaVersion:1, proposals:[proposal]}, manifest)['maturity:1'].proposedLabel,
+    'Mature Dragon Fruit');
+  assert.equal(manifest[0].reviewedLabel, null);
+  assert.throws(() => state.suggestionMap({schemaVersion:1, proposals:[{...proposal, proposedLabel:'Grade A'}]}, manifest), /incompatible/);
+});
+
 test('source-group proposals remain separate and require explicit human review', () => {
   const manifest = [
     { id:'quality:1', task:'quality', image:'dataset/public/prepared/quality/a.jpg', reviewedSourceGroup:null },

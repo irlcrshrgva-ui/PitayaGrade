@@ -46,15 +46,15 @@
     if (!record || record.schemaVersion !== 1 || !Array.isArray(record.proposals)) {
       throw new Error('Unsupported proposal file');
     }
-    const known = new Map(manifest.filter(row => row.task === 'quality').map(row => [row.id, row]));
+    const known = new Map(manifest.filter(row => LABELS[row.task]).map(row => [row.id, row]));
     const result = {};
     for (const proposal of record.proposals) {
-      if (!proposal || !known.has(proposal.id) || result[proposal.id]) throw new Error('Proposal IDs must be unique known quality records');
+      if (!proposal || !known.has(proposal.id) || result[proposal.id]) throw new Error('Proposal IDs must be unique known task records');
       if (proposal.status !== 'unverified-model-proposal' || proposal.humanReviewRequired !== true) {
         throw new Error('Proposal file must require human review');
       }
-      if (proposal.proposedLabel !== null && !LABELS.quality.includes(proposal.proposedLabel)) {
-        throw new Error('Proposal contains an incompatible quality label');
+      if (proposal.proposedLabel !== null && !LABELS[known.get(proposal.id).task].includes(proposal.proposedLabel)) {
+        throw new Error('Proposal contains an incompatible task label');
       }
       if (![proposal.confidence, proposal.reviewPriority].every(value =>
         typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 1)) {

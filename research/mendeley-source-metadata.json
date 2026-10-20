@@ -1,0 +1,235 @@
+{
+  "cfchfdpfw5": {
+    "id": "cfchfdpfw5",
+    "version": 1,
+    "name": "Dragon fruit & leaf Dataset from Bangladesh for Classification and Ecological Research",
+    "description": "Description: This dataset provides a well-curated collection of annotated images of dragon fruit and its leaves, aimed at enhancing machine learning and computer vision models for detecting and classifying various health conditions and stages of the dragon fruit plant. Designed to capture a wide range of environmental conditions, this dataset offers valuable resources for researchers, agriculturists, and AI practitioners interested in plant health monitoring, disease diagnosis, and agricultural automation. The dataset represents diverse visual characteristics, including both healthy and diseased states of the plant, helping to promote advanced applications in automated disease recognition and crop management.\nDataset Content: This dataset contains 4,518 images encompassing various health conditions of dragon fruit, with a focus on bacterial, fungal, and insect-related issues, as well as physical damage and healthy samples. The images cover different conditions to offer a comprehensive view of dragon fruit plant health, from healthy leaves and fruits to specific disease manifestations. This variability supports robust image-based classification and detection tasks, facilitating automated plant health assessment and ecological monitoring.\n\u2022 Bacterial Diseases: 498 images\n\u2022 Bacterial Wilt (Fruits): 84 images\n\u2022 Fungal Infections (Anthracnose or Stem Canker): 864 images\n\u2022 Healthy Leaves: 2,242 images\n\u2022 Healthy Fruits: 333 images\n\u2022 Insect-Infected Fruits: 53 images\n\u2022 Mealybugs and Scale Insects (Fruits): 173 images\n\u2022 Sunburn Damage: 271 images\nPurpose: The primary objective of this dataset is to aid in developing machine learning models that can accurately identify and classify various health conditions in dragon fruit plants. This can support efforts in disease management, crop yield optimization, and biodiversity research, benefiting fields such as agriculture, botany, and environmental science.",
+    "doi": "10.17632/cfchfdpfw5.1",
+    "publish_date": "2024-11-25T17:34:43.640Z",
+    "last_modification_date": "2024-11-23T09:49:55.684Z",
+    "is_confidential": false,
+    "customer": {
+      "id": "7377952c-6404-4428-bbfc-77242cfc301e",
+      "name": "Mendeley Guests"
+    },
+    "owner": {
+      "id": "9fd1eefa-6d14-427c-9a42-92ca4848801b",
+      "first_name": "Mayen Uddin ",
+      "last_name": "Mojumdar",
+      "display_name": "Mayen Uddin Mojumdar",
+      "$ref": "/profiles/9fd1eefa-6d14-427c-9a42-92ca4848801b"
+    },
+    "categories": [
+      {
+        "id": "data.elsevier.com/vocabulary/OmniScience/Concept-249562830",
+        "label": "Fruit"
+      },
+      {
+        "id": "data.elsevier.com/vocabulary/OmniScience/Concept-603644649",
+        "label": "Agriculture"
+      }
+    ],
+    "licence": {
+      "id": "01d9c749-3c4d-4431-9df3-620b2dcfe144",
+      "short_name": "CC BY 4.0",
+      "full_name": "Creative Commons Attribution 4.0 International",
+      "description": "You can share, copy and modify this dataset so long as you give appropriate credit, provide a link to the CC BY license, and indicate if changes were made, but you may not do so in a way that suggests the rights holder has endorsed you or your use of the dataset. Note that further permission may be required for any content within the dataset that is identified as belonging to a third party.",
+      "url": "http://creativecommons.org/licenses/by/4.0",
+      "category": "Creative",
+      "customer_id": null
+    },
+    "institutions": [
+      {
+        "id": "0ad97c43-5173-56e6-bbe6-46dad5323862",
+        "name": "Daffodil International University"
+      }
+    ],
+    "funders": [],
+    "organisational_unit_names": [],
+    "contributors": [
+      {
+        "id": "5f59aeaa-cf50-4f32-8012-a1d6326935f2",
+        "first_name": "Pronob",
+        "last_name": "Sarkar",
+        "$ref": "/profiles/5f59aeaa-cf50-4f32-8012-a1d6326935f2"
+      },
+      {
+        "first_name": "Gourab Kumar ",
+        "last_name": "Pranta",
+        "institution": "Daffodil International University"
+      },
+      {
+        "id": "9fd1eefa-6d14-427c-9a42-92ca4848801b",
+        "first_name": "Mayen Uddin ",
+        "last_name": "Mojumdar",
+        "$ref": "/profiles/9fd1eefa-6d14-427c-9a42-92ca4848801b"
+      }
+    ],
+    "related_links": [],
+    "custom_metadata": {},
+    "is_metadata_only": false
+  },
+  "kpsywfwkrf": {
+    "id": "kpsywfwkrf",
+    "version": 1,
+    "name": "DragonFruit-MultiOrgan Dataset",
+    "description": "Dataset Description\n\nThe DragonFruit-MultiOrgan Dataset (DF-MOD) is a comprehensive image dataset containing 5,468 high-resolution images of dragon fruit plants, including fruit and stem/leaf disease conditions. The dataset consists of eight categories: Black Rot, Fungi, Healthy Fruit, Healthy Leaf, Rust, Scab, Stem Canker, and Sunburn.\n\nOriginal Dataset Distribution:\n\n- Black_Rot: 675 images (275 MB)\n- Fungi: 640 images (260 MB)\n- Healthy_fruit: 650 images (265 MB)\n- Healthy_leaf: 944 images (305 MB)\n- Rust: 582 images (187 MB)\n- Scab: 837 images (292 MB)\n- Stem_Canker: 553 images (188 MB)\n- Sunburn: 587 images (189 MB)\n\nTotal Images: 5,468  \nTotal Size: 1,961 MB\n\nThe images were collected using an Apple iPhone 13 back dual wide camera with a resolution of 2268 \u00d7 4032 pixels, 72 dpi resolution, and 32-bit depth. The camera settings included f/1.6 aperture, 1/577-second exposure, ISO-50, 5 mm focal length equivalent to 26 mm in 35 mm format, automatic white balance, and no flash.\n\nData collection was conducted from multiple ecologically diverse locations in Jhenaidah, Bangladesh, including Charatola, Horinakunda, Krishnapur Road, Baniakandor, Jhenaidah Sadar, Schoolpara, and community-managed agricultural plots. These locations provided natural variations in environmental conditions.\n\nAll images were carefully reviewed and validated by agricultural experts. The samples were verified based on their disease characteristics, and appropriate class labels were assigned to ensure dataset reliability.\n\nDataset Structure:\n\nDragonFruit/\n\u251c\u2500\u2500 Fruit/\n\u2502   \u251c\u2500\u2500 Black_Rot/\n\u2502   \u251c\u2500\u2500 Fungi/\n\u2502   \u2514\u2500\u2500 Healthy/\n\u2502\n\u2514\u2500\u2500 Stem/\n    \u251c\u2500\u2500 Healthy/\n    \u251c\u2500\u2500 Rust/\n    \u251c\u2500\u2500 Scab/\n    \u251c\u2500\u2500 Stem_Canker/\n    \u2514\u2500\u2500 Sunburn/\n\nA balanced version of the dataset is also provided through augmentation. Each category was increased to 944 images, resulting in a total of 7,552 images. The balanced dataset helps researchers work with uniform class distribution.\n\nBalanced Dataset Distribution:\n\n- Black_Rot: 944 images\n- Fungi: 944 images\n- Healthy_fruit: 944 images\n- Healthy_leaf: 944 images\n- Rust: 944 images\n- Scab: 944 images\n- Stem_Canker: 944 images\n- Sunburn: 944 images\n\nTotal Images After Augmentation: 7,552\n\nThe resized dataset and augmented dataset versions are provided separately for researchers based on their requirements.\n\nThis dataset can be used for various dragon fruit-related research applications, including fruit disease classification, stem disease classification, and combined fruit-stem analysis. The multi-organ structure enables researchers to explore both individual plant-part analysis and innovative approaches involving multiple dragon fruit organs.",
+    "doi": "10.17632/kpsywfwkrf.1",
+    "publish_date": "2026-07-16T11:54:09.537Z",
+    "last_modification_date": "2026-07-16T06:27:25.921Z",
+    "is_confidential": false,
+    "customer": {
+      "id": "7377952c-6404-4428-bbfc-77242cfc301e",
+      "name": "Mendeley Guests"
+    },
+    "owner": {
+      "id": "94f97a73-4b76-4ad4-9b31-b8a841728ce2",
+      "first_name": "Rokonozzaman",
+      "last_name": "Ayon",
+      "display_name": "Rokonozzaman Ayon",
+      "$ref": "/profiles/94f97a73-4b76-4ad4-9b31-b8a841728ce2",
+      "profile": {
+        "id": "94f97a73-4b76-4ad4-9b31-b8a841728ce2",
+        "orcid_id": "0009-0000-3602-0714",
+        "$ref": "/profiles/94f97a73-4b76-4ad4-9b31-b8a841728ce2"
+      }
+    },
+    "categories": [
+      {
+        "id": "data.elsevier.com/vocabulary/OmniScience/Concept-249523402",
+        "label": "Machine Learning"
+      },
+      {
+        "id": "data.elsevier.com/vocabulary/OmniScience/Concept-253046992",
+        "label": "Image Classification"
+      },
+      {
+        "id": "data.elsevier.com/vocabulary/OmniScience/Concept-442095486",
+        "label": "Deep Learning"
+      },
+      {
+        "id": "data.elsevier.com/vocabulary/OmniScience/Concept-500091840",
+        "label": "Image Analysis"
+      },
+      {
+        "id": "data.elsevier.com/vocabulary/OmniScience/Concept-603644649",
+        "label": "Agriculture"
+      }
+    ],
+    "licence": {
+      "id": "01d9c749-3c4d-4431-9df3-620b2dcfe144",
+      "short_name": "CC BY 4.0",
+      "full_name": "Creative Commons Attribution 4.0 International",
+      "description": "You can share, copy and modify this dataset so long as you give appropriate credit, provide a link to the CC BY license, and indicate if changes were made, but you may not do so in a way that suggests the rights holder has endorsed you or your use of the dataset. Note that further permission may be required for any content within the dataset that is identified as belonging to a third party.",
+      "url": "http://creativecommons.org/licenses/by/4.0",
+      "category": "Creative",
+      "customer_id": null
+    },
+    "institutions": [
+      {
+        "id": "edf371b8-f2cd-4105-abcf-28abece11e13",
+        "name": "Daffodil International University",
+        "url": "https://www.daffodilvarsity.edu.bd",
+        "location": {
+          "name": "Dhaka",
+          "country": "Bangladesh",
+          "country_code": "BD",
+          "country_subdivision": "Dhaka Division"
+        },
+        "edm:identifier": [
+          {
+            "type": "idtype:ROR",
+            "value": "https://ror.org/052t4a858"
+          }
+        ]
+      }
+    ],
+    "funders": [],
+    "organisational_unit_names": [],
+    "contributors": [
+      {
+        "first_name": "MD . FAHIZ SIDDIKUR ",
+        "last_name": "PRANTO",
+        "institution": "Daffodil International University",
+        "institution_detail": {
+          "id": "edf371b8-f2cd-4105-abcf-28abece11e13",
+          "name": "Daffodil International University",
+          "url": "https://www.daffodilvarsity.edu.bd",
+          "location": {
+            "name": "Dhaka",
+            "country": "Bangladesh",
+            "country_code": "BD",
+            "country_subdivision": "Dhaka Division"
+          },
+          "edm:identifier": [
+            {
+              "type": "idtype:ROR",
+              "value": "https://ror.org/052t4a858"
+            }
+          ]
+        }
+      },
+      {
+        "id": "40e71331-e7ea-4c0c-8425-9ccfff032aa2",
+        "first_name": "Anamika",
+        "last_name": "Dhar",
+        "$ref": "/profiles/40e71331-e7ea-4c0c-8425-9ccfff032aa2",
+        "profile": {
+          "id": "40e71331-e7ea-4c0c-8425-9ccfff032aa2",
+          "$ref": "/profiles/40e71331-e7ea-4c0c-8425-9ccfff032aa2"
+        },
+        "institution": "Daffodil International University",
+        "institution_detail": {
+          "id": "edf371b8-f2cd-4105-abcf-28abece11e13",
+          "name": "Daffodil International University",
+          "url": "https://www.daffodilvarsity.edu.bd",
+          "location": {
+            "name": "Dhaka",
+            "country": "Bangladesh",
+            "country_code": "BD",
+            "country_subdivision": "Dhaka Division"
+          },
+          "edm:identifier": [
+            {
+              "type": "idtype:ROR",
+              "value": "https://ror.org/052t4a858"
+            }
+          ]
+        }
+      },
+      {
+        "id": "94f97a73-4b76-4ad4-9b31-b8a841728ce2",
+        "first_name": "Rokonozzaman",
+        "last_name": "Ayon",
+        "orcid_id": "0009-0000-3602-0714",
+        "$ref": "/profiles/94f97a73-4b76-4ad4-9b31-b8a841728ce2",
+        "profile": {
+          "id": "94f97a73-4b76-4ad4-9b31-b8a841728ce2",
+          "orcid_id": "0009-0000-3602-0714",
+          "$ref": "/profiles/94f97a73-4b76-4ad4-9b31-b8a841728ce2"
+        },
+        "institution": "Daffodil International University",
+        "institution_detail": {
+          "id": "edf371b8-f2cd-4105-abcf-28abece11e13",
+          "name": "Daffodil International University",
+          "url": "https://www.daffodilvarsity.edu.bd",
+          "location": {
+            "name": "Dhaka",
+            "country": "Bangladesh",
+            "country_code": "BD",
+            "country_subdivision": "Dhaka Division"
+          },
+          "edm:identifier": [
+            {
+              "type": "idtype:ROR",
+              "value": "https://ror.org/052t4a858"
+            }
+          ]
+        }
+      }
+    ],
+    "related_links": [],
+    "custom_metadata": {},
+    "is_metadata_only": false
+  }
+}

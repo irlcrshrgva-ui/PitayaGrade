@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PitayaGrade · Disease label lab</title>
+<style>
+body{font:17px/1.6 system-ui,sans-serif;background:#f3f6f1;color:#24342b;max-width:860px;margin:40px auto;padding:24px}a{color:#345d40}h1{line-height:1.2}section{background:white;padding:24px;border-radius:16px;margin:24px 0}button,input,select{font:inherit}button{background:#345d40;color:white;border:0;padding:12px 20px;border-radius:8px;cursor:pointer}button:disabled{opacity:.5}img{max-width:100%;max-height:360px;display:block;margin:16px 0}[hidden]{display:none!important}#status{white-space:pre-wrap}li{margin:12px 0}small{display:block;color:#526158}progress{width:100%}
+</style>
+<a href="index.html">← PitayaGrade</a>
+<h1>Disease label lab</h1>
+<p>Experimental image classification for dragon-fruit fruit and stems. This predicts the dataset’s labels; it does not measure disease area or change quality grades.</p>
+<section>
+<p id="model-status">Load the evaluated experimental model to begin.</p>
+<p><label>Task <select id="task"><option value="disease">Named condition labels (MultiOrgan)</option><option value="health">Good / Bad source labels (fruit and leaf)</option></select></label></p>
+<button id="load">Load experimental model</button>
+<p><label>Choose one fruit or stem photo <input id="photo" type="file" accept="image/*" disabled></label></p>
+<img id="preview" alt="Selected plant photo" hidden>
+<button id="analyze" disabled>Analyze photo</button>
+<p id="status" role="status" aria-live="polite"></p>
+<ol id="results"></ol>
+<small>Scores are uncalibrated. An unrelated image can receive a high score. A healthy label does not establish that a plant is disease-free. Seek an agricultural expert for diagnosis.</small>
+</section>
+<section><h2>Evaluation and sources</h2><p id="evaluation">No model loaded.</p>
+<p>Labels retain the publisher’s plant-part distinctions and broad categories such as “Fungi.” The first archive’s four Good/Bad labels are a separate task; they do not identify specific diseases. Image-level labels supply no lesion outlines.</p>
+<p>Sources under <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>:
+<a href="https://data.mendeley.com/datasets/cfchfdpfw5/1">Sarkar, Pranta and Mojumdar (2024)</a> and
+<a href="https://data.mendeley.com/datasets/kpsywfwkrf/1">Pranto, Dhar and Ayon (2026)</a>. Images are resized, deduplicated, mapped to source-preserving labels and partitioned for this experiment.</p>
+<p>Visual duplicate grouping reduces leakage. Plant and capture-session identifiers are unavailable, so the test set does not establish performance on new farms or plants.</p></section>
+<script src="ort.min.js"></script><script src="js/disease-lab.js"></script>
+</html>

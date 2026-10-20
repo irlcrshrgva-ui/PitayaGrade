@@ -8,6 +8,7 @@ for (const directory of ['js', 'css']) {
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8')
   .replace('src="www/ort.min.js"', 'src="ort.min.js"');
 fs.writeFileSync(path.join(root, 'www/index.html'), html);
+fs.copyFileSync(path.join(root, 'disease-lab.html'), path.join(root, 'www', 'disease-lab.html'));
 for (const filename of ['manifest.webmanifest', 'service-worker.js']) {
   fs.copyFileSync(path.join(root, filename), path.join(root, 'www', filename));
 }
@@ -17,4 +18,8 @@ for (const filename of ['public-review-manifest.json', 'source-group-suggestions
   fs.copyFileSync(path.join(root, 'research', filename), path.join(root, 'www', 'research', filename));
 }
 require('./verify-model-registry').verifyModelRegistry(path.join(root, 'www'));
+for (const task of ['disease', 'health']) {
+  const directory = path.join(root, 'www', 'model', task);
+  if (fs.existsSync(directory)) require('./verify-disease-model').verifyDiseaseAsset(path.join(root, 'www'), task);
+}
 console.log('Updated Capacitor web assets from existing sources.');

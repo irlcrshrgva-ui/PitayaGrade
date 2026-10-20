@@ -1,0 +1,18 @@
+{
+  "kpsywfwkrf": {
+    "Black_Rot": "fruit_black_rot",
+    "Fungi": "fruit_fungi",
+    "Healthy_fruit": "healthy_fruit",
+    "Healthy_leaf": "healthy_stem_leaf",
+    "Rust": "stem_rust",
+    "Scab": "stem_scab",
+    "Stem_Canker": "stem_canker",
+    "Sunburn": "stem_sunburn"
+  },
+  "cfchfdpfw5": {
+    "Good fruit": "fruit_good_source",
+    "Bad fruit": "fruit_bad_unspecified",
+    "Good leaf": "leaf_good_source",
+    "Bad leaf": "leaf_bad_unspecified"
+  }
+}

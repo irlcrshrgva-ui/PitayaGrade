@@ -4,4 +4,5 @@ www/ort-wasm-simd-threaded.mjs -text -whitespace
 www/ort-wasm-simd-threaded.wasm binary
 www/onnxruntime-LICENSE -text
 www/model/*.onnx binary
+www/model/**/*.onnx binary
 android/gradlew text eol=lf

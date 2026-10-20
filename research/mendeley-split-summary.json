@@ -1,0 +1,76 @@
+{
+  "schemaVersion": 1,
+  "seed": 42,
+  "ratios": [
+    0.7,
+    0.15,
+    0.15
+  ],
+  "mapping": {
+    "kpsywfwkrf": {
+      "Black_Rot": "fruit_black_rot",
+      "Fungi": "fruit_fungi",
+      "Healthy_fruit": "healthy_fruit",
+      "Healthy_leaf": "healthy_stem_leaf",
+      "Rust": "stem_rust",
+      "Scab": "stem_scab",
+      "Stem_Canker": "stem_canker",
+      "Sunburn": "stem_sunburn"
+    },
+    "cfchfdpfw5": {
+      "Good fruit": "fruit_good_source",
+      "Bad fruit": "fruit_bad_unspecified",
+      "Good leaf": "leaf_good_source",
+      "Bad leaf": "leaf_bad_unspecified"
+    }
+  },
+  "removedDuplicates": 2915,
+  "counts": {
+    "validation/fruit_bad_unspecified": 42,
+    "test/fruit_bad_unspecified": 42,
+    "train/fruit_bad_unspecified": 199,
+    "validation/fruit_black_rot": 40,
+    "test/fruit_black_rot": 40,
+    "train/fruit_black_rot": 189,
+    "validation/fruit_fungi": 27,
+    "test/fruit_fungi": 27,
+    "train/fruit_fungi": 129,
+    "validation/fruit_good_source": 44,
+    "test/fruit_good_source": 44,
+    "train/fruit_good_source": 204,
+    "validation/healthy_fruit": 34,
+    "test/healthy_fruit": 34,
+    "train/healthy_fruit": 159,
+    "validation/healthy_stem_leaf": 139,
+    "test/healthy_stem_leaf": 139,
+    "train/healthy_stem_leaf": 648,
+    "validation/leaf_bad_unspecified": 94,
+    "test/leaf_bad_unspecified": 94,
+    "train/leaf_bad_unspecified": 436,
+    "validation/leaf_good_source": 138,
+    "test/leaf_good_source": 138,
+    "train/leaf_good_source": 641,
+    "validation/stem_canker": 17,
+    "test/stem_canker": 17,
+    "train/stem_canker": 81,
+    "validation/stem_rust": 20,
+    "test/stem_rust": 20,
+    "train/stem_rust": 95,
+    "validation/stem_scab": 125,
+    "test/stem_scab": 125,
+    "train/stem_scab": 585,
+    "validation/stem_sunburn": 64,
+    "test/stem_sunburn": 64,
+    "train/stem_sunburn": 301
+  },
+  "limitations": [
+    "dHash distance <=4 plus decoded pixel and file hashes group visual duplicates across both sources.",
+    "No plant/session IDs supplied; visually distinct photos of one plant may remain across splits.",
+    "Publisher image-level labels are not independently verified diagnoses, grades, or segmentation masks.",
+    "The first archive has only Good/Bad fruit/leaf folders. Its health task stays separate from named conditions."
+  ],
+  "originalImages": 9965,
+  "retainedImages": 5235,
+  "quarantinedImages": 1815,
+  "manifestSha256": "2c3caa9185fb94b081929285cd53fa86199c4f24a44d5f8067758cb611299256"
+}
