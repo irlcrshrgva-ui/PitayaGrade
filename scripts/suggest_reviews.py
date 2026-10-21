@@ -15,6 +15,23 @@ INPUT_SIZE = 640
 CONFIDENCE_THRESHOLD = 0.30
 
 
+def select_assignment(rows, assignment_path=None, reviewer_id=None):
+    if not reviewer_id:
+        return rows
+    if assignment_path is None:
+        raise ValueError('An assignment index is required when a reviewer ID is selected')
+    record = json.loads(Path(assignment_path).read_text(encoding='utf-8'))
+    assignment = next((item for item in record.get('assignments', [])
+                       if item.get('reviewerId') == reviewer_id), None)
+    if assignment is None:
+        raise ValueError(f'Unknown reviewer assignment: {reviewer_id}')
+    allowed = set(assignment.get('recordIds', []))
+    selected = [row for row in rows if row.get('id') in allowed]
+    if len(selected) != len(allowed):
+        raise ValueError('Assignment index contains IDs missing from the manifest')
+    return selected
+
+
 def _safe_image(root, relative):
     root = Path(root).resolve()
     candidate = (root / relative).resolve()
@@ -109,6 +126,9 @@ def main(argv=None):
     parser.add_argument('--model', type=Path, default=ROOT / 'www/model/best.onnx')
     parser.add_argument('--output', required=True, type=Path)
     parser.add_argument('--limit', type=int)
+    parser.add_argument('--assignment-index', type=Path,
+                        default=ROOT / 'research/review-assignments-3.json')
+    parser.add_argument('--reviewer-id')
     args = parser.parse_args(argv)
     if args.limit is not None and args.limit < 1:
         parser.error('--limit must be a positive integer')
@@ -119,6 +139,7 @@ def main(argv=None):
         rows = json.loads(args.manifest.read_text(encoding='utf-8'))
         if not isinstance(rows, list):
             raise ValueError('Review manifest must be a JSON list')
+        rows = select_assignment(rows, args.assignment_index, args.reviewer_id)
         session = ort.InferenceSession(str(args.model), providers=['CPUExecutionProvider'])
         proposals = generate_suggestions(rows, ROOT, args.model, session, args.limit)
         json_output, csv_output = write_outputs(args.output, proposals, args.model, args.manifest)

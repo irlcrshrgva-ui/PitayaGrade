@@ -6,7 +6,8 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 
-from scripts.suggest_reviews import decode, generate_suggestions, preprocess, write_outputs
+from scripts.suggest_reviews import (decode, generate_suggestions, preprocess,
+                                     select_assignment, write_outputs)
 
 
 class _Endpoint:
@@ -32,6 +33,18 @@ class _Session:
 
 
 class ReviewSuggestionTests(unittest.TestCase):
+    def test_reviewer_assignment_filters_without_overlap(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            assignment = root / 'assignments.json'
+            assignment.write_text(json.dumps({'assignments': [{
+                'reviewerId': 'reviewer-01', 'recordIds': ['quality:1']
+            }]}), encoding='utf-8')
+            rows = [{'id': 'quality:1'}, {'id': 'quality:2'}]
+            self.assertEqual(select_assignment(rows, assignment, 'reviewer-01'), [rows[0]])
+            with self.assertRaisesRegex(ValueError, 'Unknown reviewer'):
+                select_assignment(rows, assignment, 'reviewer-99')
+
     def _output(self, class_index, confidence):
         output = np.zeros((1, 8, 2), dtype=np.float32)
         output[0, 4 + class_index, 1] = confidence
