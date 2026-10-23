@@ -53,7 +53,15 @@
   }
   function rebuild() {
     const taskRows = manifest.filter(row => row.task === els.task.value);
-    if (els.filter.value === 'reviewed') rows = taskRows.filter(row => row.reviewedLabel || drafts[row.id]);
+    const isAiDraft = row => String(drafts[row.id]?.reviewer || row.reviewer || '').startsWith('AI-assisted-');
+    if (els.filter.value === 'attention') {
+      rows = taskRows.filter(row => isAiDraft(row) && suggestions[row.id]?.needsAttention === true)
+        .sort((left, right) => suggestions[right.id].reviewPriority - suggestions[left.id].reviewPriority);
+    } else if (els.filter.value === 'audit') {
+      const sample = new Set(taskRows.filter(row => suggestions[row.id]?.needsAttention !== true)
+        .sort((left, right) => left.id.localeCompare(right.id)).slice(0, 40).map(row => row.id));
+      rows = taskRows.filter(row => sample.has(row.id) && isAiDraft(row));
+    } else if (els.filter.value === 'reviewed') rows = taskRows.filter(row => row.reviewedLabel || drafts[row.id]);
     else if (els.filter.value === 'unreviewed') rows = taskRows.filter(row => !row.reviewedLabel && !drafts[row.id]);
     else rows = taskRows;
     if (els.filter.value === 'priority') {
