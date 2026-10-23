@@ -4,7 +4,7 @@
     'progressText','progressPercent','progress','image','imageError','recordId','split','sourceLabel',
     'imagePath','previous','next','position','exportJson','exportCsv','backup','restore','proposalFile',
     'suggestionText','useSuggestion','groupProposalFile','sourceSuggestionText','useSourceSuggestion','toast',
-    'datasetFolder','datasetStatus','conflictPanel','conflictText','applyGroup']
+    'datasetFolder','datasetStatus','conflictPanel','conflictText','applyGroup','assignmentFile']
     .map(id => [id, document.getElementById(id)]));
   let allManifest = [], manifest = [], rows = [], index = 0;
   let assignmentConfig = null;
@@ -68,6 +68,8 @@
       const sample = new Set(taskRows.filter(row => suggestions[row.id]?.needsAttention !== true)
         .sort((left, right) => left.id.localeCompare(right.id)).slice(0, 40).map(row => row.id));
       rows = taskRows.filter(row => sample.has(row.id) && isAiDraft(row));
+    } else if (els.filter.value === 'assisted') {
+      rows = taskRows.filter(row => isAiDraft(row));
     } else if (els.filter.value === 'conflicts') {
       const conflicts = new Set(ReviewState.conflictingIds(taskRows, drafts));
       rows = taskRows.filter(row => conflicts.has(row.id));
@@ -80,6 +82,15 @@
     }
     index = Math.min(index, Math.max(0, rows.length - 1));
     render();
+  }
+  function populateAssignments(config) {
+    while (els.assignment.options.length > 1) els.assignment.remove(1);
+    for (const assignment of config?.assignments || []) {
+      const option = document.createElement('option');
+      option.value = assignment.reviewerId;
+      option.textContent = `${assignment.reviewerId} (${assignment.recordCount.toLocaleString()} records)`;
+      els.assignment.appendChild(option);
+    }
   }
   function applyAssignment() {
     const selected = els.assignment.value;
@@ -153,7 +164,7 @@
       reviewer:els.reviewer.value, reviewedAt:new Date().toISOString() };
     const error = ReviewState.validateDraft(draft, row.task); if (error) return toast(error);
     drafts[row.id] = draft; persist(); toast('Review saved locally');
-    if (els.filter.value === 'unreviewed' || els.filter.value === 'conflicts') rebuild();
+    if (['unreviewed', 'conflicts', 'assisted'].includes(els.filter.value)) rebuild();
     else { index = Math.min(index + 1, rows.length - 1); render(); }
   }
   function download(name, content, type) {
@@ -208,6 +219,12 @@
   els.exportJson.addEventListener('click', () => { try { const owner = els.assignment.value === 'all' ? 'coordinator' : els.assignment.value; download(`pitayagrade-reviewed-${owner}-${dateTag()}.json`, JSON.stringify(ReviewState.mergeDrafts(manifest,drafts),null,2)+'\n','application/json'); } catch(e) { toast(e.message); } });
   els.exportCsv.addEventListener('click', () => { try { const merged=ReviewState.mergeDrafts(manifest,drafts).filter(r=>r.task===els.task.value); download(`${els.task.value}-review-${dateTag()}.csv`,ReviewState.csv(merged),'text/csv'); } catch(e) { toast(e.message); } });
   els.backup.addEventListener('click', () => download(`review-draft-${dateTag()}.json`, JSON.stringify(drafts,null,2)+'\n','application/json'));
+  els.assignmentFile.addEventListener('change', async () => { try {
+    const value = JSON.parse(await els.assignmentFile.files[0].text());
+    assignmentConfig = ReviewState.assignmentIndex(value, allManifest);
+    populateAssignments(assignmentConfig); els.assignment.value = 'all'; applyAssignment();
+    toast(`${assignmentConfig.assignments.length} recheck assignments loaded locally`);
+  } catch(e) { toast(e.message); } finally { els.assignmentFile.value=''; } });
   els.proposalFile.addEventListener('change', async () => { try {
     const record = JSON.parse(await els.proposalFile.files[0].text());
     suggestions = ReviewState.suggestionMap(record, manifest); rebuild();
@@ -230,13 +247,8 @@
     try {
       const assignmentResponse = await fetch(new URL('../research/review-assignments-3.json', window.location.href), { cache:'no-store' });
       if (assignmentResponse.ok) {
-        assignmentConfig = await assignmentResponse.json();
-        for (const assignment of assignmentConfig.assignments || []) {
-          const option = document.createElement('option');
-          option.value = assignment.reviewerId;
-          option.textContent = `${assignment.reviewerId} (${assignment.recordCount.toLocaleString()} records)`;
-          els.assignment.appendChild(option);
-        }
+        assignmentConfig = ReviewState.assignmentIndex(await assignmentResponse.json(), allManifest);
+        populateAssignments(assignmentConfig);
       }
     } catch { /* Coordinator view remains available without assignments. */ }
     els.status.textContent = `${manifest.length.toLocaleString()} candidate records loaded`;

@@ -164,3 +164,19 @@ validation scripts and this guide. GitHub Pages hosts the Review Desk interface.
 The 374 MB image dataset, members' browser progress and final review exports are
 not published. Those files must remain in the team's controlled private storage.
 
+## AI-assisted recheck packages
+
+If a provisional merge retains rows attributed to `AI-assisted-<reviewer>`, create
+private three-member confirmation packages with:
+
+```powershell
+python scripts/create_assisted_recheck_packages.py --manifest <validated-provisional-manifest.json> --output <private-output-folder>
+```
+
+Each member extracts one ZIP, opens the current Review Desk, loads
+`assignment-index.json` through **Load recheck assignment**, selects their
+`recheck-XX` assignment, restores `draft-backup.json`, loads the extracted image
+folder, and chooses **All AI-assisted labels**. Saving a checked record replaces
+its AI-assisted attribution with the human recheck reviewer. Both task queues
+must reach zero before the member exports their reviewed manifest.
+

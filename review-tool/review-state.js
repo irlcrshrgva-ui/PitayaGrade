@@ -58,6 +58,28 @@
       .flatMap(group => group.ids);
   }
 
+  function assignmentIndex(record, manifest) {
+    if (!record || record.schemaVersion !== 1 || !Array.isArray(record.assignments) ||
+        !record.assignments.length) throw new Error('Unsupported assignment file');
+    const known = new Set(manifest.map(row => row.id));
+    const reviewers = new Set();
+    const assigned = new Set();
+    for (const assignment of record.assignments) {
+      const reviewer = String(assignment?.reviewerId || '').trim();
+      const ids = assignment?.recordIds;
+      if (!reviewer || reviewers.has(reviewer) || !Array.isArray(ids) || !ids.length ||
+          assignment.recordCount !== ids.length || new Set(ids).size !== ids.length) {
+        throw new Error('Assignment entries need a unique reviewer and unique record IDs');
+      }
+      if (ids.some(id => !known.has(id) || assigned.has(id))) {
+        throw new Error('Assignment IDs must be known and non-overlapping');
+      }
+      reviewers.add(reviewer);
+      ids.forEach(id => assigned.add(id));
+    }
+    return record;
+  }
+
   function suggestionMap(record, manifest) {
     if (!record || record.schemaVersion !== 1 || !Array.isArray(record.proposals)) {
       throw new Error('Unsupported proposal file');
@@ -127,6 +149,6 @@
     return [fields.join(','), ...rows.map(row => fields.map(field => escape(row[field])).join(','))].join('\r\n') + '\r\n';
   }
 
-  return { LABELS, validateDraft, mergeDrafts, progress, conflictingIds,
+  return { LABELS, validateDraft, mergeDrafts, progress, conflictingIds, assignmentIndex,
     suggestionMap, sourceSuggestionMap, csv };
 });

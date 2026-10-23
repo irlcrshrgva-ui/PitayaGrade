@@ -27,6 +27,18 @@ test('conflicting source-group labels are isolated for adjudication', () => {
   assert.deepEqual(state.conflictingIds(rows, drafts).sort(), ['one', 'two']);
 });
 
+test('local recheck assignments require known non-overlapping records', () => {
+  const manifest = [{ id:'one' }, { id:'two' }];
+  const valid = { schemaVersion:1, assignments:[
+    { reviewerId:'recheck-01', recordCount:1, recordIds:['one'] },
+    { reviewerId:'recheck-02', recordCount:1, recordIds:['two'] },
+  ] };
+  assert.equal(state.assignmentIndex(valid, manifest), valid);
+  assert.throws(() => state.assignmentIndex({ ...valid, assignments:[
+    valid.assignments[0], { reviewerId:'recheck-02', recordCount:1, recordIds:['one'] },
+  ] }, manifest), /non-overlapping/);
+});
+
 test('visual review export preserves rows and refuses retained conflicts', () => {
   const manifest = [{ id:'one', task:'quality', reviewedLabel:null }];
   const draft = { one:{ reviewedLabel:'Grade B', reviewedSourceGroup:'fruit-1', reviewer:'r1', reviewedAt:'2026-10-04T10:00:00Z' } };
