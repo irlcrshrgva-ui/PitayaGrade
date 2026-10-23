@@ -26,6 +26,12 @@ class ValidationTests(unittest.TestCase):
         rows[4]['reviewedSourceGroup'] = rows[0]['reviewedSourceGroup']
         self.assertTrue(any('crosses splits' in e for e in validation.validate(rows, 'manuscript-quality', check_files=False)))
 
+    def test_source_group_cannot_have_conflicting_labels(self):
+        rows = records()
+        rows[1]['reviewedSourceGroup'] = rows[0]['reviewedSourceGroup']
+        self.assertTrue(any('conflicting labels' in e
+                            for e in validation.validate(rows, 'manuscript-quality', check_files=False)))
+
     def test_no_review_is_not_ready(self):
         rows = records()
         rows[0]['reviewer'] = None

@@ -72,6 +72,28 @@ reviewed manifest and keep both files in a dated private backup folder.
 5. Any missing, overlapping, modified or incorrectly assigned records cause the
    merge to fail and must be corrected by the responsible reviewer.
 
+For three fully human-reviewed exports, use the strict command:
+
+```powershell
+python scripts/merge_review_exports.py --output local-review/final-merged.json <export-1> <export-2> <export-3>
+```
+
+If an export intentionally retains `AI-assisted-<reviewer>` attribution, the
+coordinator may create a clearly provisional manifest with `--allow-assisted`.
+This option preserves the attribution and does not convert AI suggestions into
+human ground truth. Such a manifest cannot satisfy the final-review checklist.
+
+After a successful merge, linked records must be placed in one partition:
+
+```powershell
+python scripts/reconcile_review_splits.py local-review/final-merged.json --output local-review/training-manifest.json
+python scripts/validate-research-data.py local-review/training-manifest.json --target manuscript-quality
+```
+
+Run validation separately for each task when one file contains both quality and
+maturity records. Conflicting labels inside one source-fruit group require human
+adjudication; the validator rejects them rather than choosing a label.
+
 ## Instructions for every reviewer
 
 1. Extract only your assigned ZIP. Do not exchange records with another member.

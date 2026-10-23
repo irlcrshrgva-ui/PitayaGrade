@@ -21,7 +21,7 @@ def load_list(path):
     return value
 
 
-def merge_exports(manifest, assignment_index, exports):
+def merge_exports(manifest, assignment_index, exports, allow_assisted=False):
     base = {row['id']: row for row in manifest}
     if len(base) != len(manifest):
         raise ValueError('Base manifest contains duplicate IDs')
@@ -31,18 +31,33 @@ def merge_exports(manifest, assignment_index, exports):
     merged_reviews = {}
     received_reviewers = set()
     for path, rows in exports:
+        ids = [row.get('id') for row in rows]
+        if len(ids) != len(set(ids)):
+            raise ValueError(f'{path}: export contains duplicate record IDs')
         reviewers = {str(row.get('reviewer') or '').strip() for row in rows}
         reviewers.discard('')
-        if len(reviewers) != 1:
-            raise ValueError(f'{path}: export must contain one completed reviewer ID')
-        reviewer = reviewers.pop()
-        if reviewer not in expected_by_reviewer:
-            raise ValueError(f'{path}: unknown reviewer assignment {reviewer}')
+        if allow_assisted:
+            assignment_matches = [
+                reviewer_id for reviewer_id, expected_ids in expected_by_reviewer.items()
+                if set(ids) == expected_ids
+            ]
+            if len(assignment_matches) != 1:
+                raise ValueError(f'{path}: records do not exactly match one reviewer assignment')
+            reviewer = assignment_matches[0]
+            allowed_reviewers = {reviewer, f'AI-assisted-{reviewer}'}
+            if not reviewers or not reviewers <= allowed_reviewers:
+                unexpected = ', '.join(sorted(reviewers - allowed_reviewers)) or 'blank reviewer ID'
+                raise ValueError(f'{path}: reviewer attribution is invalid for {reviewer}: {unexpected}')
+        else:
+            if len(reviewers) != 1:
+                raise ValueError(f'{path}: export must contain one completed reviewer ID')
+            reviewer = reviewers.pop()
+            if reviewer not in expected_by_reviewer:
+                raise ValueError(f'{path}: unknown reviewer assignment {reviewer}')
         if reviewer in received_reviewers:
             raise ValueError(f'Duplicate export for {reviewer}')
         received_reviewers.add(reviewer)
-        ids = [row.get('id') for row in rows]
-        if len(ids) != len(set(ids)) or set(ids) != expected_by_reviewer[reviewer]:
+        if set(ids) != expected_by_reviewer[reviewer]:
             raise ValueError(f'{path}: records do not exactly match {reviewer} assignment')
         for row in rows:
             original = base.get(row['id'])
@@ -51,7 +66,9 @@ def merge_exports(manifest, assignment_index, exports):
             for field in IDENTITY_FIELDS:
                 if row.get(field) != original.get(field):
                     raise ValueError(f'{path}: {row["id"]} changed protected field {field}')
-            if row.get('reviewer') != reviewer:
+            allowed_row_reviewers = ({reviewer, f'AI-assisted-{reviewer}'}
+                                     if allow_assisted else {reviewer})
+            if row.get('reviewer') not in allowed_row_reviewers:
                 raise ValueError(f'{path}: {row["id"]} has the wrong reviewer ID')
             if row.get('reviewedLabel') not in LABELS.get(row.get('task'), set()):
                 raise ValueError(f'{path}: {row["id"]} has an invalid reviewed label')
@@ -82,6 +99,11 @@ def main():
     parser.add_argument('--manifest', type=Path, default=ROOT / 'research/public-review-manifest.json')
     parser.add_argument('--assignments', type=Path, default=ROOT / 'research/review-assignments-3.json')
     parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument(
+        '--allow-assisted', action='store_true',
+        help='Allow AI-assisted-<reviewer> rows while preserving their provenance. '
+             'The result is provisional, not final human ground truth.',
+    )
     args = parser.parse_args()
     if args.output.exists():
         raise SystemExit(f'Refusing to overwrite {args.output}')
@@ -89,12 +111,18 @@ def main():
         manifest = load_list(args.manifest)
         assignment_index = json.loads(args.assignments.read_text(encoding='utf-8'))
         exports = [(path, load_list(path)) for path in args.exports]
-        merged = merge_exports(manifest, assignment_index, exports)
+        merged = merge_exports(
+            manifest, assignment_index, exports, allow_assisted=args.allow_assisted
+        )
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(json.dumps(merged, indent=2, ensure_ascii=False) + '\n', encoding='utf-8')
     except (OSError, ValueError, KeyError, json.JSONDecodeError) as error:
         raise SystemExit(str(error)) from error
-    print(json.dumps({'reviewedRowsMerged': len(merged), 'output': str(args.output)}, indent=2))
+    print(json.dumps({
+        'reviewedRowsMerged': len(merged),
+        'provisional': args.allow_assisted,
+        'output': str(args.output),
+    }, indent=2))
 
 
 if __name__ == '__main__':

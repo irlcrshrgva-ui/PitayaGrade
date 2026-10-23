@@ -40,6 +40,45 @@ class MergeReviewExportsTests(unittest.TestCase):
             merge_exports(self.manifest, self.index, [
                 ('one.json', [changed]), ('two.json', [row('b', 'reviewer-02')])])
 
+    def test_strict_mode_rejects_assisted_attribution(self):
+        with self.assertRaisesRegex(ValueError, 'unknown reviewer assignment'):
+            merge_exports(self.manifest, self.index, [
+                ('one.json', [row('a', 'AI-assisted-reviewer-01')]),
+                ('two.json', [row('b', 'reviewer-02')]),
+            ])
+
+    def test_strict_mode_rejects_mixed_human_and_assisted_attribution(self):
+        manifest = [row('a'), row('b'), row('c')]
+        index = {'assignments': [
+            {'reviewerId': 'reviewer-01', 'recordIds': ['a', 'b']},
+            {'reviewerId': 'reviewer-02', 'recordIds': ['c']},
+        ]}
+        with self.assertRaisesRegex(ValueError, 'one completed reviewer ID'):
+            merge_exports(manifest, index, [
+                ('one.json', [
+                    row('a', 'reviewer-01'),
+                    row('b', 'AI-assisted-reviewer-01'),
+                ]),
+                ('two.json', [row('c', 'reviewer-02')]),
+            ])
+
+    def test_provisional_mode_accepts_assisted_rows_and_preserves_provenance(self):
+        merged = merge_exports(self.manifest, self.index, [
+            ('one.json', [row('a', 'AI-assisted-reviewer-01')]),
+            ('two.json', [row('b', 'reviewer-02')]),
+        ], allow_assisted=True)
+        self.assertEqual(
+            [item['reviewer'] for item in merged],
+            ['AI-assisted-reviewer-01', 'reviewer-02'],
+        )
+
+    def test_provisional_mode_rejects_assistance_for_wrong_assignment(self):
+        with self.assertRaisesRegex(ValueError, 'reviewer attribution is invalid'):
+            merge_exports(self.manifest, self.index, [
+                ('one.json', [row('a', 'AI-assisted-reviewer-02')]),
+                ('two.json', [row('b', 'reviewer-02')]),
+            ], allow_assisted=True)
+
 
 if __name__ == '__main__':
     unittest.main()

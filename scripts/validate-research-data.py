@@ -23,7 +23,7 @@ def validate(rows, target, root=ROOT, check_files=True, require_class_coverage=T
     errors = []
     if not isinstance(rows, list) or not rows:
         return ['No records supplied']
-    groups, pixels, coverage = defaultdict(set), defaultdict(set), defaultdict(set)
+    groups, group_labels, pixels, coverage = (defaultdict(set) for _ in range(4))
     upright_pixels = defaultdict(set)
     roi_sources = defaultdict(set)
     ids = set()
@@ -54,6 +54,7 @@ def validate(rows, target, root=ROOT, check_files=True, require_class_coverage=T
         coverage[split].add(label)
         if row.get('reviewedSourceGroup'):
             groups[row['reviewedSourceGroup']].add(split)
+            group_labels[row['reviewedSourceGroup']].add(label)
         roi_source = row.get('roiSourceId')
         if roi_source is not None:
             if not isinstance(roi_source, str) or not roi_source.strip():
@@ -88,6 +89,12 @@ def validate(rows, target, root=ROOT, check_files=True, require_class_coverage=T
         for group, splits in mapping.items():
             if len(splits) > 1:
                 errors.append(f'{name} {group}: crosses splits')
+    for group, labels in group_labels.items():
+        valid_labels = {label for label in labels if label in LABELS[target]}
+        if len(valid_labels) > 1:
+            errors.append(
+                f'source group {group}: has conflicting labels: {", ".join(sorted(valid_labels))}'
+            )
     for split in ('train', 'val', 'test') if require_class_coverage else ():
         missing = LABELS[target] - coverage[split]
         if missing:
