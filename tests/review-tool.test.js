@@ -13,6 +13,20 @@ test('visual review drafts require complete evidence', () => {
   assert.match(state.validateDraft({ ...complete, reviewedLabel:'Fresh' }, 'quality'), /label/);
 });
 
+test('conflicting source-group labels are isolated for adjudication', () => {
+  const rows = [
+    { id:'one', task:'quality' },
+    { id:'two', task:'quality' },
+    { id:'three', task:'quality' },
+  ];
+  const drafts = {
+    one: { reviewedLabel:'Grade A', reviewedSourceGroup:'fruit-1' },
+    two: { reviewedLabel:'Grade B', reviewedSourceGroup:'fruit-1' },
+    three: { reviewedLabel:'Grade A', reviewedSourceGroup:'fruit-2' },
+  };
+  assert.deepEqual(state.conflictingIds(rows, drafts).sort(), ['one', 'two']);
+});
+
 test('visual review export preserves rows and refuses retained conflicts', () => {
   const manifest = [{ id:'one', task:'quality', reviewedLabel:null }];
   const draft = { one:{ reviewedLabel:'Grade B', reviewedSourceGroup:'fruit-1', reviewer:'r1', reviewedAt:'2026-10-04T10:00:00Z' } };

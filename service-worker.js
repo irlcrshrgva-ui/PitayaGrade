@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pitayagrade-web-2026-10-24-3';
+const CACHE_NAME = 'pitayagrade-web-2026-10-24-4';
 const BASE_URL = new URL('./', self.location.href);
 const localUrl = path => new URL(path, BASE_URL).href;
 

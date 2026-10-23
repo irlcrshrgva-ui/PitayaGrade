@@ -42,6 +42,22 @@
     return { reviewed, total: rows.length, percent: rows.length ? Math.round(reviewed / rows.length * 100) : 0 };
   }
 
+  function conflictingIds(rows, drafts) {
+    const groups = new Map();
+    for (const row of rows) {
+      const review = drafts[row.id] || row;
+      const group = String(review.reviewedSourceGroup || '').trim();
+      const label = String(review.reviewedLabel || '').trim();
+      if (!group || !label) continue;
+      if (!groups.has(group)) groups.set(group, { labels: new Set(), ids: [] });
+      groups.get(group).labels.add(label);
+      groups.get(group).ids.push(row.id);
+    }
+    return Array.from(groups.values())
+      .filter(group => group.labels.size > 1)
+      .flatMap(group => group.ids);
+  }
+
   function suggestionMap(record, manifest) {
     if (!record || record.schemaVersion !== 1 || !Array.isArray(record.proposals)) {
       throw new Error('Unsupported proposal file');
@@ -111,5 +127,6 @@
     return [fields.join(','), ...rows.map(row => fields.map(field => escape(row[field])).join(','))].join('\r\n') + '\r\n';
   }
 
-  return { LABELS, validateDraft, mergeDrafts, progress, suggestionMap, sourceSuggestionMap, csv };
+  return { LABELS, validateDraft, mergeDrafts, progress, conflictingIds,
+    suggestionMap, sourceSuggestionMap, csv };
 });

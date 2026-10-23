@@ -61,6 +61,9 @@
       const sample = new Set(taskRows.filter(row => suggestions[row.id]?.needsAttention !== true)
         .sort((left, right) => left.id.localeCompare(right.id)).slice(0, 40).map(row => row.id));
       rows = taskRows.filter(row => sample.has(row.id) && isAiDraft(row));
+    } else if (els.filter.value === 'conflicts') {
+      const conflicts = new Set(ReviewState.conflictingIds(taskRows, drafts));
+      rows = taskRows.filter(row => conflicts.has(row.id));
     } else if (els.filter.value === 'reviewed') rows = taskRows.filter(row => row.reviewedLabel || drafts[row.id]);
     else if (els.filter.value === 'unreviewed') rows = taskRows.filter(row => !row.reviewedLabel && !drafts[row.id]);
     else rows = taskRows;
@@ -132,7 +135,8 @@
       reviewer:els.reviewer.value, reviewedAt:new Date().toISOString() };
     const error = ReviewState.validateDraft(draft, row.task); if (error) return toast(error);
     drafts[row.id] = draft; persist(); toast('Review saved locally');
-    if (els.filter.value === 'unreviewed') rebuild(); else { index = Math.min(index + 1, rows.length - 1); render(); }
+    if (els.filter.value === 'unreviewed' || els.filter.value === 'conflicts') rebuild();
+    else { index = Math.min(index + 1, rows.length - 1); render(); }
   }
   function download(name, content, type) {
     const link = document.createElement('a'); link.href = URL.createObjectURL(new Blob([content], { type }));
