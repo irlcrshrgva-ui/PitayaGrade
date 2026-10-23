@@ -34,6 +34,11 @@
         <input id="sourceGroup" autocomplete="off" placeholder="farm-date-fruit-001">
       </label>
       <fieldset><legend>Reviewed label</legend><div id="labels" class="labels"></div></fieldset>
+      <section id="conflictPanel" class="suggestion" hidden aria-live="polite">
+        <strong>Source-group conflict</strong>
+        <span id="conflictText"></span>
+        <button id="applyGroup">Apply selected label to this group</button>
+      </section>
       <section class="suggestion" aria-live="polite">
         <strong>Model proposal</strong>
         <span id="suggestionText">Load a proposal file to see review assistance.</span>
@@ -81,7 +86,7 @@
   </main>
 
   <div id="toast" role="status" aria-live="polite"></div>
-  <script src="./review-state.js?v=2026-10-24-4"></script>
-  <script src="./app.js?v=2026-10-24-4"></script>
+  <script src="./review-state.js?v=2026-10-24-5"></script>
+  <script src="./app.js?v=2026-10-24-5"></script>
 </body>
 </html>

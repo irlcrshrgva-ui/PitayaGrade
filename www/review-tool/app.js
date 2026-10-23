@@ -4,7 +4,7 @@
     'progressText','progressPercent','progress','image','imageError','recordId','split','sourceLabel',
     'imagePath','previous','next','position','exportJson','exportCsv','backup','restore','proposalFile',
     'suggestionText','useSuggestion','groupProposalFile','sourceSuggestionText','useSourceSuggestion','toast',
-    'datasetFolder','datasetStatus']
+    'datasetFolder','datasetStatus','conflictPanel','conflictText','applyGroup']
     .map(id => [id, document.getElementById(id)]));
   let allManifest = [], manifest = [], rows = [], index = 0;
   let assignmentConfig = null;
@@ -21,6 +21,13 @@
   function persist() { localStorage.setItem(STORAGE, JSON.stringify(drafts)); }
   function toast(message) { els.toast.textContent = message; els.toast.classList.add('show'); setTimeout(() => els.toast.classList.remove('show'), 2400); }
   function current() { return rows[index]; }
+  function effectiveReview(row) { return drafts[row.id] || row; }
+  function currentGroupMembers(row) {
+    const group = String(effectiveReview(row)?.reviewedSourceGroup || '').trim();
+    if (!group) return [];
+    return manifest.filter(candidate => candidate.task === row.task &&
+      String(effectiveReview(candidate)?.reviewedSourceGroup || '').trim() === group);
+  }
   function normalizePath(value) { return String(value || '').replace(/\\/g, '/').replace(/^\/+/, ''); }
   function preparedRelative(value) { return normalizePath(value).replace(/^dataset\/public\/prepared\//, ''); }
   function registerLocalImages(files) {
@@ -106,6 +113,7 @@
     const row = current();
     els.position.textContent = rows.length ? `${index + 1} of ${rows.length}` : '0 of 0';
     for (const button of [els.previous, els.next, els.save, els.clear]) button.disabled = !row;
+    els.conflictPanel.hidden = true;
     if (!row) { els.image.removeAttribute('src'); els.recordId.textContent = 'No matching records';
       els.suggestionText.textContent = 'No proposal for this view.'; els.useSuggestion.disabled = true;
       renderLabels(els.task.value); return; }
@@ -127,6 +135,16 @@
       ? `${sourceProposal.suggestedSourceGroup} · ${sourceProposal.memberCount} visually similar records${sourceProposal.crossesCandidateSplits ? ' · crosses candidate splits' : ''}. Confirm the physical source before saving.`
       : 'No source-group suggestion loaded for this record.';
     els.imageError.hidden = true; els.image.hidden = false; displayImage(row);
+    if (els.filter.value === 'conflicts') {
+      const members = currentGroupMembers(row);
+      const labels = Array.from(new Set(members.map(member =>
+        effectiveReview(member).reviewedLabel).filter(Boolean))).sort();
+      if (labels.length > 1) {
+        els.conflictPanel.hidden = false;
+        els.conflictText.textContent = `${members.length} records currently use: ${labels.join(' / ')}. ` +
+          'Inspect the group, select the correct label, then apply it to the group.';
+      }
+    }
   }
   function selectedLabel() { return document.querySelector('input[name="reviewedLabel"]:checked')?.value || ''; }
   function saveReview() {
@@ -160,6 +178,21 @@
     const proposal = sourceSuggestions[current()?.id]; if (!proposal) return;
     els.sourceGroup.value = proposal.suggestedSourceGroup;
     toast('Source-group proposal copied to the draft; confirm the physical source before saving');
+  });
+  els.applyGroup.addEventListener('click', () => {
+    const row = current();
+    const label = selectedLabel();
+    const reviewer = String(els.reviewer.value || '').trim();
+    const members = row ? currentGroupMembers(row) : [];
+    if (!row || members.length < 2) return toast('No conflicting source group selected');
+    if (!ReviewState.LABELS[row.task].includes(label)) return toast('Select the correct group label');
+    if (!reviewer) return toast('Enter an anonymous reviewer ID');
+    const reviewedAt = new Date().toISOString();
+    const group = String(effectiveReview(row).reviewedSourceGroup).trim();
+    for (const member of members) {
+      drafts[member.id] = { reviewedLabel:label, reviewedSourceGroup:group, reviewer, reviewedAt };
+    }
+    persist(); rebuild(); toast(`${members.length} records adjudicated as ${label}`);
   });
   els.clear.addEventListener('click', () => { const row=current(); if (!row || !drafts[row.id]) return; if (confirm('Clear this local draft review?')) { delete drafts[row.id]; persist(); rebuild(); } });
   els.image.addEventListener('error', () => { els.image.hidden = true; els.imageError.hidden = false; });
