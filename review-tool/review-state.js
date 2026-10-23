@@ -49,7 +49,13 @@
     const known = new Map(manifest.filter(row => LABELS[row.task]).map(row => [row.id, row]));
     const result = {};
     for (const proposal of record.proposals) {
-      if (!proposal || !known.has(proposal.id) || result[proposal.id]) throw new Error('Proposal IDs must be unique known task records');
+      if (!proposal || typeof proposal.id !== 'string') {
+        throw new Error('Each model proposal must have a record ID');
+      }
+      if (!known.has(proposal.id)) {
+        throw new Error(`Proposal ${proposal.id} is not part of the selected assignment. Select the matching reviewer first.`);
+      }
+      if (result[proposal.id]) throw new Error(`Proposal ${proposal.id} appears more than once`);
       if (proposal.status !== 'unverified-model-proposal' || proposal.humanReviewRequired !== true) {
         throw new Error('Proposal file must require human review');
       }
