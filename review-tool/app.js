@@ -109,7 +109,6 @@
     const draft = drafts[row.id] || row;
     renderLabels(row.task, draft.reviewedLabel);
     els.sourceGroup.value = draft.reviewedSourceGroup || '';
-    if (draft.reviewer) els.reviewer.value = draft.reviewer;
     els.recordId.textContent = row.id; els.split.textContent = row.candidateSplit;
     els.sourceLabel.textContent = row.sourceLabel || '—'; els.imagePath.textContent = row.image;
     const proposal = suggestions[row.id];
