@@ -18,7 +18,7 @@ def read_reviewed_manifest(manifest, root=ROOT):
         raise ValueError('Reviewed manifest must be a JSON array')
     rows = [row for row in all_rows if row.get('task') == 'quality']
     if not rows:
-        raise ValueError('Reviewed manifest contains no quality records')
+        raise ValueError('Research data is not training-ready: reviewed manifest contains no quality records')
     errors = validation.validate(rows, 'manuscript-quality', root=root)
     if errors:
         raise ValueError(f'Research data is not training-ready ({len(errors)} errors):\n' + '\n'.join(errors[:20]))
@@ -52,8 +52,23 @@ def training_arguments():
     parser.add_argument('--models', nargs='+', choices=['MobileNetV2', 'ResNet50', 'EfficientNetB3'],
                         default=['MobileNetV2', 'ResNet50', 'EfficientNetB3'],
                         help='Quality architectures to train; defaults to all selectable classifiers.')
+    parser.add_argument('--phase1-epochs', type=int, default=10,
+                        help='Frozen-backbone epochs (default: 10).')
+    parser.add_argument('--phase2-epochs', type=int, default=30,
+                        help='Fine-tuning epochs (default: 30).')
+    parser.add_argument('--patience', type=int, default=10,
+                        help='Early-stopping patience in epochs (default: 10).')
+    parser.add_argument('--batch-size', type=int, default=32,
+                        help='Training batch size (default: 32).')
+    parser.add_argument('--num-workers', type=int, default=2,
+                        help='Data-loader worker processes (default: 2; use 0 for maximum Windows reliability).')
     args = parser.parse_args()
     try:
+        for name in ('phase1_epochs', 'phase2_epochs', 'patience', 'batch_size'):
+            if getattr(args, name) < 1:
+                raise ValueError(f'--{name.replace("_", "-")} must be at least 1')
+        if args.num_workers < 0:
+            raise ValueError('--num-workers cannot be negative')
         args.rows = read_reviewed_manifest(args.manifest)
         if args.run_dir.exists():
             raise ValueError('Run directory already exists; choose a new directory.')

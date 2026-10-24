@@ -32,12 +32,12 @@ from sklearn.metrics import classification_report, confusion_matrix, precision_r
 
 # ── Configuration ────────────────────────────────────────────────────────────
 IMG_SIZE = 224
-BATCH_SIZE = 32
-PHASE1_EPOCHS = 10
-PHASE2_EPOCHS = 30
-PATIENCE = 10
+BATCH_SIZE = TRAINING_ARGS.batch_size if TRAINING_ARGS else 32
+PHASE1_EPOCHS = TRAINING_ARGS.phase1_epochs if TRAINING_ARGS else 10
+PHASE2_EPOCHS = TRAINING_ARGS.phase2_epochs if TRAINING_ARGS else 30
+PATIENCE = TRAINING_ARGS.patience if TRAINING_ARGS else 10
 SEED = 42
-NUM_WORKERS = 2
+NUM_WORKERS = TRAINING_ARGS.num_workers if TRAINING_ARGS else 2
 
 PROJECT_DIR = Path(os.path.dirname(os.path.abspath(__file__)))
 RESULTS_DIR = PROJECT_DIR / "training_results"
@@ -93,12 +93,14 @@ def create_dataloaders(prepared_dir):
     # Ensure class order matches GRADE_CLASSES
     print(f"Class to idx: {train_dataset.class_to_idx}")
 
-    train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True,
-                              num_workers=NUM_WORKERS, pin_memory=True)
-    val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False,
-                            num_workers=NUM_WORKERS, pin_memory=True)
-    test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False,
-                             num_workers=NUM_WORKERS, pin_memory=True)
+    loader_options = {
+        'num_workers': NUM_WORKERS,
+        'pin_memory': torch.cuda.is_available(),
+        'persistent_workers': NUM_WORKERS > 0,
+    }
+    train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True, **loader_options)
+    val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False, **loader_options)
+    test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False, **loader_options)
 
     print(f"Train: {len(train_dataset)}, Val: {len(val_dataset)}, Test: {len(test_dataset)}")
     return train_loader, val_loader, test_loader, train_dataset.class_to_idx
@@ -580,8 +582,17 @@ def main():
     prepared_dir = prepare_dataset()
     train_loader, val_loader, test_loader, class_to_idx = create_dataloaders(prepared_dir)
 
+    reviewer_counts = {}
+    for row in TRAINING_ARGS.rows:
+        reviewer = row.get('reviewer', 'unknown')
+        reviewer_counts[reviewer] = reviewer_counts.get(reviewer, 0) + 1
+    assisted_count = sum(count for reviewer, count in reviewer_counts.items()
+                         if reviewer.lower().startswith('ai-assisted'))
+
     (RESULTS_DIR / 'training-context.json').write_text(json.dumps({
         'task': 'manuscript-quality', 'models': TRAINING_ARGS.models,
+        'status': 'provisional' if assisted_count else 'human-reviewed',
+        'reviewProvenance': {'reviewerCounts': reviewer_counts, 'assistedRecordCount': assisted_count},
         'frameworks': {name: version(name) for name in ('torch', 'torchvision', 'scikit-learn')},
         'classToIndex': class_to_idx, 'imageSize': IMG_SIZE, 'batchSize': BATCH_SIZE, 'seed': SEED,
         'orientation': 'EXIF-transpose to upright RGB before resize and augmentation',
@@ -590,8 +601,11 @@ def main():
         'optimizer': {'name': 'Adam', 'weightDecay': 1e-4, 'betas': [0.9, 0.999]},
         'scheduler': {'name': 'ReduceLROnPlateau', 'patience': 5, 'factor': 0.5},
         'selectionMetric': 'val_loss', 'earlyStoppingPatience': PATIENCE,
-        'methodologyLimitations': ['Reviewed fruit-crop provenance and full preprocessing alignment still need verification.',
-                                  'No metadata check establishes expert-label truth or field accuracy.']
+        'methodologyLimitations': [
+            *(['AI-assisted labels still require independent human confirmation.'] if assisted_count else []),
+            'Reviewed fruit-crop provenance and full preprocessing alignment still need verification.',
+            'No metadata check establishes expert-label truth or field accuracy.'
+        ]
     }, indent=2) + '\n', encoding='utf-8')
 
     model_names = TRAINING_ARGS.models
