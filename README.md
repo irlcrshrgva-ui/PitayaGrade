@@ -66,6 +66,8 @@ Team members should follow `research/TEAM_HANDOFF_NEXT_STEPS.md` for the remaini
 human review, device testing, UAT and release-signing work.
 The exact at-home procedure and three-way workload are documented in
 `research/THREE_MEMBER_DATASET_REVIEW_GUIDE.md`.
+The dependency-ordered fast-track plan from the current 80% state to the final
+release is in `research/ROADMAP_TO_100_PERCENT.md`.
 
 ## Run the web application
 
