@@ -13,7 +13,12 @@ spec.loader.exec_module(validation)
 
 
 def read_reviewed_manifest(manifest, root=ROOT):
-    rows = json.loads(Path(manifest).read_text(encoding='utf-8'))
+    all_rows = json.loads(Path(manifest).read_text(encoding='utf-8'))
+    if not isinstance(all_rows, list):
+        raise ValueError('Reviewed manifest must be a JSON array')
+    rows = [row for row in all_rows if row.get('task') == 'quality']
+    if not rows:
+        raise ValueError('Reviewed manifest contains no quality records')
     errors = validation.validate(rows, 'manuscript-quality', root=root)
     if errors:
         raise ValueError(f'Research data is not training-ready ({len(errors)} errors):\n' + '\n'.join(errors[:20]))
