@@ -13,7 +13,7 @@ function csvHasData(file) {
   return fs.readFileSync(file, 'utf8').split(/\r?\n/).filter(line => line.trim()).length > 1;
 }
 
-function validEvidenceAudit(directory, registry = []) {
+function validEvidenceAudit(directory, registry = [], reviewAudits = []) {
   const auditPath = path.join(directory, 'evidence-audit.json');
   if (!fs.existsSync(auditPath)) return false;
   try {
@@ -26,7 +26,10 @@ function validEvidenceAudit(directory, registry = []) {
     });
     const assetsValid = !registry.length || registry.every(model =>
       model.available && audit.modelAssets?.[model.id]?.sha256 === model.sha256);
-    return filesValid && assetsValid;
+    const approvedReviewAudits = new Set((audit.reviewAudits || []).map(item => item.sha256));
+    const reviewsValid = !reviewAudits.length || reviewAudits.every(file =>
+      fs.existsSync(file) && approvedReviewAudits.has(fileHash(file)));
+    return filesValid && assetsValid && reviewsValid;
   } catch {
     return false;
   }
@@ -110,7 +113,7 @@ function buildReport(root = path.resolve(__dirname, '..'), options = {}) {
   const evidenceFiles = ['model-evaluation.csv', 'predictions.csv', 'device-test.csv', 'uat.csv'];
   const evidenceDir = options.evidenceDir || path.join(root, 'research/week4');
   const evidence = evidenceFiles.map(name => ({ name, complete: csvHasData(path.join(evidenceDir, name)) }));
-  const auditValid = validEvidenceAudit(evidenceDir, registry);
+  const auditValid = validEvidenceAudit(evidenceDir, registry, options.reviewAudits || []);
   const gradle = fs.readFileSync(path.join(root, 'android/app/build.gradle'), 'utf8');
   const hasReleaseSigning = /signingConfigs\s*\{[\s\S]*?release\s*\{/m.test(gradle) &&
     /buildTypes\s*\{[\s\S]*?release\s*\{[\s\S]*?signingConfig/m.test(gradle);

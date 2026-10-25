@@ -16,6 +16,13 @@ class Week4EvidenceTests(unittest.TestCase):
         sha = 'a' * 64
         for task in ('quality', 'disease'):
             (self.root / f'{task}.json').write_text(json.dumps([{'id':f'{task}-{i}'} for i in range(10)]))
+        quality_audit = self.root / 'quality-finalization-audit.json'
+        disease_audit = self.root / 'disease-finalization-audit.json'
+        quality_audit.write_text(json.dumps({'status':'human-reviewed-and-validated', 'validationErrors':0,
+            'frozenQualityManifestSha256':hashlib.sha256((self.root / 'quality.json').read_bytes()).hexdigest()}))
+        disease_audit.write_text(json.dumps({'status':'human-annotated-and-validated', 'validationErrors':0,
+            'manifestSha256':hashlib.sha256((self.root / 'disease.json').read_bytes()).hexdigest()}))
+        self.review_audits = [quality_audit, disease_audit]
         model_specs = [
             ('yolov8-nano', 'quality', 'YOLOv8-Nano', '640'),
             ('mobilenetv2-quality', 'quality', 'MobileNetV2', '224'),
@@ -77,7 +84,7 @@ class Week4EvidenceTests(unittest.TestCase):
             writer.writerows(rows)
 
     def test_valid_evidence_produces_checksum_audit(self):
-        report = validate_evidence(self.root)
+        report = validate_evidence(self.root, review_audits=self.review_audits)
         self.assertEqual(report['status'], 'pass')
         self.assertFalse(report['errors'])
         self.assertEqual(report['deviceCount'], 1)
@@ -87,7 +94,7 @@ class Week4EvidenceTests(unittest.TestCase):
     def test_unresolved_device_failure_blocks_release(self):
         self.device_rows[0]['status'] = 'fail'
         self.write('device-test.csv', self.device_rows)
-        report = validate_evidence(self.root)
+        report = validate_evidence(self.root, review_audits=self.review_audits)
         self.assertEqual(report['status'], 'blocked')
         self.assertTrue(any('blocks release' in error for error in report['errors']))
 
@@ -95,7 +102,7 @@ class Week4EvidenceTests(unittest.TestCase):
         self.write('model-evaluation.csv', self.model_rows[:1])
         self.uat_rows[0]['ease_rating_1_to_5'] = '6'
         self.write('uat.csv', self.uat_rows)
-        report = validate_evidence(self.root)
+        report = validate_evidence(self.root, review_audits=self.review_audits)
         self.assertTrue(any('both quality and disease' in error for error in report['errors']))
         self.assertTrue(any('ease_rating' in error for error in report['errors']))
 
@@ -105,9 +112,15 @@ class Week4EvidenceTests(unittest.TestCase):
         lines = predictions.read_text(encoding='utf-8').splitlines()
         predictions.write_text('\n'.join(lines[:-1]) + '\n', encoding='utf-8')
         self.write('model-evaluation.csv', self.model_rows)
-        report = validate_evidence(self.root)
+        report = validate_evidence(self.root, review_audits=self.review_audits)
         self.assertTrue(any('model_sha256 does not match' in error for error in report['errors']))
         self.assertTrue(any('predictions row count' in error for error in report['errors']))
+
+    def test_unbound_test_manifest_is_rejected(self):
+        self.model_rows[0]['test_manifest_sha256'] = '0' * 64
+        self.write('model-evaluation.csv', self.model_rows)
+        report = validate_evidence(self.root, review_audits=self.review_audits)
+        self.assertTrue(any('not bound to the finalized quality' in error for error in report['errors']))
 
 
 if __name__ == '__main__':

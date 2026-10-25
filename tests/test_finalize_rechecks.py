@@ -76,6 +76,9 @@ class FinalizeRechecksTests(unittest.TestCase):
         self.assertEqual(audit['status'], 'human-reviewed-and-validated')
         self.assertEqual(audit['validationErrors'], 0)
         self.assertTrue((self.root / 'final/frozen-training-manifest.json').is_file())
+        self.assertTrue((self.root / 'final/frozen-quality-manifest.json').is_file())
+        self.assertTrue((self.root / 'final/frozen-maturity-manifest.json').is_file())
+        self.assertRegex(audit['frozenQualityManifestSha256'], r'^[0-9a-f]{64}$')
 
 
 if __name__ == '__main__':

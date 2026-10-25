@@ -107,6 +107,12 @@ def finalize(base_path, assignment_path, export_paths, output_dir, root=ROOT):
         raise ValueError(f'Final manifest failed validation ({len(errors)} errors):\n' + '\n'.join(errors[:30]))
     training_path = output_dir / 'frozen-training-manifest.json'
     training_path.write_text(json.dumps(reconciled, indent=2, ensure_ascii=False) + '\n', encoding='utf-8')
+    task_paths = {}
+    for task in ('quality', 'maturity'):
+        task_path = output_dir / f'frozen-{task}-manifest.json'
+        task_path.write_text(json.dumps([row for row in reconciled if row.get('task') == task],
+                                        indent=2, ensure_ascii=False) + '\n', encoding='utf-8')
+        task_paths[task] = task_path
     audit = {
         'generatedAt': datetime.now(timezone.utc).isoformat(),
         'status': 'human-reviewed-and-validated',
@@ -119,6 +125,8 @@ def finalize(base_path, assignment_path, export_paths, output_dir, root=ROOT):
         'splitReconciliation': split_summary,
         'reviewedManifestSha256': sha256(reviewed_path),
         'frozenTrainingManifestSha256': sha256(training_path),
+        'frozenQualityManifestSha256': sha256(task_paths['quality']),
+        'frozenMaturityManifestSha256': sha256(task_paths['maturity']),
         'validationTargets': ['manuscript-quality', 'maturity'],
         'validationErrors': 0,
     }

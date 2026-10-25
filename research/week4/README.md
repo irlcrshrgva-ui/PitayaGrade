@@ -27,13 +27,14 @@ from the frozen held-out dataset, physical Android devices and actual participan
 Validate completed evidence before running the release gate:
 
 ```text
-python -m scripts.validate_week4_evidence --evidence-dir <completed-folder> --min-devices <approved-count> --min-participants <approved-count> --output <completed-folder/evidence-audit.json>
+python -m scripts.validate_week4_evidence --evidence-dir <completed-folder> --review-audit <recheck-finalization-audit.json> --review-audit <annotation-finalization-audit.json> --min-devices <approved-count> --min-participants <approved-count> --output <completed-folder/evidence-audit.json>
 ```
 
 The validator requires one row for every model in the five-model selector. It
 checks that model, test-manifest, confusion-matrix and prediction paths exist;
 recomputes model and manifest hashes; verifies one unique prediction per declared
-test sample; and checks required fields, time zones, numeric ranges, task
+test sample; binds each test manifest to the corresponding human-review
+finalization audit; and checks required fields, time zones, numeric ranges, task
 coverage, unresolved failures, and approved device/participant counts. The audit
 does not generate missing results.
 

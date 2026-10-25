@@ -190,11 +190,44 @@ def validate_uat(rows, errors, minimum_participants):
         errors.append(f'uat.csv: requires at least {minimum_participants} participants; found {len(participants)}')
 
 
-def validate_evidence(directory, minimum_devices=1, minimum_participants=1):
+def approved_manifest_hashes(review_audits, errors):
+    approved = {'quality': set(), 'disease': set()}
+    for audit_path in review_audits:
+        try:
+            audit = json.loads(Path(audit_path).read_text(encoding='utf-8'))
+        except (OSError, json.JSONDecodeError) as error:
+            errors.append(f'{audit_path}: invalid review finalization audit: {error}')
+            continue
+        if audit.get('validationErrors') != 0:
+            errors.append(f'{audit_path}: review finalization audit has validation errors')
+            continue
+        if audit.get('status') == 'human-reviewed-and-validated':
+            value = audit.get('frozenQualityManifestSha256')
+            if SHA256.fullmatch(str(value or '')):
+                approved['quality'].add(value.lower())
+        elif audit.get('status') == 'human-annotated-and-validated':
+            value = audit.get('manifestSha256')
+            if SHA256.fullmatch(str(value or '')):
+                approved['disease'].add(value.lower())
+        else:
+            errors.append(f'{audit_path}: unsupported review finalization status')
+    for task in ('quality', 'disease'):
+        if not approved[task]:
+            errors.append(f'missing valid {task} review finalization audit')
+    return approved
+
+
+def validate_evidence(directory, minimum_devices=1, minimum_participants=1, review_audits=()):
     directory = Path(directory)
     rows = {name: read_csv(directory / name, fields) for name, fields in FILES.items()}
     errors = []
+    approved = approved_manifest_hashes(review_audits, errors)
     validate_model(rows['model-evaluation.csv'], errors, directory)
+    for index, row in enumerate(rows['model-evaluation.csv'], 2):
+        task = row.get('task', '').strip()
+        manifest_hash = row.get('test_manifest_sha256', '').strip().lower()
+        if task in approved and manifest_hash not in approved[task]:
+            errors.append(f'model-evaluation.csv:{index}: test manifest is not bound to the finalized {task} review audit')
     validate_devices(rows['device-test.csv'], errors, minimum_devices)
     validate_uat(rows['uat.csv'], errors, minimum_participants)
     return {
@@ -208,6 +241,8 @@ def validate_evidence(directory, minimum_devices=1, minimum_participants=1):
             'sha256': row['model_sha256'].lower(),
             'path': str(evidence_path(directory, row['model_path']).resolve()),
         } for row in rows['model-evaluation.csv']},
+        'reviewAudits': [{'path': str(path), 'sha256': file_hash(path)} for path in review_audits
+                         if Path(path).is_file()],
         'deviceCount': len({(row['device_model'], row['android_version']) for row in rows['device-test.csv']}),
         'participantCount': len({row['participant_id'] for row in rows['uat.csv']}),
         'errors': errors,
@@ -219,6 +254,8 @@ def main():
     parser.add_argument('--evidence-dir', required=True, type=Path)
     parser.add_argument('--min-devices', type=int, default=1)
     parser.add_argument('--min-participants', type=int, default=1)
+    parser.add_argument('--review-audit', action='append', default=[], type=Path,
+                        help='Repeat for quality and disease finalization audit JSON files')
     parser.add_argument('--output', required=True, type=Path)
     args = parser.parse_args()
     if args.min_devices < 1 or args.min_participants < 1:
@@ -226,7 +263,8 @@ def main():
     if args.output.exists():
         parser.error('Output audit already exists; choose a new path')
     try:
-        report = validate_evidence(args.evidence_dir, args.min_devices, args.min_participants)
+        report = validate_evidence(args.evidence_dir, args.min_devices, args.min_participants,
+                                   args.review_audit)
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(json.dumps(report, indent=2) + '\n', encoding='utf-8')
     except (OSError, ValueError, KeyError, csv.Error) as error:
