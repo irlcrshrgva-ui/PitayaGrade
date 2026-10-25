@@ -11,7 +11,7 @@ from pathlib import Path
 
 FILES = {
     'model-evaluation.csv': {'evaluation_id', 'evaluated_at', 'task', 'model_name', 'model_version',
-        'model_id', 'model_path', 'model_sha256', 'test_manifest', 'test_manifest_sha256', 'test_sample_count', 'classes',
+        'model_id', 'model_path', 'model_sha256', 'runtime_verification_path', 'test_manifest', 'test_manifest_sha256', 'test_sample_count', 'classes',
         'input_size', 'device', 'runtime', 'failed_samples', 'confusion_matrix_path',
         'predictions_path', 'reviewer'},
     'device-test.csv': {'test_run_id', 'tested_at', 'device_model', 'android_version', 'app_version',
@@ -91,7 +91,8 @@ def validate_model(rows, errors, directory):
         if model_id in models:
             errors.append(f'{context}: duplicate model_id')
         models.add(model_id)
-        for field in ('model_name', 'model_version', 'model_path', 'test_manifest', 'classes', 'device', 'runtime',
+        for field in ('model_name', 'model_version', 'model_path', 'runtime_verification_path',
+                      'test_manifest', 'classes', 'device', 'runtime',
                       'confusion_matrix_path', 'predictions_path', 'reviewer'):
             if not row[field].strip():
                 errors.append(f'{context}: {field} is required')
@@ -113,8 +114,10 @@ def validate_model(rows, errors, directory):
         manifest_path = evidence_path(directory, row['test_manifest'])
         confusion_path = evidence_path(directory, row['confusion_matrix_path'])
         predictions_path = evidence_path(directory, row['predictions_path'])
+        runtime_path = evidence_path(directory, row['runtime_verification_path'])
         for label, path in (('model_path', model_path), ('test_manifest', manifest_path),
-                            ('confusion_matrix_path', confusion_path), ('predictions_path', predictions_path)):
+                            ('confusion_matrix_path', confusion_path), ('predictions_path', predictions_path),
+                            ('runtime_verification_path', runtime_path)):
             if not path.is_file():
                 errors.append(f'{context}: {label} does not exist: {path}')
         if model_path.is_file() and file_hash(model_path).lower() != row['model_sha256'].strip().lower():
@@ -134,6 +137,14 @@ def validate_model(rows, errors, directory):
                     errors.append(f'{context}: predictions need unique non-empty sample IDs')
             except (OSError, ValueError, csv.Error) as error:
                 errors.append(f'{context}: invalid predictions evidence: {error}')
+        if runtime_path.is_file():
+            try:
+                runtime_report = json.loads(runtime_path.read_text(encoding='utf-8'))
+                if runtime_report.get('modelId') != model_id or runtime_report.get('sha256') != row['model_sha256'].lower() or \
+                        runtime_report.get('runtimeCompatible') is not True:
+                    errors.append(f'{context}: runtime verification does not match the evaluated model')
+            except (OSError, json.JSONDecodeError) as error:
+                errors.append(f'{context}: invalid runtime verification: {error}')
     if not {'quality', 'disease'} <= tasks:
         errors.append('model-evaluation.csv: both quality and disease evaluations are required')
     missing_models = sorted(set(EXPECTED_MODELS) - models)
@@ -241,6 +252,11 @@ def validate_evidence(directory, minimum_devices=1, minimum_participants=1, revi
             'sha256': row['model_sha256'].lower(),
             'path': str(evidence_path(directory, row['model_path']).resolve()),
         } for row in rows['model-evaluation.csv']},
+        'runtimeVerifications': {row['model_id']: {
+            'sha256': file_hash(evidence_path(directory, row['runtime_verification_path'])),
+            'path': str(evidence_path(directory, row['runtime_verification_path']).resolve()),
+        } for row in rows['model-evaluation.csv']
+            if evidence_path(directory, row['runtime_verification_path']).is_file()},
         'reviewAudits': [{'path': str(path), 'sha256': file_hash(path)} for path in review_audits
                          if Path(path).is_file()],
         'deviceCount': len({(row['device_model'], row['android_version']) for row in rows['device-test.csv']}),

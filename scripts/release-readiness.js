@@ -26,10 +26,20 @@ function validEvidenceAudit(directory, registry = [], reviewAudits = []) {
     });
     const assetsValid = !registry.length || registry.every(model =>
       model.available && audit.modelAssets?.[model.id]?.sha256 === model.sha256);
+    const runtimeValid = !registry.length || registry.every(model => {
+      const record = audit.runtimeVerifications?.[model.id];
+      if (!record?.path || !record?.sha256 || !fs.existsSync(record.path) || fileHash(record.path) !== record.sha256) return false;
+      try {
+        const report = JSON.parse(fs.readFileSync(record.path, 'utf8'));
+        return report.modelId === model.id && report.sha256 === model.sha256 && report.runtimeCompatible === true;
+      } catch {
+        return false;
+      }
+    });
     const approvedReviewAudits = new Set((audit.reviewAudits || []).map(item => item.sha256));
     const reviewsValid = !reviewAudits.length || reviewAudits.every(file =>
       fs.existsSync(file) && approvedReviewAudits.has(fileHash(file)));
-    return filesValid && assetsValid && reviewsValid;
+    return filesValid && assetsValid && runtimeValid && reviewsValid;
   } catch {
     return false;
   }

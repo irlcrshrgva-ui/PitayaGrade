@@ -34,6 +34,10 @@ class Week4EvidenceTests(unittest.TestCase):
         for index, (model_id, task, name, input_size) in enumerate(model_specs):
             model_path = self.root / f'{model_id}.onnx'
             model_path.write_bytes(f'model-{model_id}'.encode())
+            model_sha = hashlib.sha256(model_path.read_bytes()).hexdigest()
+            runtime_path = self.root / f'{model_id}-runtime.json'
+            runtime_path.write_text(json.dumps({'modelId':model_id, 'sha256':model_sha,
+                                                'runtimeCompatible':True}), encoding='utf-8')
             predictions = self.root / f'{model_id}-predictions.csv'
             with predictions.open('w', newline='', encoding='utf-8') as handle:
                 writer = csv.DictWriter(handle, fieldnames=['model_id', 'sample_id', 'predicted_label',
@@ -50,7 +54,7 @@ class Week4EvidenceTests(unittest.TestCase):
             self.model_rows.append(dict(
                 evaluation_id=f'e{index}', evaluated_at='2026-10-25T10:00:00+08:00', task=task,
                 model_id=model_id, model_name=name, model_version='1', model_path=model_path.name,
-                model_sha256=hashlib.sha256(model_path.read_bytes()).hexdigest(),
+                model_sha256=model_sha, runtime_verification_path=runtime_path.name,
                 test_manifest=manifest.name,
                 test_manifest_sha256=hashlib.sha256(manifest.read_bytes()).hexdigest(),
                 test_sample_count='10', classes='Grade A|Grade B|Grade C|Reject' if quality else 'Sunburn',
@@ -121,6 +125,14 @@ class Week4EvidenceTests(unittest.TestCase):
         self.write('model-evaluation.csv', self.model_rows)
         report = validate_evidence(self.root, review_audits=self.review_audits)
         self.assertTrue(any('not bound to the finalized quality' in error for error in report['errors']))
+
+    def test_runtime_verification_must_match_the_exact_model(self):
+        runtime = self.root / self.model_rows[0]['runtime_verification_path']
+        runtime.write_text(json.dumps({'modelId':'different', 'sha256':self.model_rows[0]['model_sha256'],
+                                       'runtimeCompatible':True}), encoding='utf-8')
+        self.write('model-evaluation.csv', self.model_rows)
+        report = validate_evidence(self.root, review_audits=self.review_audits)
+        self.assertTrue(any('runtime verification does not match' in error for error in report['errors']))
 
 
 if __name__ == '__main__':

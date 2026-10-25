@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pitayagrade-web-2026-10-24-6';
+const CACHE_NAME = 'pitayagrade-web-2026-10-25-7';
 const BASE_URL = new URL('./', self.location.href);
 const localUrl = path => new URL(path, BASE_URL).href;
 
@@ -25,10 +25,9 @@ const APP_SHELL = [
   'js/app.js'
 ].map(localUrl);
 
-const LARGE_RUNTIME_PATHS = [
-  '/model/best.onnx',
-  '/ort-wasm-simd-threaded.wasm'
-];
+const isLargeRuntime = pathname =>
+  pathname.endsWith('/ort-wasm-simd-threaded.wasm') ||
+  (pathname.includes('/model/') && pathname.endsWith('.onnx'));
 
 self.addEventListener('install', event => {
   event.waitUntil(
@@ -91,7 +90,7 @@ self.addEventListener('fetch', event => {
     event.respondWith(networkFirst(request));
     return;
   }
-  if (LARGE_RUNTIME_PATHS.some(path => url.pathname.endsWith(path))) {
+  if (isLargeRuntime(url.pathname)) {
     event.respondWith(cacheFirst(request));
     return;
   }

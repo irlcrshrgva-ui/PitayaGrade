@@ -20,7 +20,8 @@ test('service worker parses and versions local shell and inference caches', () =
   const source = fs.readFileSync(path.join(root, 'service-worker.js'), 'utf8');
   new vm.Script(source, { filename: 'service-worker.js' });
   assert.match(source, /pitayagrade-web-\d{4}-\d{2}-\d{2}-\d+/);
-  assert.match(source, /model\/best\.onnx/);
+  assert.match(source, /pathname\.includes\('\/model\/'\)/);
+  assert.match(source, /pathname\.endsWith\('\.onnx'\)/);
   assert.match(source, /ort-wasm-simd-threaded\.wasm/);
   assert.match(source, /request\.mode === 'navigate'/);
 });

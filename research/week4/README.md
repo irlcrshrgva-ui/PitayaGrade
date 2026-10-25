@@ -34,9 +34,22 @@ The validator requires one row for every model in the five-model selector. It
 checks that model, test-manifest, confusion-matrix and prediction paths exist;
 recomputes model and manifest hashes; verifies one unique prediction per declared
 test sample; binds each test manifest to the corresponding human-review
-finalization audit; and checks required fields, time zones, numeric ranges, task
+finalization audit; verifies the saved WebAssembly runtime-contract report for
+each exact model hash; and checks required fields, time zones, numeric ranges, task
 coverage, unresolved failures, and approved device/participant counts. The audit
 does not generate missing results.
+
+After the evidence audit passes, promote exactly those audited model hashes in
+one fail-closed step:
+
+```text
+node scripts/promote-evaluated-models.js --evidence-audit <completed-folder/evidence-audit.json> --output-audit <private-folder/model-promotion-audit.json>
+```
+
+The command rehashes every ONNX file and saved WebAssembly verification report,
+copies only exact matches into the web package, enables all five registry entries,
+verifies the resulting registry, and retains a promotion audit. It refuses to
+replace a different existing asset.
 
 Quality-model prediction exports should follow `predictions-template.csv`. Use
 `python -m scripts.summarize_model_evaluation --help` for the fail-closed comparison
