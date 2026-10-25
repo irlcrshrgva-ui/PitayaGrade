@@ -75,8 +75,14 @@ test('release evidence audit is bound to the exact CSV files', t => {
     fs.writeFileSync(path.join(directory, name), content);
     files[name] = { rows:1, sha256:crypto.createHash('sha256').update(content).digest('hex') };
   }
-  fs.writeFileSync(path.join(directory, 'evidence-audit.json'), JSON.stringify({status:'pass', errors:[], files}));
+  const auditPath = path.join(directory, 'evidence-audit.json');
+  fs.writeFileSync(auditPath, JSON.stringify({status:'pass', errors:[], files}));
   assert.equal(validEvidenceAudit(directory), true);
+  const registry = [{id:'model-1', available:true, sha256:'a'.repeat(64)}];
+  assert.equal(validEvidenceAudit(directory, registry), false);
+  fs.writeFileSync(auditPath, JSON.stringify({status:'pass', errors:[], files,
+    modelAssets:{'model-1':{sha256:'a'.repeat(64), path:'private/model.onnx'}}}));
+  assert.equal(validEvidenceAudit(directory, registry), true);
   fs.appendFileSync(path.join(directory, 'uat.csv'), 'changed\n');
   assert.equal(validEvidenceAudit(directory), false);
 });

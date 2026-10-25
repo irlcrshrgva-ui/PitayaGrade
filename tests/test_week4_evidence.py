@@ -1,4 +1,6 @@
 import csv
+import hashlib
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -12,23 +14,46 @@ class Week4EvidenceTests(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
         sha = 'a' * 64
-        self.model_rows = [
-            dict(evaluation_id='q1', evaluated_at='2026-10-25T10:00:00+08:00', task='quality',
-                 model_name='MobileNetV2', model_version='1', model_sha256=sha,
-                 test_manifest='quality.json', test_manifest_sha256=sha, test_sample_count='10',
-                 classes='Grade A|Grade B|Grade C|Reject', input_size='224', confidence_threshold='0.5',
-                 device='phone', runtime='onnx', accuracy='.8', macro_precision='.7', macro_recall='.7',
-                 macro_f1='.7', map50='', map50_95='', mask_map50='', mean_latency_ms='10',
-                 p95_latency_ms='15', failed_samples='0', confusion_matrix_path='q.csv',
-                 predictions_path='p.csv', notes='', reviewer='reviewer-01'),
-            dict(evaluation_id='d1', evaluated_at='2026-10-25T10:00:00+08:00', task='disease',
-                 model_name='YOLOv8n-seg', model_version='1', model_sha256=sha,
-                 test_manifest='disease.json', test_manifest_sha256=sha, test_sample_count='10',
-                 classes='Sunburn', input_size='128', confidence_threshold='0.5', device='phone',
-                 runtime='onnx', accuracy='', macro_precision='', macro_recall='', macro_f1='',
-                 map50='.7', map50_95='.6', mask_map50='.5', mean_latency_ms='12', p95_latency_ms='18',
-                 failed_samples='0', confusion_matrix_path='d.csv', predictions_path='dp.csv',
-                 notes='', reviewer='reviewer-02')]
+        for task in ('quality', 'disease'):
+            (self.root / f'{task}.json').write_text(json.dumps([{'id':f'{task}-{i}'} for i in range(10)]))
+        model_specs = [
+            ('yolov8-nano', 'quality', 'YOLOv8-Nano', '640'),
+            ('mobilenetv2-quality', 'quality', 'MobileNetV2', '224'),
+            ('resnet50-quality', 'quality', 'ResNet50', '224'),
+            ('efficientnet-b3-quality', 'quality', 'EfficientNet-B3', '224'),
+            ('yolov8n-disease-seg', 'disease', 'YOLOv8n-seg', '128'),
+        ]
+        self.model_rows = []
+        for index, (model_id, task, name, input_size) in enumerate(model_specs):
+            model_path = self.root / f'{model_id}.onnx'
+            model_path.write_bytes(f'model-{model_id}'.encode())
+            predictions = self.root / f'{model_id}-predictions.csv'
+            with predictions.open('w', newline='', encoding='utf-8') as handle:
+                writer = csv.DictWriter(handle, fieldnames=['model_id', 'sample_id', 'predicted_label',
+                                                             'confidence', 'inference_ms'])
+                writer.writeheader()
+                for sample in range(10):
+                    writer.writerow({'model_id':model_id, 'sample_id':f'{task}-{sample}',
+                                     'predicted_label':'Grade A' if task == 'quality' else 'Sunburn',
+                                     'confidence':'.8', 'inference_ms':'10'})
+            confusion = self.root / f'{model_id}-confusion.csv'
+            confusion.write_text('actual,predicted,count\nA,A,10\n', encoding='utf-8')
+            manifest = self.root / f'{task}.json'
+            quality = task == 'quality'
+            self.model_rows.append(dict(
+                evaluation_id=f'e{index}', evaluated_at='2026-10-25T10:00:00+08:00', task=task,
+                model_id=model_id, model_name=name, model_version='1', model_path=model_path.name,
+                model_sha256=hashlib.sha256(model_path.read_bytes()).hexdigest(),
+                test_manifest=manifest.name,
+                test_manifest_sha256=hashlib.sha256(manifest.read_bytes()).hexdigest(),
+                test_sample_count='10', classes='Grade A|Grade B|Grade C|Reject' if quality else 'Sunburn',
+                input_size=input_size, confidence_threshold='0.5', device='phone', runtime='onnx',
+                accuracy='.8' if quality else '', macro_precision='.7' if quality else '',
+                macro_recall='.7' if quality else '', macro_f1='.7' if quality else '',
+                map50='' if quality else '.7', map50_95='' if quality else '.6',
+                mask_map50='' if quality else '.5', mean_latency_ms='10', p95_latency_ms='15',
+                failed_samples='0', confusion_matrix_path=confusion.name,
+                predictions_path=predictions.name, notes='', reviewer='reviewer-01'))
         self.device_rows = [dict(test_run_id='run-1', tested_at='2026-10-25T11:00:00+08:00',
             device_model='Phone A', android_version='15', app_version='1', apk_sha256=sha,
             network_state='offline', test_case='photo scan', precondition='installed', steps='scan',
@@ -57,6 +82,7 @@ class Week4EvidenceTests(unittest.TestCase):
         self.assertFalse(report['errors'])
         self.assertEqual(report['deviceCount'], 1)
         self.assertEqual(report['participantCount'], 1)
+        self.assertEqual(set(report['modelAssets']), {row['model_id'] for row in self.model_rows})
 
     def test_unresolved_device_failure_blocks_release(self):
         self.device_rows[0]['status'] = 'fail'
@@ -72,6 +98,16 @@ class Week4EvidenceTests(unittest.TestCase):
         report = validate_evidence(self.root)
         self.assertTrue(any('both quality and disease' in error for error in report['errors']))
         self.assertTrue(any('ease_rating' in error for error in report['errors']))
+
+    def test_mismatched_model_hash_and_incomplete_predictions_are_rejected(self):
+        self.model_rows[0]['model_sha256'] = '0' * 64
+        predictions = self.root / self.model_rows[1]['predictions_path']
+        lines = predictions.read_text(encoding='utf-8').splitlines()
+        predictions.write_text('\n'.join(lines[:-1]) + '\n', encoding='utf-8')
+        self.write('model-evaluation.csv', self.model_rows)
+        report = validate_evidence(self.root)
+        self.assertTrue(any('model_sha256 does not match' in error for error in report['errors']))
+        self.assertTrue(any('predictions row count' in error for error in report['errors']))
 
 
 if __name__ == '__main__':

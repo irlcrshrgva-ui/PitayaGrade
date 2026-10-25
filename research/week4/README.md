@@ -6,7 +6,7 @@ from the frozen held-out dataset, physical Android devices and actual participan
 
 ## Required order
 
-1. Freeze the model files and record each file's SHA-256 hash.
+1. Freeze the model files and record each file path and SHA-256 hash.
 2. Freeze the reviewed test manifest. Do not tune models or thresholds on it.
 3. Complete `model-evaluation-template.csv` for every selectable model and task.
 4. Complete `device-test-template.csv` on at least one physical Android device.
@@ -30,9 +30,12 @@ Validate completed evidence before running the release gate:
 python -m scripts.validate_week4_evidence --evidence-dir <completed-folder> --min-devices <approved-count> --min-participants <approved-count> --output <completed-folder/evidence-audit.json>
 ```
 
-The validator checks required fields, time zones, hashes, numeric ranges,
-quality and disease coverage, unresolved device failures, and the approved
-minimum device/participant counts. The audit does not generate missing results.
+The validator requires one row for every model in the five-model selector. It
+checks that model, test-manifest, confusion-matrix and prediction paths exist;
+recomputes model and manifest hashes; verifies one unique prediction per declared
+test sample; and checks required fields, time zones, numeric ranges, task
+coverage, unresolved failures, and approved device/participant counts. The audit
+does not generate missing results.
 
 Quality-model prediction exports should follow `predictions-template.csv`. Use
 `python -m scripts.summarize_model_evaluation --help` for the fail-closed comparison
