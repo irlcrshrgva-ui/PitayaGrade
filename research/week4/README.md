@@ -51,6 +51,20 @@ copies only exact matches into the web package, enables all five registry entrie
 verifies the resulting registry, and retains a promotion audit. It refuses to
 replace a different existing asset.
 
+## Signed Android release
+
+Keep the team keystore and passwords outside Git. In a PowerShell session, set
+`PITAYAGRADE_STORE_PASSWORD` and `PITAYAGRADE_KEY_PASSWORD`, then run:
+
+```powershell
+./scripts/build-android-release.ps1 -KeystorePath <private-keystore.jks> -KeyAlias <alias> -OutputAudit <private-folder/release-audit.json> -JavaHome <java-21-folder>
+```
+
+The script refuses a dirty Git tree, runs the app tests, builds and lints the
+release, verifies the APK signature with Android `apksigner`, and records the APK,
+certificate and source-commit hashes without writing passwords to the repository.
+Supply the audit to the final gate with `--release-audit <release-audit.json>`.
+
 Quality-model prediction exports should follow `predictions-template.csv`. Use
 `python -m scripts.summarize_model_evaluation --help` for the fail-closed comparison
 tool; its generated JSON, summary, confusion matrices and mistake lists provide the

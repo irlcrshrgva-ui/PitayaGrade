@@ -2,6 +2,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
+const childProcess = require('node:child_process');
 const vm = require('node:vm');
 
 function fileHash(file) {
@@ -72,6 +73,23 @@ function validReviewAudits(files, auditFiles) {
   return files.every(file => fs.existsSync(file) && approved.has(fileHash(file)));
 }
 
+function validReleaseAudit(file, root) {
+  if (!file || !fs.existsSync(file)) return false;
+  try {
+    const audit = JSON.parse(fs.readFileSync(file, 'utf8'));
+    const commit = childProcess.execFileSync('git', ['rev-parse', 'HEAD'], { cwd:root, encoding:'utf8' }).trim();
+    return audit.status === 'signed-release-verified' && audit.signatureVerified === true &&
+      audit.sourceCommit === commit && /^[a-f0-9]{64}$/.test(audit.apkSha256 || '') &&
+      /^[a-f0-9]{64}$/.test(audit.certificateSha256 || '') &&
+      typeof audit.versionName === 'string' && audit.versionName.length > 0 &&
+      Number.isInteger(audit.versionCode) && audit.versionCode > 0 &&
+      path.isAbsolute(audit.apkPath || '') && fs.existsSync(audit.apkPath) &&
+      fileHash(audit.apkPath) === audit.apkSha256;
+  } catch {
+    return false;
+  }
+}
+
 function validReviewedRow(row) {
   const reviewer = String(row.reviewer || '');
   const reviewedAt = String(row.reviewedAt || '');
@@ -127,6 +145,7 @@ function buildReport(root = path.resolve(__dirname, '..'), options = {}) {
   const gradle = fs.readFileSync(path.join(root, 'android/app/build.gradle'), 'utf8');
   const hasReleaseSigning = /signingConfigs\s*\{[\s\S]*?release\s*\{/m.test(gradle) &&
     /buildTypes\s*\{[\s\S]*?release\s*\{[\s\S]*?signingConfig/m.test(gradle);
+  const releaseAuditValid = validReleaseAudit(options.releaseAudit, root);
   const debugApk = path.join(root, 'android/app/build/outputs/apk/debug/app-debug.apk');
 
   const checks = [
@@ -157,9 +176,9 @@ function buildReport(root = path.resolve(__dirname, '..'), options = {}) {
       required: 'A reproducible Android build exists for device testing.'
     },
     {
-      id: 'android-release-signing', passed: hasReleaseSigning,
-      observed: hasReleaseSigning ? 'Release signing configuration detected' : 'No release signing configuration detected',
-      required: 'A team-controlled release key is configured outside version control.'
+      id: 'android-release-signing', passed: hasReleaseSigning && releaseAuditValid,
+      observed: `${hasReleaseSigning ? 'Environment-based signing configured' : 'No release signing configuration'}; signed-build audit:${releaseAuditValid ? 'valid' : 'missing/invalid'}`,
+      required: 'A team-controlled key signs the exact current-commit APK and the verified build audit matches its checksum.'
     }
   ];
   return { generatedAt: new Date().toISOString(), ready: checks.every(check => check.passed), checks };
@@ -178,20 +197,23 @@ if (require.main === module) {
   const reviewManifests = [];
   const reviewAudits = [];
   let evidenceDir;
+  let releaseAudit;
   for (let index = 0; index < args.length; index += 1) {
     if (args[index] === '--review-manifest') reviewManifests.push(path.resolve(args[++index] || ''));
     else if (args[index] === '--review-audit') reviewAudits.push(path.resolve(args[++index] || ''));
     else if (args[index] === '--evidence-dir') evidenceDir = path.resolve(args[++index] || '');
+    else if (args[index] === '--release-audit') releaseAudit = path.resolve(args[++index] || '');
     else if (args[index] !== '--json') throw new Error(`Unknown argument: ${args[index]}`);
   }
   const report = buildReport(path.resolve(__dirname, '..'), {
     ...(reviewManifests.length ? { reviewManifests } : {}),
     ...(reviewAudits.length ? { reviewAudits } : {}),
-    ...(evidenceDir ? { evidenceDir } : {})
+    ...(evidenceDir ? { evidenceDir } : {}),
+    ...(releaseAudit ? { releaseAudit } : {})
   });
   if (args.includes('--json')) console.log(JSON.stringify(report, null, 2));
   else printReport(report);
   process.exitCode = report.ready ? 0 : 2;
 }
 
-module.exports = { buildReport, reviewedEvidence, validEvidenceAudit, validReviewAudits };
+module.exports = { buildReport, reviewedEvidence, validEvidenceAudit, validReviewAudits, validReleaseAudit };

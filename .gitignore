@@ -9,6 +9,8 @@ android/app/build/
 android/build/
 *.apk
 *.aab
+*.jks
+*.keystore
 
 # Flutter generated files
 pitaya_grade/.dart_tool/

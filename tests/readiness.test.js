@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const os = require('node:os');
 const crypto = require('node:crypto');
-const { buildReport, reviewedEvidence, validEvidenceAudit } = require('../scripts/release-readiness');
+const { buildReport, reviewedEvidence, validEvidenceAudit, validReleaseAudit } = require('../scripts/release-readiness');
 
 test('release gate reports evidence blockers without treating templates as results', () => {
   const report = buildReport(path.resolve(__dirname, '..'));
@@ -98,4 +98,33 @@ test('release evidence audit is bound to the exact CSV files', t => {
   assert.equal(validEvidenceAudit(directory, registry, [reviewAudit]), true);
   fs.appendFileSync(path.join(directory, 'uat.csv'), 'changed\n');
   assert.equal(validEvidenceAudit(directory), false);
+});
+
+test('signed release audit is bound to the APK and current source commit', t => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'pitayagrade-release-audit-'));
+  t.after(() => fs.rmSync(directory, { recursive:true, force:true }));
+  const apk = path.join(directory, 'app-release.apk');
+  fs.writeFileSync(apk, 'signed-fixture');
+  const commit = require('node:child_process').execFileSync('git', ['rev-parse', 'HEAD'],
+    {cwd:path.resolve(__dirname, '..'), encoding:'utf8'}).trim();
+  const audit = path.join(directory, 'release-audit.json');
+  const value = {status:'signed-release-verified', signatureVerified:true, sourceCommit:commit,
+    apkPath:apk, apkSha256:crypto.createHash('sha256').update(fs.readFileSync(apk)).digest('hex'),
+    certificateSha256:'a'.repeat(64), versionName:'1.0', versionCode:1};
+  fs.writeFileSync(audit, JSON.stringify(value));
+  assert.equal(validReleaseAudit(audit, path.resolve(__dirname, '..')), true);
+  fs.appendFileSync(apk, 'changed');
+  assert.equal(validReleaseAudit(audit, path.resolve(__dirname, '..')), false);
+});
+
+test('release signing reads secrets from the environment and verifies the APK', () => {
+  const gradle = fs.readFileSync(path.resolve(__dirname, '../android/app/build.gradle'), 'utf8');
+  const script = fs.readFileSync(path.resolve(__dirname, '../scripts/build-android-release.ps1'), 'utf8');
+  for (const name of ['PITAYAGRADE_KEYSTORE_PATH', 'PITAYAGRADE_KEY_ALIAS',
+    'PITAYAGRADE_STORE_PASSWORD', 'PITAYAGRADE_KEY_PASSWORD']) {
+    assert.match(gradle, new RegExp(`System\\.getenv\\('${name}'\\)`));
+  }
+  assert.match(script, /apksigner verify --verbose --print-certs/);
+  assert.match(script, /git status --porcelain/);
+  assert.doesNotMatch(gradle, /storePassword\s+["'][^"']+["']/);
 });
