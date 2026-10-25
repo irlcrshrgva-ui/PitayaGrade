@@ -2,7 +2,8 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const { buildReport } = require('../scripts/release-readiness');
+const os = require('node:os');
+const { buildReport, reviewedEvidence } = require('../scripts/release-readiness');
 
 test('release gate reports evidence blockers without treating templates as results', () => {
   const report = buildReport(path.resolve(__dirname, '..'));
@@ -17,4 +18,22 @@ test('release gate reports evidence blockers without treating templates as resul
   assert.equal(checks['evaluation-evidence'].passed, false);
   assert.equal(checks['android-release-signing'].passed, false);
   assert.equal(report.ready, false);
+});
+
+test('release review gate rejects assisted rows and accepts complete human task evidence', t => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'pitayagrade-readiness-'));
+  t.after(() => fs.rmSync(directory, { recursive:true, force:true }));
+  const quality = path.join(directory, 'quality.json');
+  const disease = path.join(directory, 'disease.json');
+  fs.writeFileSync(quality, JSON.stringify([{task:'quality', reviewedLabel:'Grade A',
+    reviewer:'reviewer-01', reviewedAt:'2026-10-25T10:00:00Z'}]));
+  fs.writeFileSync(disease, JSON.stringify([{task:'disease', reviewedLabel:'Sunburn',
+    reviewer:'reviewer-02', reviewedAt:'2026-10-25T10:00:00Z', annotationsComplete:true}]));
+  assert.equal(reviewedEvidence([quality, disease]).passed, true);
+  fs.writeFileSync(quality, JSON.stringify([{task:'quality', reviewedLabel:'Grade A',
+    reviewer:'AI-assisted-reviewer-01', reviewedAt:'2026-10-25T10:00:00Z'}]));
+  const result = reviewedEvidence([quality, disease]);
+  assert.equal(result.passed, false);
+  assert.equal(result.genuine, 1);
+  assert.equal(result.total, 2);
 });

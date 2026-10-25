@@ -180,3 +180,17 @@ folder, and chooses **All AI-assisted labels**. Saving a checked record replaces
 its AI-assisted attribution with the human recheck reviewer. Both task queues
 must reach zero before the member exports their reviewed manifest.
 
+After collecting all recheck exports, the coordinator freezes the human-reviewed
+manifest in one fail-closed step:
+
+```powershell
+python scripts/finalize_rechecks.py <recheck-01.json> <recheck-02.json> <recheck-03.json> `
+  --base <validated-provisional-manifest.json> `
+  --assignments <recheck-package-folder/assignment-index.json> `
+  --output-dir <new-private-final-folder>
+```
+
+The command refuses missing assignments, AI-assisted attribution, changed image
+identity, invalid labels/timestamps, conflicts, and split leakage. It produces a
+frozen training manifest plus a checksum-bearing finalization audit.
+

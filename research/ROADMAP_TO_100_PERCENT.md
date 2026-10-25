@@ -198,5 +198,10 @@ npm run progress
 npm run readiness
 ```
 
+If the final reviewed manifests and Week 4 evidence remain in approved private
+storage rather than the public repository, run the gate directly with repeated
+`--review-manifest <path>` arguments and `--evidence-dir <private-folder>`. The
+gate rejects `AI-assisted-*` attribution and incomplete disease annotations.
+
 Completion requires `100/100`, `release readiness: PASS`, a clean Git working
 tree, a tagged final commit, the signed-build checksum, and adviser approval.

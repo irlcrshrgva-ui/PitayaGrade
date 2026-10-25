@@ -20,7 +20,25 @@ function loadRegistry(root) {
   return Array.from(context.registry, model => ({ ...model, classes: Array.from(model.classes) }));
 }
 
-function buildReport(root = path.resolve(__dirname, '..')) {
+function reviewedEvidence(files) {
+  const rows = files.flatMap(file => fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : []);
+  const genuine = rows.filter(row => row.reviewedLabel && row.reviewer && row.reviewedAt &&
+    !String(row.reviewer).startsWith('AI-assisted-') &&
+    (!('annotationsComplete' in row) || row.annotationsComplete === true));
+  const reviewedByTask = genuine.reduce((counts, row) => {
+    counts[row.task] = (counts[row.task] || 0) + 1;
+    return counts;
+  }, {});
+  return {
+    total: rows.length,
+    genuine: genuine.length,
+    reviewedByTask,
+    passed: rows.length > 0 && genuine.length === rows.length &&
+      ['quality', 'disease'].every(task => reviewedByTask[task] > 0)
+  };
+}
+
+function buildReport(root = path.resolve(__dirname, '..'), options = {}) {
   const registry = loadRegistry(root);
   const intended = ['yolov8-nano', 'mobilenetv2-quality', 'resnet50-quality', 'efficientnet-b3-quality', 'yolov8n-disease-seg'];
   const available = registry.filter(model => model.available);
@@ -31,16 +49,12 @@ function buildReport(root = path.resolve(__dirname, '..')) {
     return fs.existsSync(file) && fileHash(file) === model.sha256;
   });
 
-  const reviewFile = path.join(root, 'research/public-review-manifest.json');
-  const reviews = fs.existsSync(reviewFile) ? JSON.parse(fs.readFileSync(reviewFile, 'utf8')) : [];
-  const reviewed = reviews.filter(row => row.reviewedLabel && row.reviewer && row.reviewedAt);
-  const reviewedByTask = reviewed.reduce((counts, row) => {
-    counts[row.task] = (counts[row.task] || 0) + 1;
-    return counts;
-  }, {});
+  const reviewFiles = options.reviewManifests || [path.join(root, 'research/public-review-manifest.json')];
+  const review = reviewedEvidence(reviewFiles);
 
   const evidenceFiles = ['model-evaluation.csv', 'predictions.csv', 'device-test.csv', 'uat.csv'];
-  const evidence = evidenceFiles.map(name => ({ name, complete: csvHasData(path.join(root, 'research/week4', name)) }));
+  const evidenceDir = options.evidenceDir || path.join(root, 'research/week4');
+  const evidence = evidenceFiles.map(name => ({ name, complete: csvHasData(path.join(evidenceDir, name)) }));
   const gradle = fs.readFileSync(path.join(root, 'android/app/build.gradle'), 'utf8');
   const hasReleaseSigning = /signingConfigs\s*\{[\s\S]*?release\s*\{/m.test(gradle) &&
     /buildTypes\s*\{[\s\S]*?release\s*\{[\s\S]*?signingConfig/m.test(gradle);
@@ -58,8 +72,8 @@ function buildReport(root = path.resolve(__dirname, '..')) {
       required: 'Every selectable quality and disease model has an evaluated, checksum-verified runtime asset.'
     },
     {
-      id: 'reviewed-labels', passed: reviewed.length > 0 && ['quality', 'disease'].every(task => reviewedByTask[task] > 0),
-      observed: `${reviewed.length}/${reviews.length} rows have reviewer, time, and target label (${JSON.stringify(reviewedByTask)})`,
+      id: 'reviewed-labels', passed: review.passed,
+      observed: `${review.genuine}/${review.total} rows have genuine reviewer, time, target label, and complete annotations where required (${JSON.stringify(review.reviewedByTask)})`,
       required: 'Genuine reviewed target labels exist for every research task.'
     },
     {
@@ -90,10 +104,21 @@ function printReport(report) {
 }
 
 if (require.main === module) {
-  const report = buildReport();
-  if (process.argv.includes('--json')) console.log(JSON.stringify(report, null, 2));
+  const args = process.argv.slice(2);
+  const reviewManifests = [];
+  let evidenceDir;
+  for (let index = 0; index < args.length; index += 1) {
+    if (args[index] === '--review-manifest') reviewManifests.push(path.resolve(args[++index] || ''));
+    else if (args[index] === '--evidence-dir') evidenceDir = path.resolve(args[++index] || '');
+    else if (args[index] !== '--json') throw new Error(`Unknown argument: ${args[index]}`);
+  }
+  const report = buildReport(path.resolve(__dirname, '..'), {
+    ...(reviewManifests.length ? { reviewManifests } : {}),
+    ...(evidenceDir ? { evidenceDir } : {})
+  });
+  if (args.includes('--json')) console.log(JSON.stringify(report, null, 2));
   else printReport(report);
   process.exitCode = report.ready ? 0 : 2;
 }
 
-module.exports = { buildReport };
+module.exports = { buildReport, reviewedEvidence };
