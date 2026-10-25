@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const os = require('node:os');
 const crypto = require('node:crypto');
-const { buildReport, reviewedEvidence, validEvidenceAudit, validReleaseAudit } = require('../scripts/release-readiness');
+const { buildReport, reviewedEvidence, validEvidenceAudit, validReleaseAudit, validFinalResults } = require('../scripts/release-readiness');
 
 test('release gate reports evidence blockers without treating templates as results', () => {
   const report = buildReport(path.resolve(__dirname, '..'));
@@ -127,4 +127,33 @@ test('release signing reads secrets from the environment and verifies the APK', 
   assert.match(script, /apksigner verify --verbose --print-certs/);
   assert.match(script, /git status --porcelain/);
   assert.doesNotMatch(gradle, /storePassword\s+["'][^"']+["']/);
+});
+
+test('final result artifacts are bound to their evidence and traceability hashes', t => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'pitayagrade-final-results-'));
+  t.after(() => fs.rmSync(directory, { recursive:true, force:true }));
+  const evidence = path.join(directory, 'evidence');
+  const results = path.join(directory, 'results');
+  fs.mkdirSync(evidence); fs.mkdirSync(results);
+  const inputs = {};
+  for (const name of ['model-evaluation.csv', 'device-test.csv', 'uat.csv']) {
+    fs.writeFileSync(path.join(evidence, name), 'header\nrow\n');
+    inputs[name] = {sha256:crypto.createHash('sha256').update(fs.readFileSync(path.join(evidence, name))).digest('hex')};
+  }
+  const audit = path.join(evidence, 'evidence-audit.json');
+  fs.writeFileSync(audit, '{}');
+  const outputs = {};
+  for (const name of ['model-results.md','quality-model-results.svg','disease-model-results.svg',
+    'device-test-summary.md','uat-summary.md','uat-results.svg']) {
+    fs.writeFileSync(path.join(results, name), name);
+    outputs[name] = crypto.createHash('sha256').update(fs.readFileSync(path.join(results, name))).digest('hex');
+  }
+  fs.writeFileSync(path.join(results, 'traceability.json'), JSON.stringify({
+    status:'generated-from-validated-evidence',
+    evidenceAudit:{path:audit, sha256:crypto.createHash('sha256').update(fs.readFileSync(audit)).digest('hex')},
+    inputs, outputs
+  }));
+  assert.equal(validFinalResults(results, evidence), true);
+  fs.appendFileSync(path.join(results, 'uat-results.svg'), 'changed');
+  assert.equal(validFinalResults(results, evidence), false);
 });

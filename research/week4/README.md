@@ -77,6 +77,8 @@ python -m scripts.generate_final_results --evidence-dir <completed-folder> --aud
 The generator refuses changed or unaudited CSV files. Its Markdown summaries and
 SVG charts cover quality models, disease segmentation, Android device runs and
 UAT aggregates; `traceability.json` binds every output to the evidence hashes.
+Supply this folder to the final release gate with `--results-dir
+<new-results-folder>`.
 
 Quality-model prediction exports should follow `predictions-template.csv`. Use
 `python -m scripts.summarize_model_evaluation --help` for the fail-closed comparison

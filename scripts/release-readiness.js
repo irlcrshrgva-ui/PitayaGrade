@@ -90,6 +90,30 @@ function validReleaseAudit(file, root) {
   }
 }
 
+function validFinalResults(directory, evidenceDirectory) {
+  const required = ['model-results.md', 'quality-model-results.svg', 'disease-model-results.svg',
+    'device-test-summary.md', 'uat-summary.md', 'uat-results.svg'];
+  const tracePath = path.join(directory, 'traceability.json');
+  if (!fs.existsSync(tracePath)) return false;
+  try {
+    const trace = JSON.parse(fs.readFileSync(tracePath, 'utf8'));
+    if (trace.status !== 'generated-from-validated-evidence') return false;
+    if (!trace.evidenceAudit?.path || !fs.existsSync(trace.evidenceAudit.path) ||
+        fileHash(trace.evidenceAudit.path) !== trace.evidenceAudit.sha256) return false;
+    const inputsValid = ['model-evaluation.csv', 'device-test.csv', 'uat.csv'].every(name => {
+      const file = path.join(evidenceDirectory, name);
+      return fs.existsSync(file) && trace.inputs?.[name]?.sha256 === fileHash(file);
+    });
+    const outputsValid = required.every(name => {
+      const file = path.join(directory, name);
+      return fs.existsSync(file) && trace.outputs?.[name] === fileHash(file);
+    });
+    return inputsValid && outputsValid;
+  } catch {
+    return false;
+  }
+}
+
 function validReviewedRow(row) {
   const reviewer = String(row.reviewer || '');
   const reviewedAt = String(row.reviewedAt || '');
@@ -142,6 +166,8 @@ function buildReport(root = path.resolve(__dirname, '..'), options = {}) {
   const evidenceDir = options.evidenceDir || path.join(root, 'research/week4');
   const evidence = evidenceFiles.map(name => ({ name, complete: csvHasData(path.join(evidenceDir, name)) }));
   const auditValid = validEvidenceAudit(evidenceDir, registry, options.reviewAudits || []);
+  const resultsDir = options.resultsDir || path.join(root, 'research/week4/final-results');
+  const finalResultsValid = validFinalResults(resultsDir, evidenceDir);
   const gradle = fs.readFileSync(path.join(root, 'android/app/build.gradle'), 'utf8');
   const hasReleaseSigning = /signingConfigs\s*\{[\s\S]*?release\s*\{/m.test(gradle) &&
     /buildTypes\s*\{[\s\S]*?release\s*\{[\s\S]*?signingConfig/m.test(gradle);
@@ -165,10 +191,10 @@ function buildReport(root = path.resolve(__dirname, '..'), options = {}) {
       required: 'All 1,553 quality and 1,497 maturity rows plus the complete disease manifest are human-reviewed and bound to valid finalization audits.'
     },
     {
-      id: 'evaluation-evidence', passed: evidence.every(item => item.complete) && auditValid,
+      id: 'evaluation-evidence', passed: evidence.every(item => item.complete) && auditValid && finalResultsValid,
       observed: evidence.map(item => `${item.name}:${item.complete ? 'complete' : 'missing'}`).join(', ') +
-        `, evidence-audit.json:${auditValid ? 'valid' : 'missing/invalid'}`,
-      required: 'Completed predictions, held-out metrics, device tests, and UAT records replace the templates.'
+        `, evidence-audit.json:${auditValid ? 'valid' : 'missing/invalid'}, final-results:${finalResultsValid ? 'valid' : 'missing/invalid'}`,
+      required: 'Completed predictions, held-out metrics, device tests, UAT records, and hash-bound final result artifacts replace the templates.'
     },
     {
       id: 'android-debug-build', passed: fs.existsSync(debugApk),
@@ -197,11 +223,13 @@ if (require.main === module) {
   const reviewManifests = [];
   const reviewAudits = [];
   let evidenceDir;
+  let resultsDir;
   let releaseAudit;
   for (let index = 0; index < args.length; index += 1) {
     if (args[index] === '--review-manifest') reviewManifests.push(path.resolve(args[++index] || ''));
     else if (args[index] === '--review-audit') reviewAudits.push(path.resolve(args[++index] || ''));
     else if (args[index] === '--evidence-dir') evidenceDir = path.resolve(args[++index] || '');
+    else if (args[index] === '--results-dir') resultsDir = path.resolve(args[++index] || '');
     else if (args[index] === '--release-audit') releaseAudit = path.resolve(args[++index] || '');
     else if (args[index] !== '--json') throw new Error(`Unknown argument: ${args[index]}`);
   }
@@ -209,6 +237,7 @@ if (require.main === module) {
     ...(reviewManifests.length ? { reviewManifests } : {}),
     ...(reviewAudits.length ? { reviewAudits } : {}),
     ...(evidenceDir ? { evidenceDir } : {}),
+    ...(resultsDir ? { resultsDir } : {}),
     ...(releaseAudit ? { releaseAudit } : {})
   });
   if (args.includes('--json')) console.log(JSON.stringify(report, null, 2));
@@ -216,4 +245,4 @@ if (require.main === module) {
   process.exitCode = report.ready ? 0 : 2;
 }
 
-module.exports = { buildReport, reviewedEvidence, validEvidenceAudit, validReviewAudits, validReleaseAudit };
+module.exports = { buildReport, reviewedEvidence, validEvidenceAudit, validReviewAudits, validReleaseAudit, validFinalResults };
