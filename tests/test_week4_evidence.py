@@ -36,8 +36,12 @@ class Week4EvidenceTests(unittest.TestCase):
             model_path.write_bytes(f'model-{model_id}'.encode())
             model_sha = hashlib.sha256(model_path.read_bytes()).hexdigest()
             runtime_path = self.root / f'{model_id}-runtime.json'
+            output_contract = ('yolov8-grade-detection-v1' if model_id == 'yolov8-nano' else
+                               'yolov8-disease-segmentation-v1' if task == 'disease' else 'quality-softmax-v1')
+            preprocessing = 'rgb-zero-to-one' if model_id in ('yolov8-nano', 'yolov8n-disease-seg') else 'rgb-imagenet-normalized'
             runtime_path.write_text(json.dumps({'modelId':model_id, 'sha256':model_sha,
-                                                'runtimeCompatible':True}), encoding='utf-8')
+                'runtimeCompatible':True, 'outputContract':output_contract, 'preprocessing':preprocessing,
+                'inputShape':[1,3,int(input_size),int(input_size)], 'outputShapes':[[1,4]]}), encoding='utf-8')
             predictions = self.root / f'{model_id}-predictions.csv'
             with predictions.open('w', newline='', encoding='utf-8') as handle:
                 writer = csv.DictWriter(handle, fieldnames=['model_id', 'sample_id', 'predicted_label',

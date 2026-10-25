@@ -81,7 +81,12 @@ test('release evidence audit is bound to the exact CSV files', t => {
   const registry = [{id:'model-1', available:true, sha256:'a'.repeat(64)}];
   assert.equal(validEvidenceAudit(directory, registry), false);
   const runtime = path.join(directory, 'model-1-runtime.json');
-  fs.writeFileSync(runtime, JSON.stringify({modelId:'model-1', sha256:'a'.repeat(64), runtimeCompatible:true}));
+  registry[0].outputContract = 'quality-softmax-v1';
+  registry[0].preprocessing = 'rgb-imagenet-normalized';
+  registry[0].inputSize = 224;
+  fs.writeFileSync(runtime, JSON.stringify({modelId:'model-1', sha256:'a'.repeat(64), runtimeCompatible:true,
+    outputContract:'quality-softmax-v1', preprocessing:'rgb-imagenet-normalized',
+    inputShape:[1,3,224,224], outputShapes:[[1,4]]}));
   const runtimeRecord = {path:runtime, sha256:crypto.createHash('sha256').update(fs.readFileSync(runtime)).digest('hex')};
   fs.writeFileSync(auditPath, JSON.stringify({status:'pass', errors:[], files,
     modelAssets:{'model-1':{sha256:'a'.repeat(64), path:'private/model.onnx'}},

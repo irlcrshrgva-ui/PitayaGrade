@@ -32,7 +32,10 @@ function validEvidenceAudit(directory, registry = [], reviewAudits = []) {
       if (!record?.path || !record?.sha256 || !fs.existsSync(record.path) || fileHash(record.path) !== record.sha256) return false;
       try {
         const report = JSON.parse(fs.readFileSync(record.path, 'utf8'));
-        return report.modelId === model.id && report.sha256 === model.sha256 && report.runtimeCompatible === true;
+        return report.modelId === model.id && report.sha256 === model.sha256 && report.runtimeCompatible === true &&
+          report.outputContract === model.outputContract && report.preprocessing === model.preprocessing &&
+          JSON.stringify(report.inputShape) === JSON.stringify([1, 3, model.inputSize, model.inputSize]) &&
+          Array.isArray(report.outputShapes) && report.outputShapes.length > 0;
       } catch {
         return false;
       }

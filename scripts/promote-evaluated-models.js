@@ -55,7 +55,10 @@ function validatedAssets(evidenceAudit, registry) {
       throw new Error(`${model.id}: runtime verification file/hash mismatch`);
     }
     const report = JSON.parse(fs.readFileSync(verificationPath, 'utf8'));
-    if (report.modelId !== model.id || report.sha256 !== asset.sha256 || report.runtimeCompatible !== true) {
+    if (report.modelId !== model.id || report.sha256 !== asset.sha256 || report.runtimeCompatible !== true ||
+        report.outputContract !== model.outputContract || report.preprocessing !== model.preprocessing ||
+        JSON.stringify(report.inputShape) !== JSON.stringify([1, 3, model.inputSize, model.inputSize]) ||
+        !Array.isArray(report.outputShapes) || !report.outputShapes.length) {
       throw new Error(`${model.id}: runtime verification does not match the evaluated model`);
     }
     return { model, assetPath, sha256:asset.sha256, verificationPath, verificationSha256:verification.sha256 };

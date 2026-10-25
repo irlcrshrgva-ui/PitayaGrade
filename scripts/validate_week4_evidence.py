@@ -23,12 +23,17 @@ FILES = {
         'observer_note'},
 }
 SHA256 = re.compile(r'^[0-9a-fA-F]{64}$')
-EXPECTED_MODELS = {
-    'yolov8-nano': 'quality',
-    'mobilenetv2-quality': 'quality',
-    'resnet50-quality': 'quality',
-    'efficientnet-b3-quality': 'quality',
-    'yolov8n-disease-seg': 'disease',
+MODEL_CONTRACTS = {
+    'yolov8-nano': {'task': 'quality', 'inputSize': 640, 'preprocessing': 'rgb-zero-to-one',
+                    'outputContract': 'yolov8-grade-detection-v1'},
+    'mobilenetv2-quality': {'task': 'quality', 'inputSize': 224, 'preprocessing': 'rgb-imagenet-normalized',
+                            'outputContract': 'quality-softmax-v1'},
+    'resnet50-quality': {'task': 'quality', 'inputSize': 224, 'preprocessing': 'rgb-imagenet-normalized',
+                         'outputContract': 'quality-softmax-v1'},
+    'efficientnet-b3-quality': {'task': 'quality', 'inputSize': 224, 'preprocessing': 'rgb-imagenet-normalized',
+                                'outputContract': 'quality-softmax-v1'},
+    'yolov8n-disease-seg': {'task': 'disease', 'inputSize': 128, 'preprocessing': 'rgb-zero-to-one',
+                            'outputContract': 'yolov8-disease-segmentation-v1'},
 }
 PREDICTION_FIELDS = {'model_id', 'sample_id', 'predicted_label', 'confidence', 'inference_ms'}
 
@@ -86,7 +91,8 @@ def validate_model(rows, errors, directory):
             errors.append(f'{context}: task must be quality or disease')
         tasks.add(task)
         model_id = row['model_id'].strip()
-        if model_id not in EXPECTED_MODELS or EXPECTED_MODELS.get(model_id) != task:
+        contract = MODEL_CONTRACTS.get(model_id)
+        if not contract or contract['task'] != task:
             errors.append(f'{context}: unexpected model_id/task combination')
         if model_id in models:
             errors.append(f'{context}: duplicate model_id')
@@ -101,6 +107,8 @@ def validate_model(rows, errors, directory):
                 errors.append(f'{context}: {field} must be SHA-256')
         for field in ('test_sample_count', 'input_size'):
             number(row[field], f'{context}:{field}', errors, minimum=1, integer=True)
+        if contract and row['input_size'].strip().isdigit() and int(row['input_size']) != contract['inputSize']:
+            errors.append(f'{context}: input_size does not match the app model contract')
         number(row['failed_samples'], f'{context}:failed_samples', errors, minimum=0, integer=True)
         if row['failed_samples'].strip() != '0':
             errors.append(f'{context}: failed_samples must be zero for release')
@@ -141,13 +149,17 @@ def validate_model(rows, errors, directory):
             try:
                 runtime_report = json.loads(runtime_path.read_text(encoding='utf-8'))
                 if runtime_report.get('modelId') != model_id or runtime_report.get('sha256') != row['model_sha256'].lower() or \
-                        runtime_report.get('runtimeCompatible') is not True:
+                        runtime_report.get('runtimeCompatible') is not True or not contract or \
+                        runtime_report.get('outputContract') != contract['outputContract'] or \
+                        runtime_report.get('preprocessing') != contract['preprocessing'] or \
+                        runtime_report.get('inputShape') != [1, 3, contract['inputSize'], contract['inputSize']] or \
+                        not isinstance(runtime_report.get('outputShapes'), list) or not runtime_report['outputShapes']:
                     errors.append(f'{context}: runtime verification does not match the evaluated model')
             except (OSError, json.JSONDecodeError) as error:
                 errors.append(f'{context}: invalid runtime verification: {error}')
     if not {'quality', 'disease'} <= tasks:
         errors.append('model-evaluation.csv: both quality and disease evaluations are required')
-    missing_models = sorted(set(EXPECTED_MODELS) - models)
+    missing_models = sorted(set(MODEL_CONTRACTS) - models)
     if missing_models:
         errors.append(f'model-evaluation.csv: missing selectable models: {", ".join(missing_models)}')
 

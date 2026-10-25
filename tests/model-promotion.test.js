@@ -26,7 +26,9 @@ function fixture(t) {
     fs.writeFileSync(asset, `onnx-${model.id}`);
     const sha256 = hash(asset);
     const report = path.join(directory, `${model.id}-runtime.json`);
-    fs.writeFileSync(report, JSON.stringify({modelId:model.id, sha256, runtimeCompatible:true}));
+    fs.writeFileSync(report, JSON.stringify({modelId:model.id, sha256, runtimeCompatible:true,
+      outputContract:model.outputContract, preprocessing:model.preprocessing,
+      inputShape:[1,3,model.inputSize,model.inputSize], outputShapes:[[1,4]]}));
     audit.modelAssets[model.id] = {path:asset, sha256};
     audit.runtimeVerifications[model.id] = {path:report, sha256:hash(report)};
   }
