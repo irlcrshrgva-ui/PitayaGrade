@@ -26,17 +26,44 @@ test('release review gate rejects assisted rows and accepts complete human task 
   t.after(() => fs.rmSync(directory, { recursive:true, force:true }));
   const quality = path.join(directory, 'quality.json');
   const disease = path.join(directory, 'disease.json');
-  fs.writeFileSync(quality, JSON.stringify([{task:'quality', reviewedLabel:'Grade A',
-    reviewer:'reviewer-01', reviewedAt:'2026-10-25T10:00:00Z'}]));
-  fs.writeFileSync(disease, JSON.stringify([{task:'disease', reviewedLabel:'Sunburn',
-    reviewer:'reviewer-02', reviewedAt:'2026-10-25T10:00:00Z', annotationsComplete:true}]));
-  assert.equal(reviewedEvidence([quality, disease]).passed, true);
-  fs.writeFileSync(quality, JSON.stringify([{task:'quality', reviewedLabel:'Grade A',
-    reviewer:'AI-assisted-reviewer-01', reviewedAt:'2026-10-25T10:00:00Z'}]));
-  const result = reviewedEvidence([quality, disease]);
+  const rows = [
+    ...Array.from({length:1553}, (_, index) => ({id:`q-${index}`, task:'quality', reviewedLabel:'Grade A',
+      reviewedSourceGroup:`qg-${index}`, reviewer:'reviewer-01', reviewedAt:'2026-10-25T10:00:00Z'})),
+    ...Array.from({length:1497}, (_, index) => ({id:`m-${index}`, task:'maturity', reviewedLabel:'Mature Dragon Fruit',
+      reviewedSourceGroup:`mg-${index}`, reviewer:'reviewer-01', reviewedAt:'2026-10-25T10:00:00Z'}))
+  ];
+  const diseaseRows = [{id:'d-1', task:'disease', reviewedLabel:'Sunburn', reviewedSourceGroup:'dg-1',
+    reviewer:'reviewer-02', reviewedAt:'2026-10-25T10:00:00Z', annotationsComplete:true,
+    annotationReviewer:'reviewer-02', annotationReviewedAt:'2026-10-25T10:00:00Z',
+    regions:[{label:'Sunburn', polygon:[[0,0],[1,0],[1,1]]}]}];
+  fs.writeFileSync(quality, JSON.stringify(rows));
+  fs.writeFileSync(disease, JSON.stringify(diseaseRows));
+  const qualityAudit = path.join(directory, 'quality-audit.json');
+  const diseaseAudit = path.join(directory, 'disease-audit.json');
+  fs.writeFileSync(qualityAudit, JSON.stringify({status:'human-reviewed-and-validated', validationErrors:0,
+    frozenTrainingManifestSha256:crypto.createHash('sha256').update(fs.readFileSync(quality)).digest('hex')}));
+  fs.writeFileSync(diseaseAudit, JSON.stringify({status:'human-annotated-and-validated', validationErrors:0,
+    manifestSha256:crypto.createHash('sha256').update(fs.readFileSync(disease)).digest('hex')}));
+  assert.equal(reviewedEvidence([quality, disease], [qualityAudit, diseaseAudit]).passed, true);
+  rows[0].reviewer = 'AI-assisted-reviewer-01';
+  fs.writeFileSync(quality, JSON.stringify(rows));
+  const result = reviewedEvidence([quality, disease], [qualityAudit, diseaseAudit]);
   assert.equal(result.passed, false);
-  assert.equal(result.genuine, 1);
-  assert.equal(result.total, 2);
+  assert.equal(result.genuine, 3050);
+  assert.equal(result.total, 3051);
+  assert.equal(result.auditsValid, false);
+});
+
+test('release review gate refuses sample-sized manifests even with valid checksums', t => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'pitayagrade-readiness-small-'));
+  t.after(() => fs.rmSync(directory, { recursive:true, force:true }));
+  const manifest = path.join(directory, 'sample.json');
+  fs.writeFileSync(manifest, JSON.stringify([{task:'quality', reviewedLabel:'Grade A',
+    reviewedSourceGroup:'one', reviewer:'reviewer-01', reviewedAt:'2026-10-25T10:00:00Z'}]));
+  const audit = path.join(directory, 'audit.json');
+  fs.writeFileSync(audit, JSON.stringify({status:'human-reviewed-and-validated', validationErrors:0,
+    frozenTrainingManifestSha256:crypto.createHash('sha256').update(fs.readFileSync(manifest)).digest('hex')}));
+  assert.equal(reviewedEvidence([manifest], [audit]).passed, false);
 });
 
 test('release evidence audit is bound to the exact CSV files', t => {

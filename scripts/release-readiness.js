@@ -36,21 +36,57 @@ function loadRegistry(root) {
   return Array.from(context.registry, model => ({ ...model, classes: Array.from(model.classes) }));
 }
 
-function reviewedEvidence(files) {
+const REQUIRED_REVIEW_COUNTS = Object.freeze({ quality: 1553, maturity: 1497 });
+
+function validReviewAudits(files, auditFiles) {
+  if (!files.length || !auditFiles.length) return false;
+  const approved = new Set();
+  try {
+    for (const auditFile of auditFiles) {
+      const audit = JSON.parse(fs.readFileSync(auditFile, 'utf8'));
+      if (!['human-reviewed-and-validated', 'human-annotated-and-validated'].includes(audit.status) ||
+          audit.validationErrors !== 0) return false;
+      for (const key of ['frozenTrainingManifestSha256', 'reviewedManifestSha256', 'manifestSha256']) {
+        if (/^[a-f0-9]{64}$/.test(audit[key] || '')) approved.add(audit[key]);
+      }
+    }
+  } catch {
+    return false;
+  }
+  return files.every(file => fs.existsSync(file) && approved.has(fileHash(file)));
+}
+
+function validReviewedRow(row) {
+  const reviewer = String(row.reviewer || '');
+  const reviewedAt = String(row.reviewedAt || '');
+  if (!row.reviewedLabel || !reviewer || !reviewedAt || reviewer.startsWith('AI-assisted-') ||
+      !row.reviewedSourceGroup) return false;
+  const timestamp = Date.parse(reviewedAt);
+  if (!Number.isFinite(timestamp) || !/(?:Z|[+-]\d\d:\d\d)$/.test(reviewedAt)) return false;
+  if (row.task !== 'disease') return ['quality', 'maturity'].includes(row.task);
+  const annotationReviewer = String(row.annotationReviewer || '');
+  const annotationReviewedAt = String(row.annotationReviewedAt || '');
+  return row.annotationsComplete === true && Array.isArray(row.regions) &&
+    annotationReviewer === reviewer && annotationReviewedAt === reviewedAt &&
+    !annotationReviewer.startsWith('AI-assisted-');
+}
+
+function reviewedEvidence(files, auditFiles = []) {
   const rows = files.flatMap(file => fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : []);
-  const genuine = rows.filter(row => row.reviewedLabel && row.reviewer && row.reviewedAt &&
-    !String(row.reviewer).startsWith('AI-assisted-') &&
-    (!('annotationsComplete' in row) || row.annotationsComplete === true));
+  const genuine = rows.filter(validReviewedRow);
   const reviewedByTask = genuine.reduce((counts, row) => {
     counts[row.task] = (counts[row.task] || 0) + 1;
     return counts;
   }, {});
+  const auditsValid = validReviewAudits(files, auditFiles);
   return {
     total: rows.length,
     genuine: genuine.length,
     reviewedByTask,
-    passed: rows.length > 0 && genuine.length === rows.length &&
-      ['quality', 'disease'].every(task => reviewedByTask[task] > 0)
+    auditsValid,
+    passed: rows.length > 0 && genuine.length === rows.length && auditsValid &&
+      Object.entries(REQUIRED_REVIEW_COUNTS).every(([task, count]) => reviewedByTask[task] === count) &&
+      reviewedByTask.disease > 0
   };
 }
 
@@ -66,7 +102,7 @@ function buildReport(root = path.resolve(__dirname, '..'), options = {}) {
   });
 
   const reviewFiles = options.reviewManifests || [path.join(root, 'research/public-review-manifest.json')];
-  const review = reviewedEvidence(reviewFiles);
+  const review = reviewedEvidence(reviewFiles, options.reviewAudits || []);
 
   const evidenceFiles = ['model-evaluation.csv', 'predictions.csv', 'device-test.csv', 'uat.csv'];
   const evidenceDir = options.evidenceDir || path.join(root, 'research/week4');
@@ -90,8 +126,8 @@ function buildReport(root = path.resolve(__dirname, '..'), options = {}) {
     },
     {
       id: 'reviewed-labels', passed: review.passed,
-      observed: `${review.genuine}/${review.total} rows have genuine reviewer, time, target label, and complete annotations where required (${JSON.stringify(review.reviewedByTask)})`,
-      required: 'Genuine reviewed target labels exist for every research task.'
+      observed: `${review.genuine}/${review.total} rows have genuine reviewer, time, target label, and complete annotations where required (${JSON.stringify(review.reviewedByTask)}); finalization audits:${review.auditsValid ? 'valid' : 'missing/invalid'}`,
+      required: 'All 1,553 quality and 1,497 maturity rows plus the complete disease manifest are human-reviewed and bound to valid finalization audits.'
     },
     {
       id: 'evaluation-evidence', passed: evidence.every(item => item.complete) && auditValid,
@@ -124,14 +160,17 @@ function printReport(report) {
 if (require.main === module) {
   const args = process.argv.slice(2);
   const reviewManifests = [];
+  const reviewAudits = [];
   let evidenceDir;
   for (let index = 0; index < args.length; index += 1) {
     if (args[index] === '--review-manifest') reviewManifests.push(path.resolve(args[++index] || ''));
+    else if (args[index] === '--review-audit') reviewAudits.push(path.resolve(args[++index] || ''));
     else if (args[index] === '--evidence-dir') evidenceDir = path.resolve(args[++index] || '');
     else if (args[index] !== '--json') throw new Error(`Unknown argument: ${args[index]}`);
   }
   const report = buildReport(path.resolve(__dirname, '..'), {
     ...(reviewManifests.length ? { reviewManifests } : {}),
+    ...(reviewAudits.length ? { reviewAudits } : {}),
     ...(evidenceDir ? { evidenceDir } : {})
   });
   if (args.includes('--json')) console.log(JSON.stringify(report, null, 2));
@@ -139,4 +178,4 @@ if (require.main === module) {
   process.exitCode = report.ready ? 0 : 2;
 }
 
-module.exports = { buildReport, reviewedEvidence, validEvidenceAudit };
+module.exports = { buildReport, reviewedEvidence, validEvidenceAudit, validReviewAudits };
