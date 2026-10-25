@@ -80,6 +80,10 @@ and chooses **All AI-assisted labels**. The member inspects and saves every reco
 exports backups after each work block, and sends one final reviewed-manifest JSON
 when both task queues reach zero.
 
+The coordinator can run `python scripts/check_recheck_status.py --help` against
+returned JSON files at any time. It is read-only and reports exact per-member
+completion, remaining records and attribution/identity errors before finalization.
+
 The technical workflow then strictly merges the three exports, reconciles linked
 source groups, validates quality and maturity separately, and freezes versioned
 train/validation/test manifests. It must reject missing assignments, overlaps,

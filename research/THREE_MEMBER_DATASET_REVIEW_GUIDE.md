@@ -180,6 +180,23 @@ folder, and chooses **All AI-assisted labels**. Saving a checked record replaces
 its AI-assisted attribution with the human recheck reviewer. Both task queues
 must reach zero before the member exports their reviewed manifest.
 
+For faster manual inspection, press **1**, **2**, **3**, or **4** to select the
+visible label, then **Ctrl+Enter** to save and advance. Use **[** and **]** for
+previous/next. Shortcuts do nothing while typing in a field and never accept an
+AI proposal automatically.
+
+The coordinator can check any returned files without changing them:
+
+```powershell
+python scripts/check_recheck_status.py <returned-files...> `
+  --base <validated-provisional-manifest.json> `
+  --assignments <recheck-package-folder/assignment-index.json>
+```
+
+The report identifies the matching member, counts valid human reviews and shows
+the exact remainder. Add `--strict` in automation when all three files are
+expected; it exits unsuccessfully until every assignment is complete.
+
 After collecting all recheck exports, the coordinator freezes the human-reviewed
 manifest in one fail-closed step:
 

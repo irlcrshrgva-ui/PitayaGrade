@@ -69,6 +69,11 @@ The exact at-home procedure and three-way workload are documented in
 The dependency-ordered fast-track plan from the current 80% state to the final
 release is in `research/ROADMAP_TO_100_PERCENT.md`.
 
+Coordinators can validate returned recheck exports without modifying evidence by
+running `python scripts/check_recheck_status.py --help`. The report identifies
+each member's file, valid human-review count and exact remaining records before
+the strict finalization step.
+
 ## Run the web application
 
 ### Online dataset Review Desk
