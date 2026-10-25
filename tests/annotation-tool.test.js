@@ -43,7 +43,12 @@ test('annotation manifest rejects duplicates and invalid splits', () => {
 
 test('annotation browser app parses and is exposed by the local evidence server', () => {
   const root = path.join(__dirname, '..');
-  assert.doesNotThrow(() => new vm.Script(fs.readFileSync(path.join(root, 'annotation-tool', 'app.js'), 'utf8')));
+  const app = fs.readFileSync(path.join(root, 'annotation-tool', 'app.js'), 'utf8');
+  const page = fs.readFileSync(path.join(root, 'annotation-tool', 'index.html'), 'utf8');
+  assert.doesNotThrow(() => new vm.Script(app));
+  assert.match(app, /document\.addEventListener\('keydown'/);
+  assert.match(app, /event\.ctrlKey && event\.key === 'Enter'/);
+  assert.match(page, /H marks Healthy, Ctrl\+Enter saves/);
   assert.ok(server.resolveRequestPath('/annotation-tool/index.html').endsWith(path.join('annotation-tool','index.html')));
   assert.equal(server.resolveRequestPath('/annotation-tool/%2e%2e/package.json'), null);
 });

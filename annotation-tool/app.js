@@ -136,6 +136,21 @@
   });
   elements.previous.addEventListener('click', () => { if (index > 0) { index -= 1; update(); } });
   elements.next.addEventListener('click', () => { if (index < rows.length - 1) { index += 1; update(); } });
+  document.addEventListener('keydown', event => {
+    const target = event.target;
+    if (target?.closest?.('input, select, textarea, button')) return;
+    if (event.ctrlKey && event.key === 'Enter') {
+      event.preventDefault(); elements.saveRecord.click(); return;
+    }
+    if (event.ctrlKey || event.metaKey || event.altKey) return;
+    if (event.key.toLowerCase() === 'h') {
+      event.preventDefault(); elements.markHealthy.click();
+    } else if (event.key === '[') {
+      event.preventDefault(); elements.previous.click();
+    } else if (event.key === ']') {
+      event.preventDefault(); elements.next.click();
+    }
+  });
 
   function download(name, value) {
     const link = document.createElement('a'); link.href = URL.createObjectURL(new Blob([JSON.stringify(value, null, 2) + '\n'], {type:'application/json'}));

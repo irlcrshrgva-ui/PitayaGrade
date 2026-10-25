@@ -91,6 +91,10 @@ changed image hashes, assisted attribution, conflicting groups, and split leaks.
 
 ### Phase 3 — Finish disease and detection annotations (Day 2–8, parallel)
 
+In the Disease Annotation Desk, **H** marks the visible record Healthy,
+**Ctrl+Enter** saves and advances, and **[** / **]** navigates. Every shortcut
+still requires a human decision; none draws or approves a lesion automatically.
+
 After the adviser freezes the annotation rules, divide disease images into three
 non-overlapping packages while keeping related captures together. Reviewers draw
 visible disease-region polygons/masks and record Healthy negatives. If fruit
