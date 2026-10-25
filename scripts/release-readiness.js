@@ -13,6 +13,22 @@ function csvHasData(file) {
   return fs.readFileSync(file, 'utf8').split(/\r?\n/).filter(line => line.trim()).length > 1;
 }
 
+function validEvidenceAudit(directory) {
+  const auditPath = path.join(directory, 'evidence-audit.json');
+  if (!fs.existsSync(auditPath)) return false;
+  try {
+    const audit = JSON.parse(fs.readFileSync(auditPath, 'utf8'));
+    if (audit.status !== 'pass' || !Array.isArray(audit.errors) || audit.errors.length) return false;
+    return ['model-evaluation.csv', 'device-test.csv', 'uat.csv'].every(name => {
+      const file = path.join(directory, name);
+      return fs.existsSync(file) && audit.files?.[name]?.sha256 === fileHash(file) &&
+        Number(audit.files[name].rows) > 0;
+    });
+  } catch {
+    return false;
+  }
+}
+
 function loadRegistry(root) {
   const context = {};
   vm.createContext(context);
@@ -55,6 +71,7 @@ function buildReport(root = path.resolve(__dirname, '..'), options = {}) {
   const evidenceFiles = ['model-evaluation.csv', 'predictions.csv', 'device-test.csv', 'uat.csv'];
   const evidenceDir = options.evidenceDir || path.join(root, 'research/week4');
   const evidence = evidenceFiles.map(name => ({ name, complete: csvHasData(path.join(evidenceDir, name)) }));
+  const auditValid = validEvidenceAudit(evidenceDir);
   const gradle = fs.readFileSync(path.join(root, 'android/app/build.gradle'), 'utf8');
   const hasReleaseSigning = /signingConfigs\s*\{[\s\S]*?release\s*\{/m.test(gradle) &&
     /buildTypes\s*\{[\s\S]*?release\s*\{[\s\S]*?signingConfig/m.test(gradle);
@@ -77,8 +94,9 @@ function buildReport(root = path.resolve(__dirname, '..'), options = {}) {
       required: 'Genuine reviewed target labels exist for every research task.'
     },
     {
-      id: 'evaluation-evidence', passed: evidence.every(item => item.complete),
-      observed: evidence.map(item => `${item.name}:${item.complete ? 'complete' : 'missing'}`).join(', '),
+      id: 'evaluation-evidence', passed: evidence.every(item => item.complete) && auditValid,
+      observed: evidence.map(item => `${item.name}:${item.complete ? 'complete' : 'missing'}`).join(', ') +
+        `, evidence-audit.json:${auditValid ? 'valid' : 'missing/invalid'}`,
       required: 'Completed predictions, held-out metrics, device tests, and UAT records replace the templates.'
     },
     {
@@ -121,4 +139,4 @@ if (require.main === module) {
   process.exitCode = report.ready ? 0 : 2;
 }
 
-module.exports = { buildReport, reviewedEvidence };
+module.exports = { buildReport, reviewedEvidence, validEvidenceAudit };

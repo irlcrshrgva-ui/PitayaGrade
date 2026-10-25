@@ -3,7 +3,8 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const os = require('node:os');
-const { buildReport, reviewedEvidence } = require('../scripts/release-readiness');
+const crypto = require('node:crypto');
+const { buildReport, reviewedEvidence, validEvidenceAudit } = require('../scripts/release-readiness');
 
 test('release gate reports evidence blockers without treating templates as results', () => {
   const report = buildReport(path.resolve(__dirname, '..'));
@@ -36,4 +37,19 @@ test('release review gate rejects assisted rows and accepts complete human task 
   assert.equal(result.passed, false);
   assert.equal(result.genuine, 1);
   assert.equal(result.total, 2);
+});
+
+test('release evidence audit is bound to the exact CSV files', t => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'pitayagrade-audit-'));
+  t.after(() => fs.rmSync(directory, { recursive:true, force:true }));
+  const files = {};
+  for (const name of ['model-evaluation.csv', 'device-test.csv', 'uat.csv']) {
+    const content = 'header\nrow\n';
+    fs.writeFileSync(path.join(directory, name), content);
+    files[name] = { rows:1, sha256:crypto.createHash('sha256').update(content).digest('hex') };
+  }
+  fs.writeFileSync(path.join(directory, 'evidence-audit.json'), JSON.stringify({status:'pass', errors:[], files}));
+  assert.equal(validEvidenceAudit(directory), true);
+  fs.appendFileSync(path.join(directory, 'uat.csv'), 'changed\n');
+  assert.equal(validEvidenceAudit(directory), false);
 });

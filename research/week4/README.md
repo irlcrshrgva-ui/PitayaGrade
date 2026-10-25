@@ -24,6 +24,16 @@ from the frozen held-out dataset, physical Android devices and actual participan
 - Passing software tests proves runtime behavior, not research accuracy.
 - Store large raw exports outside Git and record their path and checksum here.
 
+Validate completed evidence before running the release gate:
+
+```text
+python -m scripts.validate_week4_evidence --evidence-dir <completed-folder> --min-devices <approved-count> --min-participants <approved-count> --output <completed-folder/evidence-audit.json>
+```
+
+The validator checks required fields, time zones, hashes, numeric ranges,
+quality and disease coverage, unresolved device failures, and the approved
+minimum device/participant counts. The audit does not generate missing results.
+
 Quality-model prediction exports should follow `predictions-template.csv`. Use
 `python -m scripts.summarize_model_evaluation --help` for the fail-closed comparison
 tool; its generated JSON, summary, confusion matrices and mistake lists provide the
