@@ -212,6 +212,11 @@ manifest-linked row per held-out sample, softmax confidence and measured inferen
 time. Those files can be supplied directly to the summarizer after final training;
 provisional runs remain excluded from final capstone evidence.
 
+For release evidence, evaluate the exported asset itself with
+`python -m scripts.evaluate_quality_onnx --help`. This repeats the frozen test set
+through ONNX Runtime, records per-image latency and binds the prediction CSV to the
+exact model and manifest checksums used by the application.
+
 Before enabling an exported ONNX file, run
 `node scripts/verify-model-candidate.js <model-id> <candidate.onnx>`. This exercises
 the candidate with the bundled WebAssembly runtime, verifies its declared shape
