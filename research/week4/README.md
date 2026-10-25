@@ -65,6 +65,19 @@ release, verifies the APK signature with Android `apksigner`, and records the AP
 certificate and source-commit hashes without writing passwords to the repository.
 Supply the audit to the final gate with `--release-audit <release-audit.json>`.
 
+## Manuscript-ready results
+
+After the Week 4 audit passes, generate tables, SVG figures and a checksum map
+directly from that locked evidence:
+
+```text
+python -m scripts.generate_final_results --evidence-dir <completed-folder> --audit <completed-folder/evidence-audit.json> --output-dir <new-results-folder>
+```
+
+The generator refuses changed or unaudited CSV files. Its Markdown summaries and
+SVG charts cover quality models, disease segmentation, Android device runs and
+UAT aggregates; `traceability.json` binds every output to the evidence hashes.
+
 Quality-model prediction exports should follow `predictions-template.csv`. Use
 `python -m scripts.summarize_model_evaluation --help` for the fail-closed comparison
 tool; its generated JSON, summary, confusion matrices and mistake lists provide the
