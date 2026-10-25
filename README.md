@@ -83,6 +83,11 @@ before loading the extracted package folder. Assignment rows do not overlap.
 
 Public web preview: <https://irlcrshrgva-ui.github.io/PitayaGrade/>
 
+The local disease-polygon workflow is available at
+<https://irlcrshrgva-ui.github.io/PitayaGrade/annotation-tool/>. It requires a
+coordinator-provided annotation manifest and local fruit-ROI image folder; it
+does not publish images or infer human evidence.
+
 The preview is published from `www/` after updates reach the `main` branch. Camera
 access requires browser permission. Records and settings remain local to each
 browser/device and are not synchronized to a server.

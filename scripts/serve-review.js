@@ -9,6 +9,7 @@ const types = { '.html':'text/html; charset=utf-8', '.css':'text/css; charset=ut
 
 function allowed(relative) {
   return relative === 'review-tool/index.html' || relative.startsWith('review-tool/') ||
+    relative === 'annotation-tool/index.html' || relative.startsWith('annotation-tool/') ||
     relative === 'research/public-review-manifest.json' ||
     (/^dataset\/public\/prepared\//.test(relative) && /\.(jpe?g|png|webp)$/i.test(relative));
 }
@@ -24,9 +25,11 @@ function resolveRequestPath(url) {
   if (!allowed(relative)) return null;
   const file = path.resolve(root, relative);
   const reviewRoot = path.join(root, 'review-tool');
+  const annotationRoot = path.join(root, 'annotation-tool');
   const preparedRoot = path.join(root, 'dataset', 'public', 'prepared');
   const manifest = path.join(root, 'research', 'public-review-manifest.json');
   if (relative.startsWith('review-tool/')) return isInside(file, reviewRoot) ? file : null;
+  if (relative.startsWith('annotation-tool/')) return isInside(file, annotationRoot) ? file : null;
   if (relative.startsWith('dataset/public/prepared/')) return isInside(file, preparedRoot) ? file : null;
   return file === manifest ? file : null;
 }

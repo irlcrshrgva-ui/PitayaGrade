@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>PitayaGrade Disease Annotation Desk</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <header>
+    <div><p class="eyebrow">LOCAL RESEARCH EVIDENCE TOOL</p><h1>Disease Annotation Desk</h1>
+      <p>Draw human-reviewed symptom boundaries. Images and drafts remain on this computer until exported.</p></div>
+    <strong id="status">Load an annotation manifest to begin.</strong>
+  </header>
+  <main>
+    <aside class="panel controls">
+      <h2>1. Load evidence</h2>
+      <label class="import">Load annotation manifest<input id="manifestFile" type="file" accept="application/json"></label>
+      <label class="import">Load local image folder<input id="imageFolder" type="file" webkitdirectory multiple accept="image/*"></label>
+      <label>Human reviewer ID<input id="reviewer" autocomplete="off" placeholder="reviewer-01"></label>
+      <h2>2. Draw a region</h2>
+      <label>Polygon symptom<select id="regionLabel"></select></label>
+      <div class="button-grid"><button id="undoPoint">Undo point</button><button id="closeRegion">Save polygon</button>
+        <button id="removeRegion">Remove last polygon</button><button id="clearRecord">Clear record</button></div>
+      <p class="hint">Click around the visible symptom boundary. Use at least three points and do not cross polygon lines.</p>
+      <h2>3. Complete the record</h2>
+      <label>Primary reviewed result<select id="primaryLabel"><option value="">Choose result</option><option>Healthy</option></select></label>
+      <button id="markHealthy">Mark Healthy (no regions)</button>
+      <button id="saveRecord" class="primary">Save annotation &amp; next</button>
+      <p id="recordSummary" class="hint">No record loaded.</p>
+    </aside>
+    <section class="panel viewer">
+      <div class="progress"><strong id="progressText">0 / 0 complete</strong><progress id="progress" max="100" value="0"></progress></div>
+      <div class="canvas-wrap"><canvas id="canvas" width="960" height="640"></canvas><p id="canvasMessage">Load the manifest and matching local images.</p></div>
+      <dl><div><dt>Record</dt><dd id="recordId">—</dd></div><div><dt>Split</dt><dd id="split">—</dd></div>
+        <div><dt>Image path</dt><dd id="imagePath">—</dd></div><div><dt>Regions</dt><dd id="regionCount">0</dd></div></dl>
+      <nav><button id="previous">← Previous</button><span id="position">0 of 0</span><button id="next">Next →</button></nav>
+    </section>
+    <aside class="panel evidence">
+      <h2>Evidence export</h2>
+      <p>Export a draft after every work block. Final export is enabled only when every loaded record is complete.</p>
+      <button id="exportDraft">Export draft backup</button>
+      <label class="import">Restore draft backup<input id="restoreFile" type="file" accept="application/json"></label>
+      <button id="exportFinal" class="primary" disabled>Export completed manifest</button>
+      <section class="warning"><strong>Human-review rule</strong><p>Folder names and model predictions do not prove lesion boundaries. Follow the adviser-approved class and polygon guide.</p></section>
+      <a href="https://github.com/irlcrshrgva-ui/PitayaGrade/blob/main/research/ROADMAP_TO_100_PERCENT.md" target="_blank" rel="noopener">Open the completion roadmap</a>
+    </aside>
+  </main>
+  <div id="toast" role="status" aria-live="polite"></div>
+  <script src="./annotation-state.js?v=2026-10-25-1"></script>
+  <script src="./app.js?v=2026-10-25-1"></script>
+</body>
+</html>

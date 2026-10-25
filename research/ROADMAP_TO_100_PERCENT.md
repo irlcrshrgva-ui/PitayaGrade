@@ -92,6 +92,17 @@ non-overlapping packages while keeping related captures together. Reviewers draw
 visible disease-region polygons/masks and record Healthy negatives. If fruit
 detection retraining is retained in scope, also review the fruit boxes.
 
+The coordinator generates packages from the reviewed crop manifest with:
+
+```text
+python scripts/create_annotation_packages.py --manifest <crop-review-manifest.json> --output <private-folder>
+```
+
+Members use the hosted Disease Annotation Desk at
+`https://irlcrshrgva-ui.github.io/PitayaGrade/annotation-tool/`. Dataset images
+remain inside the private ZIPs and are selected locally; GitHub Pages hosts only
+the annotation interface.
+
 Run the disease and detection validators. Do not infer masks from folder names or
 convert a broad disease class into a pixel mask. If approved masks cannot be
 obtained, the honest alternative is to revise the project scope and manuscript so
