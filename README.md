@@ -218,9 +218,11 @@ through ONNX Runtime, records per-image latency and binds the prediction CSV to 
 exact model and manifest checksums used by the application.
 
 Before enabling an exported ONNX file, run
-`node scripts/verify-model-candidate.js <model-id> <candidate.onnx>`. This exercises
+`node scripts/verify-model-candidate.js <model-id> <candidate.onnx> --output <verification.json>`.
+This exercises
 the candidate with the bundled WebAssembly runtime, verifies its declared shape
-contract and prints its SHA-256. It proves compatibility, not accuracy; held-out
+contract, prints its SHA-256 and saves an immutable report for Week 4 evidence.
+It proves compatibility, not accuracy; held-out
 evaluation remains mandatory.
 
 YOLO dataset preparation likewise requires reviewed fruit boxes. The Colab entry

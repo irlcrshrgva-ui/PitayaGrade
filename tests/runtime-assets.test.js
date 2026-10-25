@@ -7,7 +7,7 @@ const crypto = require('node:crypto');
 const { verifyRuntime } = require('../scripts/verify-runtime');
 const { smokeInference } = require('../scripts/smoke-inference');
 const { verifyModelRegistry } = require('../scripts/verify-model-registry');
-const { validateContract, verifyCandidate } = require('../scripts/verify-model-candidate');
+const { validateContract, verifyCandidate, writeVerification } = require('../scripts/verify-model-candidate');
 const www = path.resolve(__dirname, '..', 'www');
 
 test('the bundled ONNX backend contains the matching JS, MJS and WASM files', () => {
@@ -47,6 +47,16 @@ test('candidate verifier checks the actual bundled model contract', async () => 
   assert.deepEqual(result.outputShapes, [[1, 8, 8400]]);
   assert.equal(result.runtimeCompatible, true);
   assert.equal(result.accuracyValidated, false);
+});
+
+test('candidate verifier writes one immutable runtime report', t => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'pitaya-verification-'));
+  t.after(() => fs.rmSync(directory, { recursive:true, force:true }));
+  const output = path.join(directory, 'verification.json');
+  const result = {modelId:'model', sha256:'a'.repeat(64), runtimeCompatible:true};
+  writeVerification(output, result);
+  assert.deepEqual(JSON.parse(fs.readFileSync(output, 'utf8')), result);
+  assert.throws(() => writeVerification(output, result), /EEXIST/);
 });
 
 test('candidate verifier rejects incompatible quality and segmentation outputs', () => {

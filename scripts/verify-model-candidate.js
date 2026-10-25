@@ -83,8 +83,25 @@ async function verifyCandidate(modelId, candidatePath, projectRoot = path.resolv
   }
 }
 
-module.exports = { validateContract, verifyCandidate };
+function writeVerification(outputPath, result) {
+  if (!outputPath) return;
+  const output = path.resolve(outputPath);
+  fs.mkdirSync(path.dirname(output), { recursive: true });
+  fs.writeFileSync(output, JSON.stringify(result, null, 2) + '\n', { flag:'wx' });
+}
+
+module.exports = { validateContract, verifyCandidate, writeVerification };
 if (require.main === module) {
-  verifyCandidate(process.argv[2], process.argv[3]).then(result => console.log(JSON.stringify(result, null, 2)))
+  const args = process.argv.slice(2);
+  const outputIndex = args.indexOf('--output');
+  const output = outputIndex >= 0 ? args[outputIndex + 1] : null;
+  if (outputIndex >= 0) args.splice(outputIndex, 2);
+  if (args.length !== 2 || (outputIndex >= 0 && !output)) {
+    console.error('Usage: node scripts/verify-model-candidate.js <model-id> <candidate.onnx> [--output <verification.json>]');
+    process.exitCode = 1;
+  } else verifyCandidate(args[0], args[1]).then(result => {
+    writeVerification(output, result);
+    console.log(JSON.stringify(result, null, 2));
+  })
     .catch(error => { console.error(error.message); process.exitCode = 1; });
 }
