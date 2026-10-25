@@ -194,3 +194,21 @@ The command refuses missing assignments, AI-assisted attribution, changed image
 identity, invalid labels/timestamps, conflicts, and split leakage. It produces a
 frozen training manifest plus a checksum-bearing finalization audit.
 
+## Finalizing the three disease-annotation exports
+
+After all disease-annotation members finish, merge their exports against the
+original crop manifest and the exact assignment index:
+
+```powershell
+python scripts/finalize_disease_annotations.py <mask-reviewer-01.json> <mask-reviewer-02.json> <mask-reviewer-03.json> `
+  --base <original-crop-manifest.json> `
+  --assignments <annotation-package-folder/assignment-index.json> `
+  --output-dir <new-private-final-folder>
+```
+
+The command refuses missing or overlapping assignments, changed record identity
+or checksums, incorrect reviewer IDs, malformed polygons, split leakage, and
+incomplete class coverage. Use only the generated
+`frozen-disease-annotation-manifest.json` for final segmentation training and
+retain `annotation-finalization-audit.json` with the private evidence.
+
