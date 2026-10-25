@@ -108,6 +108,9 @@ test('review server exposes only the tool, manifest and prepared images', () => 
 test('browser review application parses as JavaScript', () => {
   const source = fs.readFileSync(path.join(__dirname, '..', 'review-tool', 'app.js'), 'utf8');
   assert.doesNotThrow(() => new vm.Script(source));
+  assert.match(source, /event\.ctrlKey && event\.key === 'Enter'/);
+  assert.match(source, /\^\[1-4\]\$/);
+  assert.match(source, /\['input', 'select', 'textarea', 'button'\]\.includes\(tag\)/);
 });
 
 test('packaged Review Desk supports local image folders without publishing the dataset', () => {

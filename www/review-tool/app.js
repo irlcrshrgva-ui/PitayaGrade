@@ -179,6 +179,24 @@
   els.previous.addEventListener('click', () => { index = Math.max(0, index - 1); render(); });
   els.next.addEventListener('click', () => { index = Math.min(rows.length - 1, index + 1); render(); });
   els.save.addEventListener('click', saveReview);
+  document.addEventListener('keydown', event => {
+    const tag = String(event.target?.tagName || '').toLowerCase();
+    if (['input', 'select', 'textarea', 'button'].includes(tag) || event.altKey || event.metaKey) return;
+    if (event.ctrlKey && event.key === 'Enter') {
+      event.preventDefault(); saveReview(); return;
+    }
+    if (!event.ctrlKey && /^[1-4]$/.test(event.key)) {
+      const radios = Array.from(document.querySelectorAll('input[name="reviewedLabel"]'));
+      const radio = radios[Number(event.key) - 1];
+      if (radio && !radio.disabled) { event.preventDefault(); radio.checked = true; toast(`${radio.value} selected; inspect before saving`); }
+      return;
+    }
+    if (!event.ctrlKey && event.key === '[' && index > 0) {
+      event.preventDefault(); index -= 1; render();
+    } else if (!event.ctrlKey && event.key === ']' && index < rows.length - 1) {
+      event.preventDefault(); index += 1; render();
+    }
+  });
   els.useSuggestion.addEventListener('click', () => {
     const proposal = suggestions[current()?.id]; if (!proposal?.proposedLabel) return;
     const radio = Array.from(document.querySelectorAll('input[name="reviewedLabel"]'))
