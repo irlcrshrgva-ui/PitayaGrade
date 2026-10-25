@@ -207,6 +207,11 @@ duplicate or incompatible predictions and generates traceable metrics, confusion
 matrices, latency summaries and mistake lists. It does not create missing labels or
 replace field evaluation.
 
+`train_models.py` now writes `<Model>_predictions.csv` automatically, with one
+manifest-linked row per held-out sample, softmax confidence and measured inference
+time. Those files can be supplied directly to the summarizer after final training;
+provisional runs remain excluded from final capstone evidence.
+
 Before enabling an exported ONNX file, run
 `node scripts/verify-model-candidate.js <model-id> <candidate.onnx>`. This exercises
 the candidate with the bundled WebAssembly runtime, verifies its declared shape

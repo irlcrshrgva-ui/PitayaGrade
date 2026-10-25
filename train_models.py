@@ -12,7 +12,8 @@ import os
 import json
 import time
 from importlib.metadata import version
-from scripts.reviewed_training import training_arguments, prepare_reviewed_dataset
+from scripts.reviewed_training import (training_arguments, prepare_reviewed_dataset,
+                                       prepared_sample_ids, write_prediction_csv)
 from scripts.training_policy import LossMonitor
 from scripts.image_orientation import load_upright_rgb
 from scripts.quality_onnx import export_quality_onnx
@@ -43,6 +44,11 @@ PROJECT_DIR = Path(os.path.dirname(os.path.abspath(__file__)))
 RESULTS_DIR = PROJECT_DIR / "training_results"
 
 GRADE_CLASSES = ["Grade A", "Grade B", "Grade C", "Reject"]
+MODEL_IDS = {
+    'MobileNetV2': 'mobilenetv2-quality',
+    'ResNet50': 'resnet50-quality',
+    'EfficientNetB3': 'efficientnet-b3-quality',
+}
 
 torch.manual_seed(SEED)
 np.random.seed(SEED)
@@ -289,14 +295,25 @@ def evaluate_model(model_name, model, test_loader, class_to_idx):
 
     all_preds = []
     all_labels = []
+    all_confidences = []
+    all_latencies = []
 
     with torch.no_grad():
         for inputs, labels in test_loader:
+            if device.type == 'cuda':
+                torch.cuda.synchronize()
+            started = time.perf_counter()
             inputs = inputs.to(device)
             outputs = model(inputs)
-            _, predicted = outputs.max(1)
+            if device.type == 'cuda':
+                torch.cuda.synchronize()
+            elapsed_ms = (time.perf_counter() - started) * 1000
+            probabilities = torch.softmax(outputs, dim=1)
+            confidence, predicted = probabilities.max(1)
             all_preds.extend(predicted.cpu().numpy())
             all_labels.extend(labels.numpy())
+            all_confidences.extend(confidence.cpu().numpy())
+            all_latencies.extend([elapsed_ms / len(labels)] * len(labels))
 
     y_pred = np.array(all_preds)
     y_true = np.array(all_labels)
@@ -324,6 +341,8 @@ def evaluate_model(model_name, model, test_loader, class_to_idx):
         "per_class": {},
         "confusion_matrix": cm.tolist(),
         "class_names": class_names,
+        "mean_inference_ms": float(np.mean(all_latencies)),
+        "p95_inference_ms": float(np.percentile(all_latencies, 95)),
     }
     for i, grade in enumerate(class_names):
         metrics["per_class"][grade] = {
@@ -333,6 +352,15 @@ def evaluate_model(model_name, model, test_loader, class_to_idx):
             "support": int(support[i]),
         }
 
+    with open(RESULTS_DIR / f"{model_name}_metrics.json", "w") as f:
+        json.dump(metrics, f, indent=2)
+
+    sample_ids = prepared_sample_ids(TRAINING_ARGS.rows, test_loader.dataset.samples)
+    prediction_path = write_prediction_csv(
+        RESULTS_DIR / f'{model_name}_predictions.csv', MODEL_IDS[model_name], sample_ids,
+        [class_names[index] for index in y_pred], all_confidences, all_latencies)
+    metrics['prediction_file'] = prediction_path.name
+    metrics['prediction_count'] = len(sample_ids)
     with open(RESULTS_DIR / f"{model_name}_metrics.json", "w") as f:
         json.dump(metrics, f, indent=2)
 

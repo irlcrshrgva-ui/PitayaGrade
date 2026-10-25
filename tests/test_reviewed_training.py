@@ -7,7 +7,8 @@ import unittest
 from pathlib import Path
 
 from PIL import Image
-from scripts.reviewed_training import read_reviewed_manifest, prepare_reviewed_dataset
+from scripts.reviewed_training import (read_reviewed_manifest, prepare_reviewed_dataset,
+                                       prepared_sample_ids, write_prediction_csv)
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -90,6 +91,24 @@ class ReviewedTrainingTests(unittest.TestCase):
         self.assertEqual(result.returncode, 2)
         self.assertIn('--manifest', result.stderr)
         self.assertNotIn('ModuleNotFoundError', result.stderr)
+
+    def test_prepared_samples_recover_frozen_manifest_ids(self):
+        prepared = prepare_reviewed_dataset(self.read(), self.root / 'run', self.root)
+        samples = sorted((path, 0) for path in (prepared / 'test').glob('*/*'))
+        expected = sorted(row['id'] for row in self.rows if row['candidateSplit'] == 'test')
+        self.assertEqual(sorted(prepared_sample_ids(self.rows, samples)), expected)
+        with self.assertRaisesRegex(ValueError, 'no reviewed-manifest identity'):
+            prepared_sample_ids(self.rows, samples + [(prepared / 'test' / 'unknown.jpg', 0)])
+
+    def test_prediction_csv_is_complete_and_traceable(self):
+        output = self.root / 'predictions.csv'
+        write_prediction_csv(output, 'mobilenetv2-quality', ['one', 'two'],
+                             ['Grade A', 'Reject'], [.8, .9], [4.5, 5.5])
+        text = output.read_text(encoding='utf-8')
+        self.assertIn('model_id,sample_id,predicted_label,confidence,inference_ms', text)
+        self.assertIn('mobilenetv2-quality,one,Grade A,0.8000000000,4.500000', text)
+        with self.assertRaisesRegex(ValueError, 'one complete row'):
+            write_prediction_csv(self.root / 'bad.csv', 'model', ['one'], [], [], [])
 
 
 if __name__ == '__main__':

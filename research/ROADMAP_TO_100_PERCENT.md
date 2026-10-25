@@ -126,6 +126,10 @@ Once Gate A passes, the technical workflow will:
    and inference latency.
 7. Obtain adviser sign-off on the model comparison before enabling assets.
 
+The quality trainer automatically creates traceable `<Model>_predictions.csv`
+files. The evaluation summarizer refuses incomplete, duplicate, unknown, or
+non-test records before producing the formal comparison artifacts.
+
 ### Phase 5 — Integrate and regression-test the selected assets (Day 11–14)
 
 Only evaluated models are copied into the app and enabled in the registry. Then:

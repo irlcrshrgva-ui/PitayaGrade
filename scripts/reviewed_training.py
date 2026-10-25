@@ -1,5 +1,6 @@
 """Prepare only reviewed manuscript grades, preserving approved partitions."""
 import argparse
+import csv
 import hashlib
 import importlib.util
 import json
@@ -43,6 +44,42 @@ def prepare_reviewed_dataset(rows, run_dir, root=ROOT):
             raise ValueError('Image changed during preparation')
     (run_dir / 'reviewed-manifest.json').write_text(json.dumps(rows, indent=2) + '\n', encoding='utf-8')
     return prepared
+
+
+def prepared_sample_ids(rows, samples):
+    """Recover manifest IDs from the hashed filenames emitted during preparation."""
+    identifiers = {
+        hashlib.sha256(row['id'].encode()).hexdigest(): row['id']
+        for row in rows if row.get('task') == 'quality' and row.get('candidateSplit') == 'test'
+    }
+    ordered = []
+    for sample in samples:
+        path = Path(sample[0] if isinstance(sample, (tuple, list)) else sample)
+        ident = identifiers.get(path.stem)
+        if not ident:
+            raise ValueError(f'Prepared test image has no reviewed-manifest identity: {path.name}')
+        ordered.append(ident)
+    if len(ordered) != len(set(ordered)) or set(ordered) != set(identifiers.values()):
+        raise ValueError('Prepared test samples do not match the frozen reviewed manifest exactly')
+    return ordered
+
+
+def write_prediction_csv(path, model_id, sample_ids, predicted_labels, confidences, inference_ms):
+    lengths = {len(sample_ids), len(predicted_labels), len(confidences), len(inference_ms)}
+    if len(lengths) != 1 or not sample_ids:
+        raise ValueError('Prediction evidence must contain one complete row per test sample')
+    path = Path(path)
+    with path.open('x', newline='', encoding='utf-8') as handle:
+        writer = csv.DictWriter(handle, fieldnames=[
+            'model_id', 'sample_id', 'predicted_label', 'confidence', 'inference_ms'])
+        writer.writeheader()
+        for values in zip(sample_ids, predicted_labels, confidences, inference_ms):
+            sample_id, predicted_label, confidence, latency = values
+            writer.writerow({'model_id': model_id, 'sample_id': sample_id,
+                             'predicted_label': predicted_label,
+                             'confidence': f'{float(confidence):.10f}',
+                             'inference_ms': f'{float(latency):.6f}'})
+    return path
 
 
 def training_arguments():
