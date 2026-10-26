@@ -5,7 +5,7 @@ import unittest
 from pathlib import Path
 
 from PIL import Image
-from scripts.finalize_rechecks import apply_rechecks, finalize
+from scripts.finalize_rechecks import apply_adjudications, apply_rechecks, finalize
 
 
 class FinalizeRechecksTests(unittest.TestCase):
@@ -63,6 +63,37 @@ class FinalizeRechecksTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'protected field'):
             apply_rechecks(self.rows, self.assignments, [('one.json', [changed]),
                 ('two.json', [self.export('row-12', 'recheck-02')])])
+
+    def test_adjudication_resolves_only_real_conflicts_with_human_evidence(self):
+        rows = [dict(self.rows[0]), dict(self.rows[1])]
+        rows[1]['reviewedSourceGroup'] = rows[0]['reviewedSourceGroup']
+        rows[1]['reviewedLabel'] = 'Grade B'
+        document = {'schemaVersion': 1, 'decisions': [{
+            'task': 'quality', 'reviewedSourceGroup': rows[0]['reviewedSourceGroup'],
+            'reviewedLabel': 'Grade B', 'adjudicator': 'coordinator-01',
+            'adjudicatedAt': '2026-10-27T09:00:00+08:00', 'rationale': 'Visual recheck',
+        }]}
+        result, audit = apply_adjudications(rows, document)
+        self.assertEqual({row['reviewedLabel'] for row in result}, {'Grade B'})
+        self.assertEqual({row['reviewer'] for row in result}, {'coordinator-01'})
+        self.assertEqual(audit[0]['previousLabels'], ['Grade A', 'Grade B'])
+        document['decisions'][0]['adjudicator'] = 'AI-assisted-coordinator'
+        with self.assertRaisesRegex(ValueError, 'genuine human'):
+            apply_adjudications(rows, document)
+
+    def test_adjudication_requires_every_and_only_conflicting_group(self):
+        rows = [dict(self.rows[0]), dict(self.rows[1])]
+        rows[1]['reviewedSourceGroup'] = rows[0]['reviewedSourceGroup']
+        rows[1]['reviewedLabel'] = 'Grade B'
+        with self.assertRaisesRegex(ValueError, 'Missing adjudication'):
+            apply_adjudications(rows, {'schemaVersion': 1, 'decisions': []})
+        clean = [dict(self.rows[0])]
+        with self.assertRaisesRegex(ValueError, 'non-conflicting'):
+            apply_adjudications(clean, {'schemaVersion': 1, 'decisions': [{
+                'task': 'quality', 'reviewedSourceGroup': clean[0]['reviewedSourceGroup'],
+                'reviewedLabel': 'Grade A', 'adjudicator': 'coordinator-01',
+                'adjudicatedAt': '2026-10-27T09:00:00+08:00',
+            }]})
 
     def test_finalizer_writes_validated_frozen_evidence(self):
         base = self.root / 'base.json'

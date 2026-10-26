@@ -211,6 +211,14 @@ The command refuses missing assignments, AI-assisted attribution, changed image
 identity, invalid labels/timestamps, conflicts, and split leakage. It produces a
 frozen training manifest plus a checksum-bearing finalization audit.
 
+If the strict finalizer reports conflicting labels for the same source-fruit
+group, a coordinator or adviser must inspect that fruit and record one decision
+in a schema-version-1 JSON file. Pass it with `--adjudications <decisions.json>`.
+The finalizer accepts decisions only for actual conflicts, requires a genuine
+human adjudicator ID and timezone-aware timestamp, resolves every conflicting
+group consistently, and records the original labels and decision-file checksum
+in the finalization audit. It never chooses a label automatically.
+
 ## Finalizing the three disease-annotation exports
 
 After all disease-annotation members finish, merge their exports against the
