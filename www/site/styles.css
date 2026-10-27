@@ -113,6 +113,13 @@ button, input, textarea, select { font: inherit; }
 .download-panel p { color: var(--muted); margin: 0; max-width: 680px; }
 .build-meta { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 18px; }
 .build-meta span { padding: 6px 10px; border-radius: 8px; color: var(--muted); background: rgba(255,255,255,.05); font-size: .76rem; }
+.checksum-card { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 14px; padding: 13px 14px; border: 1px solid rgba(76,175,80,.24); border-radius: 12px; background: rgba(76,175,80,.07); }
+.checksum-card[hidden] { display: none; }
+.checksum-card strong { display: block; margin-bottom: 3px; font-size: .76rem; color: var(--green-light); }
+.checksum-card code { display: block; max-width: 540px; overflow-wrap: anywhere; color: var(--muted); font-size: .72rem; }
+.checksum-copy { flex: 0 0 auto; padding: 8px 11px; border: 1px solid var(--border); border-radius: 9px; color: var(--text); background: rgba(255,255,255,.05); cursor: pointer; }
+.checksum-copy:hover { border-color: rgba(255,255,255,.3); }
+.metadata-note { margin-top: 10px !important; color: var(--subtle) !important; font-size: .76rem; }
 
 .steps { counter-reset: step; display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; }
 .step { counter-increment: step; padding: 25px; border-top: 1px solid var(--border); }
@@ -184,6 +191,7 @@ button, input, textarea, select { font: inherit; }
   .hero h1 { font-size: 3.35rem; }
   .section { padding: 68px 0; }
   .download-panel { padding: 27px; }
+  .checksum-card { align-items: stretch; flex-direction: column; }
   .button { width: 100%; }
   .footer-grid { align-items: flex-start; flex-direction: column; }
 }

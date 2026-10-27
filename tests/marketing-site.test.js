@@ -20,6 +20,8 @@ test('marketing site contains home, about, contact and direct APK navigation', (
   assert.match(home, /downloads\/PitayaGrade-debug\.apk/);
   assert.match(home, /testing build/i);
   assert.match(home, /visible-symptom/i);
+  assert.match(home, /data-build-sha/);
+  assert.match(home, /SHA-256 checksum/i);
 });
 
 test('marketing site follows the app design system and supports reduced motion', () => {
@@ -30,6 +32,22 @@ test('marketing site follows the app design system and supports reduced motion',
   assert.match(css, /--font-display:\s*'Space Grotesk'/);
   assert.match(css, /prefers-reduced-motion/);
   assert.doesNotThrow(() => new vm.Script(fs.readFileSync(path.join(root, 'site', 'site.js'), 'utf8')));
+  const script = fs.readFileSync(path.join(root, 'site', 'site.js'), 'utf8');
+  assert.match(script, /downloads\/release\.json/);
+  assert.match(script, /signedRelease/);
+});
+
+test('Pages workflow publishes an APK with immutable verification metadata', () => {
+  const workflow = fs.readFileSync(path.join(root, '.github', 'workflows', 'pages.yml'), 'utf8');
+  assert.match(workflow, /sha256sum/);
+  assert.match(workflow, /release\.json/);
+  assert.match(workflow, /PitayaGrade-debug\.apk\.sha256/);
+  assert.match(workflow, /signedRelease:false/);
+});
+
+test('application links testers to the PitayaGrade website', () => {
+  const app = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  assert.match(app, /https:\/\/irlcrshrgva-ui\.github\.io\/PitayaGrade\/site\//);
 });
 
 test('packaged marketing site matches editable source', () => {

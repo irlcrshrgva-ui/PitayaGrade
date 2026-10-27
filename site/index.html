@@ -67,7 +67,12 @@
       <div class="wrap">
         <div class="download-panel reveal">
           <div><div class="eyebrow">Android testing build</div><h2>Take PitayaGrade into the field.</h2><p>Download the latest automated testing build. Android may ask you to allow installation from your browser or file manager. This build is for evaluation and is not yet the final signed store release.</p>
-            <div class="build-meta"><span>Version 1.0.0</span><span>Debug testing build</span><span data-apk-size>Size checked on download</span></div>
+            <div class="build-meta"><span data-build-version>Version 1.0.0-testing</span><span>Debug testing build</span><span data-apk-size>Checking size…</span><span data-build-date>Checking build date…</span><span data-build-commit>Checking source…</span></div>
+            <div class="checksum-card" data-checksum-card hidden>
+              <div><strong>SHA-256 checksum</strong><code data-build-sha></code></div>
+              <button class="checksum-copy" type="button" data-copy-checksum>Copy checksum</button>
+            </div>
+            <p class="metadata-note" data-release-status>Checking the published build details…</p>
           </div>
           <a class="button primary" data-apk-link href="../downloads/PitayaGrade-debug.apk" download>Download APK <span aria-hidden="true">↓</span></a>
         </div>
@@ -80,7 +85,7 @@
         <div class="steps reveal">
           <article class="step"><h3>Download</h3><p>Tap Download APK and keep the file on the Android device.</p></article>
           <article class="step"><h3>Allow installation</h3><p>If prompted, allow installs from the browser or file manager used for the download.</p></article>
-          <article class="step"><h3>Test responsibly</h3><p>Use clear fruit photos, check every result, and report unexpected behavior to the team.</p></article>
+          <article class="step"><h3>Verify and test</h3><p>Optionally compare the file's SHA-256 checksum, then use clear fruit photos and report unexpected behavior to the team.</p></article>
         </div>
       </div>
     </section>
