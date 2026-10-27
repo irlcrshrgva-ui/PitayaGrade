@@ -31,6 +31,9 @@ Grade A and Grade C results must remain visible in the manuscript and defense.
 ## Traceability
 
 - Training directory: `training_results/final-quality-2026-10-27`
+- Human-review evidence:
+  `local-review/finalized-human-review-2026-10-27/human-reviewed-manifest.json`
+  and `finalization-audit.json`
 - Frozen copy of reviewed manifest: `reviewed-manifest.json`
 - ONNX prediction exports: `*_onnx_predictions.csv`
 - ONNX evaluation bindings: `*_onnx_predictions.evaluation.json`

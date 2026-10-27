@@ -117,6 +117,32 @@ function validFinalResults(directory, evidenceDirectory) {
   }
 }
 
+function validFinalQualityEvaluation(root) {
+  const directory = path.join(root, 'training_results/final-quality-2026-10-27');
+  const evaluationPath = path.join(directory, 'held-out-summary/evaluation.json');
+  const retainedManifest = path.join(directory, 'reviewed-manifest.json');
+  if (!fs.existsSync(evaluationPath) || !fs.existsSync(retainedManifest)) return false;
+  try {
+    const evaluation = JSON.parse(fs.readFileSync(evaluationPath, 'utf8'));
+    const expected = new Set(['mobilenetv2-quality', 'resnet50-quality', 'efficientnet-b3-quality']);
+    if (evaluation.target !== 'manuscript-quality' || evaluation.manifest?.sha256 !== fileHash(retainedManifest) ||
+        !Array.isArray(evaluation.models) || evaluation.models.length !== expected.size ||
+        !Array.isArray(evaluation.predictionFiles) || evaluation.predictionFiles.length !== expected.size) return false;
+    for (const model of evaluation.models) {
+      if (!expected.delete(model.modelId) || model.sampleCount !== 226 ||
+          !['accuracy', 'macroPrecision', 'macroRecall', 'macroF1', 'meanLatencyMs', 'p95LatencyMs']
+            .every(key => Number.isFinite(model[key]))) return false;
+    }
+    return expected.size === 0 && evaluation.predictionFiles.every(item => {
+      const file = path.resolve(root, item.path || '');
+      return file.startsWith(path.resolve(root) + path.sep) && fs.existsSync(file) &&
+        /^[a-f0-9]{64}$/.test(item.sha256 || '') && fileHash(file) === item.sha256;
+    });
+  } catch {
+    return false;
+  }
+}
+
 function validReviewedRow(row) {
   const reviewer = String(row.reviewer || '');
   const reviewedAt = String(row.reviewedAt || '');
@@ -162,13 +188,21 @@ function buildReport(root = path.resolve(__dirname, '..'), options = {}) {
     return fs.existsSync(file) && fileHash(file) === model.sha256;
   });
 
-  const reviewFiles = options.reviewManifests || [path.join(root, 'research/public-review-manifest.json')];
-  const review = reviewedEvidence(reviewFiles, options.reviewAudits || []);
+  const retainedReviewDirectory = path.join(root, 'local-review/finalized-human-review-2026-10-27');
+  const retainedReviewManifest = path.join(retainedReviewDirectory, 'human-reviewed-manifest.json');
+  const retainedReviewAudit = path.join(retainedReviewDirectory, 'finalization-audit.json');
+  const hasRetainedReview = !options.reviewManifests && fs.existsSync(retainedReviewManifest) &&
+    fs.existsSync(retainedReviewAudit);
+  const reviewFiles = options.reviewManifests || (hasRetainedReview ? [retainedReviewManifest] :
+    [path.join(root, 'research/public-review-manifest.json')]);
+  const reviewAuditFiles = options.reviewAudits || (hasRetainedReview ? [retainedReviewAudit] : []);
+  const review = reviewedEvidence(reviewFiles, reviewAuditFiles);
 
   const evidenceFiles = ['model-evaluation.csv', 'predictions.csv', 'device-test.csv', 'uat.csv'];
   const evidenceDir = options.evidenceDir || path.join(root, 'research/week4');
   const evidence = evidenceFiles.map(name => ({ name, complete: csvHasData(path.join(evidenceDir, name)) }));
-  const auditValid = validEvidenceAudit(evidenceDir, registry, options.reviewAudits || []);
+  const auditValid = validEvidenceAudit(evidenceDir, registry, reviewAuditFiles);
+  const qualityEvidenceValid = validFinalQualityEvaluation(root);
   const resultsDir = options.resultsDir || path.join(root, 'research/week4/final-results');
   const finalResultsValid = validFinalResults(resultsDir, evidenceDir);
   const gradle = fs.readFileSync(path.join(root, 'android/app/build.gradle'), 'utf8');
@@ -196,6 +230,7 @@ function buildReport(root = path.resolve(__dirname, '..'), options = {}) {
     {
       id: 'evaluation-evidence', passed: evidence.every(item => item.complete) && auditValid && finalResultsValid,
       observed: evidence.map(item => `${item.name}:${item.complete ? 'complete' : 'missing'}`).join(', ') +
+        `, quality-onnx-evaluation:${qualityEvidenceValid ? 'valid' : 'missing/invalid'}` +
         `, evidence-audit.json:${auditValid ? 'valid' : 'missing/invalid'}, final-results:${finalResultsValid ? 'valid' : 'missing/invalid'}`,
       required: 'Completed predictions, held-out metrics, device tests, UAT records, and hash-bound final result artifacts replace the templates.'
     },
@@ -248,4 +283,5 @@ if (require.main === module) {
   process.exitCode = report.ready ? 0 : 2;
 }
 
-module.exports = { buildReport, reviewedEvidence, validEvidenceAudit, validReviewAudits, validReleaseAudit, validFinalResults };
+module.exports = { buildReport, reviewedEvidence, validEvidenceAudit, validReviewAudits, validReleaseAudit,
+  validFinalResults, validFinalQualityEvaluation };

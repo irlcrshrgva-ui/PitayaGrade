@@ -4,7 +4,8 @@ const fs = require('node:fs');
 const path = require('node:path');
 const os = require('node:os');
 const crypto = require('node:crypto');
-const { buildReport, reviewedEvidence, validEvidenceAudit, validReleaseAudit, validFinalResults } = require('../scripts/release-readiness');
+const { buildReport, reviewedEvidence, validEvidenceAudit, validReleaseAudit, validFinalResults,
+  validFinalQualityEvaluation } = require('../scripts/release-readiness');
 
 test('release gate reports evidence blockers without treating templates as results', () => {
   const report = buildReport(path.resolve(__dirname, '..'));
@@ -15,10 +16,17 @@ test('release gate reports evidence blockers without treating templates as resul
   assert.equal(checks['model-assets'].passed, false);
   assert.match(checks['model-assets'].observed, /mobilenetv2-quality/);
   assert.equal(checks['reviewed-labels'].passed, false);
-  assert.match(checks['reviewed-labels'].observed, /^0\/3050/);
+  assert.match(checks['reviewed-labels'].observed, /^3050\/3050/);
+  assert.match(checks['reviewed-labels'].observed, /"quality":1553/);
+  assert.match(checks['reviewed-labels'].observed, /"maturity":1497/);
   assert.equal(checks['evaluation-evidence'].passed, false);
+  assert.match(checks['evaluation-evidence'].observed, /quality-onnx-evaluation:valid/);
   assert.equal(checks['android-release-signing'].passed, false);
   assert.equal(report.ready, false);
+});
+
+test('retained final quality evaluation is checksum-bound and complete', () => {
+  assert.equal(validFinalQualityEvaluation(path.resolve(__dirname, '..')), true);
 });
 
 test('release review gate rejects assisted rows and accepts complete human task evidence', t => {
