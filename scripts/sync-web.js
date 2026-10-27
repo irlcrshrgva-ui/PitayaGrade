@@ -14,6 +14,7 @@ for (const filename of ['manifest.webmanifest', 'service-worker.js']) {
 }
 fs.cpSync(path.join(root, 'review-tool'), path.join(root, 'www', 'review-tool'), { recursive: true });
 fs.cpSync(path.join(root, 'annotation-tool'), path.join(root, 'www', 'annotation-tool'), { recursive: true });
+fs.cpSync(path.join(root, 'site'), path.join(root, 'www', 'site'), { recursive: true });
 fs.mkdirSync(path.join(root, 'www', 'research'), { recursive: true });
 for (const filename of ['public-review-manifest.json', 'source-group-suggestions-2026-10-10.json', 'review-assignments-3.json']) {
   fs.copyFileSync(path.join(root, 'research', filename), path.join(root, 'www', 'research', filename));

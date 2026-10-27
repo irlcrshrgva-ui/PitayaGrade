@@ -22,6 +22,29 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - run: npm ci
+      - run: npm run sync:android
+      - uses: android-actions/setup-android@v3
+        with:
+          log-accepted-android-sdk-licenses: false
+          packages: platform-tools
+      - name: Build downloadable testing APK
+        run: |
+          sdkmanager 'platforms;android-36' 'build-tools;35.0.0'
+          chmod +x android/gradlew
+          cd android
+          ./gradlew assembleDebug --console=plain
+          cd ..
+          mkdir -p www/downloads
+          cp android/app/build/outputs/apk/debug/app-debug.apk www/downloads/PitayaGrade-debug.apk
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

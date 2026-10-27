@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0e1525">
+  <meta name="description" content="Contact the PitayaGrade team, report an application problem, or share testing feedback.">
+  <title>Contact — PitayaGrade</title><link rel="icon" href="../assets/logo.png"><link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="site-header"><nav class="nav wrap" aria-label="Main navigation"><a class="brand" href="index.html"><img src="../assets/logo.png" alt="PitayaGrade dragon logo"><span>PitayaGrade</span></a><button class="menu-button" type="button" aria-expanded="false" aria-label="Open navigation">Menu</button><div class="nav-links"><a href="index.html">Home</a><a href="about.html">About</a><a href="contact.html" aria-current="page">Contact</a><a href="../" target="_blank" rel="noopener">Open web app</a><a class="nav-download" href="index.html#download">Download APK</a></div></nav></header>
+  <main>
+    <section class="page-hero wrap reveal"><div class="eyebrow">Contact and feedback</div><h1>Help us make it <span class="gradient-text">field-ready.</span></h1><p>Report installation problems, incorrect app behavior, or testing feedback through the project’s public GitHub issue tracker.</p></section>
+    <section class="section"><div class="contact-layout wrap">
+      <div class="contact-options reveal">
+        <a class="contact-option" href="https://github.com/irlcrshrgva-ui/PitayaGrade/issues" target="_blank" rel="noopener"><strong>Issue tracker ↗</strong><span>Review existing reports or follow the status of a problem.</span></a>
+        <a class="contact-option" href="https://github.com/irlcrshrgva-ui/PitayaGrade" target="_blank" rel="noopener"><strong>GitHub repository ↗</strong><span>View public source files, documentation, and project history.</span></a>
+        <a class="contact-option" href="../" target="_blank" rel="noopener"><strong>Web application ↗</strong><span>Open the current browser version without installing the APK.</span></a>
+      </div>
+      <form class="contact-form reveal" id="supportForm">
+        <div class="eyebrow">Prepare a GitHub report</div><h2>Tell us what happened.</h2>
+        <div class="field"><label for="type">Report type</label><select id="type" name="type"><option>APK installation issue</option><option>Scanner problem</option><option>Incorrect or unclear result</option><option>Interface feedback</option><option>General feedback</option></select></div>
+        <div class="field"><label for="subject">Short title</label><input id="subject" name="subject" required maxlength="100" placeholder="Example: Photo mode stays on loading"></div>
+        <div class="field"><label for="details">Details</label><textarea id="details" name="details" required placeholder="Include the phone model, Android version, steps taken, and what appeared on screen."></textarea></div>
+        <button class="button primary" type="submit">Continue to GitHub issue ↗</button><p class="form-note">This form does not silently submit personal information. It prepares a GitHub issue that you can review before posting.</p>
+      </form>
+    </div></section>
+    <section class="section"><div class="wrap"><div class="section-heading reveal"><div class="eyebrow">Common questions</div><h2>Before you report a problem.</h2></div><div class="faq reveal">
+      <details><summary>Why does Android warn me about the APK?</summary><p>The current file is a testing build installed outside an app store. Verify that it came from this website, then follow Android’s permission prompt only if you intend to participate in testing.</p></details>
+      <details><summary>Does the website upload my fruit photos?</summary><p>No. The public website provides information and downloads. Current scan records and selected images are handled locally by the application.</p></details>
+      <details><summary>Are visible-symptom results a confirmed diagnosis?</summary><p>No. They are AI-assisted visible-symptom estimates and must not replace qualified agricultural or laboratory assessment.</p></details>
+    </div></div></section>
+  </main>
+  <footer class="site-footer"><div class="footer-grid wrap"><a class="brand" href="index.html"><img src="../assets/logo.png" alt=""><span>PitayaGrade</span></a><div class="footer-links"><a href="index.html">Home</a><a href="about.html">About</a><a href="https://github.com/irlcrshrgva-ui/PitayaGrade" target="_blank" rel="noopener">GitHub</a><span>© <span data-year></span></span></div></div></footer>
+  <script src="site.js"></script>
+</body>
+</html>
