@@ -134,7 +134,8 @@ function validFinalQualityEvaluation(root) {
             .every(key => Number.isFinite(model[key]))) return false;
     }
     return expected.size === 0 && evaluation.predictionFiles.every(item => {
-      const file = path.resolve(root, item.path || '');
+      const portablePath = String(item.path || '').replace(/[\\/]+/g, path.sep);
+      const file = path.resolve(root, portablePath);
       return file.startsWith(path.resolve(root) + path.sep) && fs.existsSync(file) &&
         /^[a-f0-9]{64}$/.test(item.sha256 || '') && fileHash(file) === item.sha256;
     });
