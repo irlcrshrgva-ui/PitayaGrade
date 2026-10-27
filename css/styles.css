@@ -2310,6 +2310,11 @@ a { text-decoration: none; color: inherit; }
 #tutorialOverlay.spotlight-mode .tutorial-spotlight {
   display: block;
 }
+#tutorialOverlay.spotlight-mode {
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
 
 .tutorial-card {
   background: #141D30;
@@ -2319,6 +2324,7 @@ a { text-decoration: none; color: inherit; }
   max-width: 320px;
   width: calc(100% - 48px);
   position: relative;
+  z-index: 10001;
   box-shadow: 0 24px 60px rgba(0,0,0,0.6);
   animation: tutorialPop 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -2329,10 +2335,23 @@ a { text-decoration: none; color: inherit; }
 
 #tutorialOverlay.spotlight-mode .tutorial-card {
   position: fixed;
-  bottom: 110px;
+  bottom: calc(104px + env(safe-area-inset-bottom, 0px));
   left: 50%;
   transform: translateX(-50%);
   animation: none;
+  max-height: min(62dvh, 560px);
+  overflow-y: auto;
+}
+
+@media (max-height: 650px) {
+  #tutorialOverlay.spotlight-mode .tutorial-card {
+    bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+    padding: 18px 18px 16px;
+    max-height: 68dvh;
+  }
+  .tutorial-icon { width: 42px; height: 42px; margin-bottom: 9px; }
+  .tutorial-desc { margin-bottom: 12px; }
+  .tutorial-dots { margin-bottom: 12px; }
 }
 
 .tutorial-step-badge {

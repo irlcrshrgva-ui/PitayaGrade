@@ -408,7 +408,7 @@ const Tutorial = {
     {
       title: 'Dashboard',
       icon: '&#128200;',
-      desc: 'This is your Home screen. See your total scans, average grade, disease rate, and harvest readiness at a glance.',
+      desc: 'This is your Home screen. See total scans, average grade, visible-symptom estimates, and harvest readiness at a glance.',
       target: '#nav-dashboard',
       badge: 'Step 1 of 5',
     },
@@ -429,7 +429,7 @@ const Tutorial = {
     {
       title: 'Analytics',
       icon: '&#128202;',
-      desc: 'Track disease trends, quality over time, and grade distribution across all your scans. Great for farm-level decision making.',
+      desc: 'Track visible-symptom estimates, quality over time, and grade distribution across all your scans.',
       target: '#nav-analytics',
       badge: 'Step 4 of 5',
     },
@@ -507,10 +507,15 @@ const Tutorial = {
     if (!el || !spot) return;
     const r = el.getBoundingClientRect();
     const pad = 6;
-    spot.style.top    = (r.top    - pad) + 'px';
-    spot.style.left   = (r.left   - pad) + 'px';
-    spot.style.width  = (r.width  + pad * 2) + 'px';
-    spot.style.height = (r.height + pad * 2) + 'px';
+    const edge = 8;
+    const left = Math.max(edge, r.left - pad);
+    const top = Math.max(edge, r.top - pad);
+    const right = Math.min(window.innerWidth - edge, r.right + pad);
+    const bottom = Math.min(window.innerHeight - edge, r.bottom + pad);
+    spot.style.top = top + 'px';
+    spot.style.left = left + 'px';
+    spot.style.width = Math.max(0, right - left) + 'px';
+    spot.style.height = Math.max(0, bottom - top) + 'px';
   },
 
   _clearSpotlight() {
