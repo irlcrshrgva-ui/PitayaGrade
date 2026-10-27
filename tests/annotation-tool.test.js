@@ -17,21 +17,31 @@ test('disease annotation polygons reject malformed evidence', () => {
 });
 
 test('disease annotation completion preserves explicit human evidence', () => {
-  const result = state.completed(row, { reviewedLabel:'Sunburn', regions:[{
+  const result = state.completed(row, { cropDecision:'confirmed', reviewedLabel:'Sunburn', regions:[{
     label:'Sunburn', polygon:[[.1,.1],[.8,.1],[.8,.8],[.1,.8]]
   }] }, 'reviewer-01', '2026-10-25T10:00:00Z');
   assert.equal(result.imageRole, 'fruit-roi');
   assert.equal(result.maskCoordinateSpace, 'upright');
   assert.equal(result.annotationReviewer, 'reviewer-01');
   assert.equal(state.isComplete(result), true);
-  assert.throws(() => state.completed(row, { reviewedLabel:'Healthy', regions:result.regions },
+  assert.throws(() => state.completed(row, { cropDecision:'confirmed', reviewedLabel:'Healthy', regions:result.regions },
     'reviewer-01', '2026-10-25T10:00:00Z'), /Healthy/);
 });
 
 test('healthy annotation requires an explicit empty region list', () => {
-  const result = state.completed(row, { reviewedLabel:'Healthy', regions:[] },
+  const result = state.completed(row, { cropDecision:'confirmed', reviewedLabel:'Healthy', regions:[] },
     'reviewer-02', '2026-10-25T10:00:00Z');
   assert.deepEqual(result.regions, []);
+  assert.equal(state.isComplete(result), true);
+});
+
+test('crop proposals require confirmation and unusable crops can be excluded', () => {
+  assert.throws(() => state.completed(row, { reviewedLabel:'Healthy', regions:[] },
+    'reviewer-01', '2026-10-25T10:00:00Z'), /Confirm/);
+  const result = state.completed(row, { cropDecision:'excluded' },
+    'reviewer-01', '2026-10-25T10:00:00Z');
+  assert.equal(result.excludedFromTraining, true);
+  assert.equal(result.reviewedLabel, 'Excluded');
   assert.equal(state.isComplete(result), true);
 });
 

@@ -2,12 +2,12 @@
   'use strict';
   const state = window.PitayaAnnotationState;
   const $ = id => document.getElementById(id);
-  const elements = Object.fromEntries(['status','manifestFile','imageFolder','reviewer','regionLabel','primaryLabel',
+  const elements = Object.fromEntries(['status','manifestFile','imageFolder','reviewer','confirmCrop','excludeCrop','cropStatus','regionLabel','primaryLabel',
     'undoPoint','closeRegion','removeRegion','clearRecord','markHealthy','saveRecord','recordSummary','progressText',
     'progress','canvas','canvasMessage','recordId','split','imagePath','regionCount','previous','position','next',
     'exportDraft','restoreFile','exportFinal','toast'].map(id => [id, $(id)]));
   const context = elements.canvas.getContext('2d');
-  let rows = [], drafts = {}, files = new Map(), index = 0, points = [], regions = [], bitmap = null;
+  let rows = [], drafts = {}, files = new Map(), index = 0, points = [], regions = [], cropDecision = '', bitmap = null;
   const colors = ['#55efb2','#f83f83','#ffd85a','#73b7ff','#d293ff','#ff9955'];
 
   state.SYMPTOMS.forEach(label => {
@@ -36,10 +36,11 @@
 
   function draftFor(row) {
     const saved = drafts[row.id] || (row.annotationsComplete ? row : null);
-    return saved ? { reviewedLabel:saved.reviewedLabel, regions:(saved.regions || []).map(region =>
+    return saved ? { reviewedLabel:saved.reviewedLabel, cropDecision:saved.excludedFromTraining ? 'excluded' :
+      saved.cropReviewStatus === 'human-confirmed' ? 'confirmed' : saved.cropDecision || '', regions:(saved.regions || []).map(region =>
       ({ label:region.label, polygon:region.polygon.map(item => [...item]) })),
       annotationReviewer:saved.annotationReviewer, annotationReviewedAt:saved.annotationReviewedAt } :
-      { reviewedLabel:'', regions:[] };
+      { reviewedLabel:'', cropDecision:'', regions:[] };
   }
 
   function draw() {
@@ -80,11 +81,13 @@
       elements.recordId.textContent = elements.split.textContent = elements.imagePath.textContent = '—';
       elements.position.textContent = '0 of 0'; elements.recordSummary.textContent = 'No record loaded.'; return;
     }
-    const draft = draftFor(row); points = []; regions = draft.regions;
+    const draft = draftFor(row); points = []; regions = draft.regions; cropDecision = draft.cropDecision;
     elements.primaryLabel.value = draft.reviewedLabel || '';
     elements.reviewer.value ||= draft.annotationReviewer || '';
     elements.recordId.textContent = row.id; elements.split.textContent = row.candidateSplit;
     elements.imagePath.textContent = row.image; elements.regionCount.textContent = String(regions.length);
+    elements.cropStatus.textContent = cropDecision === 'confirmed' ? 'Confirmed usable dragon-fruit crop' :
+      cropDecision === 'excluded' ? 'Excluded from training' : 'Awaiting human crop confirmation';
     elements.position.textContent = `${index + 1} of ${rows.length}`;
     elements.recordSummary.textContent = draft.reviewedLabel ? `${draft.reviewedLabel}; ${regions.length} region(s)` : 'Not completed.';
     elements.previous.disabled = index === 0; elements.next.disabled = index >= rows.length - 1;
@@ -111,24 +114,27 @@
     update(); toast(`${event.target.files.length} local files available.`);
   });
   elements.canvas.addEventListener('pointerdown', event => {
-    if (!bitmap || elements.primaryLabel.value === 'Healthy') return;
+    if (!bitmap || cropDecision !== 'confirmed' || elements.primaryLabel.value === 'Healthy') return;
     const rect = elements.canvas.getBoundingClientRect();
     points.push(state.point([(event.clientX - rect.left) / rect.width, (event.clientY - rect.top) / rect.height])); draw();
   });
   elements.undoPoint.addEventListener('click', () => { points.pop(); draw(); });
   elements.closeRegion.addEventListener('click', () => {
+    if (cropDecision !== 'confirmed') return toast('Confirm the fruit crop before drawing symptoms.');
     const error = state.polygonError(points); if (error) return toast(error);
     regions.push({ label:elements.regionLabel.value, polygon:points.map(item => [...item]) });
     points = []; elements.primaryLabel.value ||= regions[0].label; elements.regionCount.textContent = String(regions.length); draw();
   });
   elements.removeRegion.addEventListener('click', () => { regions.pop(); elements.regionCount.textContent = String(regions.length); draw(); });
-  elements.clearRecord.addEventListener('click', () => { points = []; regions = []; elements.primaryLabel.value = ''; delete drafts[rows[index]?.id]; update(); });
-  elements.markHealthy.addEventListener('click', () => { points = []; regions = []; elements.primaryLabel.value = 'Healthy'; draw(); });
+  elements.clearRecord.addEventListener('click', () => { points = []; regions = []; cropDecision = ''; elements.primaryLabel.value = ''; delete drafts[rows[index]?.id]; update(); });
+  elements.confirmCrop.addEventListener('click', () => { cropDecision = 'confirmed'; elements.cropStatus.textContent = 'Confirmed usable dragon-fruit crop'; });
+  elements.excludeCrop.addEventListener('click', () => { cropDecision = 'excluded'; points = []; regions = []; elements.primaryLabel.value = ''; elements.cropStatus.textContent = 'Excluded from training'; draw(); });
+  elements.markHealthy.addEventListener('click', () => { if (cropDecision !== 'confirmed') return toast('Confirm the fruit crop first.'); points = []; regions = []; elements.primaryLabel.value = 'Healthy'; draw(); });
   elements.saveRecord.addEventListener('click', () => {
     const row = rows[index]; if (!row) return toast('Load a manifest first.');
     try {
       const reviewedAt = new Date().toISOString();
-      const result = state.completed(row, { reviewedLabel:elements.primaryLabel.value, regions }, elements.reviewer.value, reviewedAt);
+      const result = state.completed(row, { reviewedLabel:elements.primaryLabel.value, regions, cropDecision }, elements.reviewer.value, reviewedAt);
       drafts[row.id] = result;
       const nextIncomplete = rows.findIndex((item, rowIndex) => rowIndex > index && !state.isComplete(drafts[item.id] || item));
       index = nextIncomplete >= 0 ? nextIncomplete : Math.min(index + 1, rows.length - 1); update(); toast('Annotation saved locally.');

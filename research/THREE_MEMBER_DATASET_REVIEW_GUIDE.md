@@ -221,6 +221,25 @@ in the finalization audit. It never chooses a label automatically.
 
 ## Finalizing the three disease-annotation exports
 
+The adviser-approved disease choices are **Anthracnose, Stem Canker, Soft Rot,
+Pest Damage, Sunburn, Fungal Spots, and Healthy**. The current private crop
+proposal set contains 600 records, divided into three non-overlapping packages
+of 200 records each under:
+
+`local-review/disease-annotation-packages-2026-10-27/`
+
+Member 1 uses `mask-reviewer-01`; Member 2 uses `mask-reviewer-02`; Member 3
+uses `mask-reviewer-03`. Each member extracts only their ZIP, opens
+<https://irlcrshrgva-ui.github.io/PitayaGrade/annotation-tool/>, loads
+`annotation-manifest.json`, then loads the extracted folder for the images.
+
+Every image is an unverified model-assisted crop proposal. Before labeling,
+the reviewer must click **Confirm usable dragon-fruit crop** when the crop is
+usable, or **Exclude unusable crop** when it is not. A confirmed crop is then
+marked Healthy or annotated with one or more symptom polygons. Source folder
+names and the crop detector's grade are provenance only and must never be
+copied as a disease diagnosis.
+
 After all disease-annotation members finish, merge their exports against the
 original crop manifest and the exact assignment index:
 

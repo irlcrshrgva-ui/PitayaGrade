@@ -66,6 +66,18 @@
   function completed(row, draft, reviewer, reviewedAt) {
     if (!draft || typeof draft !== 'object') throw new Error('No annotation draft is available.');
     if (typeof reviewer !== 'string' || !reviewer.trim()) throw new Error('Enter the human reviewer ID.');
+    if (!['confirmed', 'excluded'].includes(draft.cropDecision)) {
+      throw new Error('Confirm that the crop contains a usable dragon fruit, or exclude it.');
+    }
+    if (draft.cropDecision === 'excluded') {
+      return {
+        ...row, task:'disease', imageRole:'fruit-roi', roiSourceId:row.roiSourceId || row.id,
+        cropReviewStatus:'excluded', cropReviewer:reviewer.trim(), cropReviewedAt:reviewedAt,
+        excludedFromTraining:true, exclusionReason:'unusable-model-assisted-fruit-crop',
+        annotationsComplete:true, annotationReviewer:reviewer.trim(), annotationReviewedAt:reviewedAt,
+        reviewer:reviewer.trim(), reviewedAt, reviewedLabel:'Excluded', maskCoordinateSpace:'upright', regions:[]
+      };
+    }
     const healthy = draft.reviewedLabel === 'Healthy';
     const regions = Array.isArray(draft.regions) ? draft.regions.map(region => {
       if (!region || !SYMPTOMS.includes(region.label)) throw new Error('Choose a supported symptom for every polygon.');
@@ -84,6 +96,10 @@
       task: 'disease',
       imageRole: 'fruit-roi',
       roiSourceId: row.roiSourceId || row.id,
+      cropReviewStatus: 'human-confirmed',
+      cropReviewer: reviewer.trim(),
+      cropReviewedAt: reviewedAt,
+      excludedFromTraining: false,
       annotationsComplete: true,
       annotationReviewer: reviewer.trim(),
       annotationReviewedAt: reviewedAt,
@@ -103,8 +119,9 @@
   function isComplete(row) {
     return row && row.annotationsComplete === true && typeof row.annotationReviewer === 'string' &&
       row.annotationReviewer.trim() && typeof row.annotationReviewedAt === 'string' &&
-      (row.reviewedLabel === 'Healthy' ? Array.isArray(row.regions) && row.regions.length === 0 :
-        SYMPTOMS.includes(row.reviewedLabel) && Array.isArray(row.regions) && row.regions.length > 0);
+      (row.excludedFromTraining === true ? row.cropReviewStatus === 'excluded' && row.reviewedLabel === 'Excluded' :
+      row.cropReviewStatus === 'human-confirmed' && (row.reviewedLabel === 'Healthy' ? Array.isArray(row.regions) && row.regions.length === 0 :
+        SYMPTOMS.includes(row.reviewedLabel) && Array.isArray(row.regions) && row.regions.length > 0));
   }
 
   return { SYMPTOMS, point, polygonError, manifest, completed, merge, isComplete };

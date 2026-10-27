@@ -16,6 +16,8 @@ PROTECTED_FIELDS = (
 ANNOTATION_FIELDS = (
     'task', 'reviewedLabel', 'reviewer', 'reviewedAt', 'annotationsComplete',
     'annotationReviewer', 'annotationReviewedAt', 'maskCoordinateSpace', 'regions',
+    'cropReviewStatus', 'cropReviewer', 'cropReviewedAt', 'excludedFromTraining',
+    'exclusionReason',
 )
 
 
@@ -81,7 +83,18 @@ def apply_annotations(base_rows, assignment_index, exports):
             if row.get('reviewedAt') != row.get('annotationReviewedAt'):
                 raise ValueError(f'{path}: {ident} has inconsistent review timestamps')
             aware_timestamp(row.get('annotationReviewedAt'), f'{path}: {ident}')
+            if row.get('cropReviewer') != reviewer or row.get('cropReviewedAt') != row.get('reviewedAt'):
+                raise ValueError(f'{path}: {ident} has inconsistent crop-review evidence')
             label, regions = row.get('reviewedLabel'), row.get('regions')
+            if row.get('excludedFromTraining') is True:
+                if row.get('cropReviewStatus') != 'excluded' or label != 'Excluded' or regions != []:
+                    raise ValueError(f'{path}: {ident} has invalid crop-exclusion evidence')
+                if not str(row.get('exclusionReason') or '').strip():
+                    raise ValueError(f'{path}: {ident} needs an exclusion reason')
+                patches[ident] = {field: row.get(field) for field in ANNOTATION_FIELDS}
+                continue
+            if row.get('cropReviewStatus') != 'human-confirmed' or row.get('excludedFromTraining') is not False:
+                raise ValueError(f'{path}: {ident} crop must be human-confirmed or excluded')
             if label == 'Healthy':
                 if regions != []:
                     raise ValueError(f'{path}: {ident} Healthy record must have an empty regions list')
@@ -101,7 +114,11 @@ def finalize(base_path, assignment_path, export_paths, output_dir, root=ROOT):
     base_rows = load_list(base_path)
     assignments = json.loads(Path(assignment_path).read_text(encoding='utf-8'))
     exports = [(Path(path), load_list(path)) for path in export_paths]
-    merged = apply_annotations(base_rows, assignments, exports)
+    all_merged = apply_annotations(base_rows, assignments, exports)
+    excluded = [row for row in all_merged if row.get('excludedFromTraining') is True]
+    merged = [row for row in all_merged if row.get('excludedFromTraining') is not True]
+    if not merged:
+        raise ValueError('Every proposed crop was excluded; no trainable disease annotations remain')
     errors = validate_segmentation(merged, root=root)
     if errors:
         raise ValueError(f'Final disease manifest failed validation ({len(errors)} errors):\n' +
@@ -114,7 +131,10 @@ def finalize(base_path, assignment_path, export_paths, output_dir, root=ROOT):
         'baseManifest': {'path': str(base_path), 'sha256': sha256(base_path)},
         'assignmentIndex': {'path': str(assignment_path), 'sha256': sha256(assignment_path)},
         'exports': [{'path': str(path), 'sha256': sha256(path)} for path in export_paths],
+        'assignedRowCount': len(all_merged),
         'rowCount': len(merged),
+        'excludedCount': len(excluded),
+        'excludedIds': [row['id'] for row in excluded],
         'reviewerCounts': dict(sorted(Counter(row['annotationReviewer'] for row in merged).items())),
         'splitCounts': dict(sorted(Counter(row['candidateSplit'] for row in merged).items())),
         'labelCounts': dict(sorted(Counter(row['reviewedLabel'] for row in merged).items())),

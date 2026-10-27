@@ -80,11 +80,13 @@ def write_package(output, assignment, public, root=ROOT):
 3. Load annotation-manifest.json.
 4. Load this extracted folder as the local image folder.
 5. Enter reviewer ID {reviewer}.
-6. Follow the adviser-approved symptom and polygon guide.
-7. Click around each visible symptom, select its class, and save the polygon.
-8. Select the primary reviewed result, then Save annotation & next.
-9. For an approved healthy crop, use Mark Healthy; do not draw a symptom region.
-10. Export a draft after every work block and the completed manifest at 100%.
+6. Treat every image as a model-assisted crop proposal, not verified evidence.
+7. Click Confirm usable dragon-fruit crop only when the crop clearly contains a usable fruit.
+8. Otherwise click Exclude unusable crop; excluded images will not enter training.
+9. For a confirmed crop, click around each visible symptom, select its class, and save the polygon.
+10. Select the primary reviewed result, then Save annotation & next.
+11. For an approved healthy crop, use Mark Healthy; do not draw a symptom region.
+12. Export a draft after every work block and the completed manifest at 100%.
 
 Folder names and model output do not prove a diagnosis or lesion boundary.
 """

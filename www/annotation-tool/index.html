@@ -18,12 +18,16 @@
       <label class="import">Load annotation manifest<input id="manifestFile" type="file" accept="application/json"></label>
       <label class="import">Load local image folder<input id="imageFolder" type="file" webkitdirectory multiple accept="image/*"></label>
       <label>Human reviewer ID<input id="reviewer" autocomplete="off" placeholder="reviewer-01"></label>
-      <h2>2. Draw a region</h2>
+      <h2>2. Confirm the proposed crop</h2>
+      <div class="button-grid"><button id="confirmCrop">Confirm dragon-fruit crop</button><button id="excludeCrop">Exclude unusable crop</button></div>
+      <p id="cropStatus" class="hint">Awaiting human crop confirmation</p>
+      <p class="hint">The crop was proposed by a model. Confirm it only when it visibly contains a usable dragon fruit. Excluded crops remain in the audit but never enter training.</p>
+      <h2>3. Draw a region</h2>
       <label>Polygon symptom<select id="regionLabel"></select></label>
       <div class="button-grid"><button id="undoPoint">Undo point</button><button id="closeRegion">Save polygon</button>
         <button id="removeRegion">Remove last polygon</button><button id="clearRecord">Clear record</button></div>
       <p class="hint">Click around the visible symptom boundary. Use at least three points and do not cross polygon lines.</p>
-      <h2>3. Complete the record</h2>
+      <h2>4. Complete the record</h2>
       <label>Primary reviewed result<select id="primaryLabel"><option value="">Choose result</option><option>Healthy</option></select></label>
       <button id="markHealthy">Mark Healthy (no regions)</button>
       <button id="saveRecord" class="primary">Save annotation &amp; next</button>
