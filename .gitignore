@@ -28,6 +28,7 @@ yolo_dataset/labels/
 training_results/*.pth
 training_results/**/dataset/
 training_results/**/*.pth
+training_results/**/*.onnx
 training_results/mendeley-*/
 training_results/provisional-*/
 yolo_results/**/dataset/

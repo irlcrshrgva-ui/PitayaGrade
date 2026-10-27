@@ -1,0 +1,66 @@
+{
+  "model": "MobileNetV2",
+  "test_accuracy": 0.7212389380530974,
+  "per_class": {
+    "Grade A": {
+      "precision": 0.34146341463414637,
+      "recall": 0.5,
+      "f1_score": 0.4057971014492754,
+      "support": 28
+    },
+    "Grade B": {
+      "precision": 0.582089552238806,
+      "recall": 0.639344262295082,
+      "f1_score": 0.609375,
+      "support": 61
+    },
+    "Grade C": {
+      "precision": 0.36363636363636365,
+      "recall": 0.18181818181818182,
+      "f1_score": 0.24242424242424243,
+      "support": 22
+    },
+    "Reject": {
+      "precision": 0.9906542056074766,
+      "recall": 0.9217391304347826,
+      "f1_score": 0.954954954954955,
+      "support": 115
+    }
+  },
+  "confusion_matrix": [
+    [
+      14,
+      13,
+      1,
+      0
+    ],
+    [
+      18,
+      39,
+      3,
+      1
+    ],
+    [
+      8,
+      10,
+      4,
+      0
+    ],
+    [
+      1,
+      5,
+      3,
+      106
+    ]
+  ],
+  "class_names": [
+    "Grade A",
+    "Grade B",
+    "Grade C",
+    "Reject"
+  ],
+  "mean_inference_ms": 27.16779955761946,
+  "p95_inference_ms": 31.52514062503542,
+  "prediction_file": "MobileNetV2_predictions.csv",
+  "prediction_count": 226
+}

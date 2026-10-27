@@ -51,10 +51,16 @@ the second dataset's eight condition labels. Neither dataset supplies lesion mas
 ## Completion evidence
 
 Run `npm run progress` to calculate the retained-deliverable readiness score.
-The current evidence-based estimate is **80/100**; it is a project-management
-measure, not model accuracy. Its weights, basis and remaining 20% are documented
+The current evidence-based estimate is **88/100**; it is a project-management
+measure, not model accuracy. Its weights, basis and remaining 12% are documented
 in `research/COMPLETION_SCORECARD.md`. The actionable team checklist is in
 `research/FINAL_20_PERCENT_CHECKLIST.md`.
+
+Final human-reviewed quality data and exact held-out ONNX evaluations for
+MobileNetV2, ResNet50 and EfficientNet-B3 are now retained. See
+`research/FINAL_QUALITY_MODEL_EVALUATION_2026-10-27.md`. These candidates remain
+unbundled until the all-model evidence audit can also validate the pending
+disease-segmentation asset and required Week 4 evidence.
 
 The editable defense presentation is available at
 `deliverables/PitayaGrade_Defense_Deck_v1.pptx`.

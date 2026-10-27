@@ -1,0 +1,66 @@
+{
+  "model": "ResNet50",
+  "test_accuracy": 0.7433628318584071,
+  "per_class": {
+    "Grade A": {
+      "precision": 0.4,
+      "recall": 0.2857142857142857,
+      "f1_score": 0.3333333333333333,
+      "support": 28
+    },
+    "Grade B": {
+      "precision": 0.5647058823529412,
+      "recall": 0.7868852459016393,
+      "f1_score": 0.6575342465753424,
+      "support": 61
+    },
+    "Grade C": {
+      "precision": 0.36363636363636365,
+      "recall": 0.18181818181818182,
+      "f1_score": 0.24242424242424243,
+      "support": 22
+    },
+    "Reject": {
+      "precision": 0.9818181818181818,
+      "recall": 0.9391304347826087,
+      "f1_score": 0.96,
+      "support": 115
+    }
+  },
+  "confusion_matrix": [
+    [
+      8,
+      19,
+      1,
+      0
+    ],
+    [
+      9,
+      48,
+      2,
+      2
+    ],
+    [
+      3,
+      15,
+      4,
+      0
+    ],
+    [
+      0,
+      3,
+      4,
+      108
+    ]
+  ],
+  "class_names": [
+    "Grade A",
+    "Grade B",
+    "Grade C",
+    "Reject"
+  ],
+  "mean_inference_ms": 65.69760265486856,
+  "p95_inference_ms": 81.55119062485028,
+  "prediction_file": "ResNet50_predictions.csv",
+  "prediction_count": 226
+}

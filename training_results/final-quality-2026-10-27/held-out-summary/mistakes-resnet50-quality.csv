@@ -1,0 +1,59 @@
+sampleId,actual,predicted,confidence
+quality:0,Grade A,Grade B,0.4809813078
+quality:121,Grade B,Grade A,0.3730717
+quality:122,Grade B,Reject,0.6738412953
+quality:1229,Reject,Grade C,0.551592445
+quality:129,Reject,Grade B,0.4705624493
+quality:1326,Grade B,Reject,0.3475901683
+quality:138,Grade C,Grade B,0.4513447051
+quality:1381,Reject,Grade C,0.7149301222
+quality:167,Grade A,Grade B,0.5594257824
+quality:194,Reject,Grade C,0.4422116365
+quality:203,Grade A,Grade B,0.5481407543
+quality:210,Grade A,Grade B,0.6552514254
+quality:235,Grade C,Grade B,0.6570043732
+quality:26,Grade A,Grade B,0.7047835066
+quality:268,Grade B,Grade A,0.5104710862
+quality:282,Grade C,Grade B,0.3691163803
+quality:288,Grade C,Grade A,0.4924226822
+quality:291,Grade B,Grade A,0.5445812521
+quality:344,Grade B,Grade A,0.5406292017
+quality:353,Grade B,Grade A,0.4500908744
+quality:355,Grade A,Grade B,0.9823957203
+quality:367,Grade A,Grade B,0.6726221193
+quality:371,Grade B,Grade C,0.575358032
+quality:41,Grade B,Grade A,0.4229906894
+quality:417,Grade C,Grade A,0.5282869957
+quality:42,Grade A,Grade C,0.6128643394
+quality:441,Grade A,Grade B,0.7241101008
+quality:442,Grade A,Grade B,0.5539699166
+quality:454,Grade C,Grade B,0.6893470975
+quality:457,Grade C,Grade B,0.7485923102
+quality:48,Grade A,Grade B,0.4618133144
+quality:49,Grade A,Grade B,0.7429209141
+quality:50,Grade C,Grade B,0.684517969
+quality:52,Grade A,Grade B,0.75069447
+quality:529,Grade C,Grade B,0.6355878087
+quality:555,Grade B,Grade C,0.5774408586
+quality:558,Grade C,Grade B,0.5854623429
+quality:630,Grade B,Grade A,0.4940263679
+quality:638,Grade B,Grade A,0.8934779991
+quality:66,Grade A,Grade B,0.6930446394
+quality:670,Grade B,Grade A,0.6098639557
+quality:693,Grade A,Grade B,0.752893493
+quality:707,Grade C,Grade B,0.5672718181
+quality:72,Grade A,Grade B,0.6581278987
+quality:720,Grade C,Grade B,0.721183233
+quality:730,Grade A,Grade B,0.4339444797
+quality:738,Grade C,Grade B,0.7750367684
+quality:777,Reject,Grade B,0.5154083025
+quality:791,Reject,Grade C,0.4115433489
+quality:807,Grade C,Grade A,0.6418928252
+quality:808,Grade C,Grade B,0.5205868933
+quality:839,Grade C,Grade B,0.5475325971
+quality:840,Grade C,Grade B,0.4994430698
+quality:841,Grade A,Grade B,0.57152741
+quality:845,Reject,Grade B,0.411529139
+quality:870,Grade A,Grade B,0.505945091
+quality:876,Grade A,Grade B,0.6802603347
+quality:887,Grade C,Grade B,0.6796744617

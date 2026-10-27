@@ -1,0 +1,20 @@
+{
+  "modelId": "mobilenetv2-quality",
+  "outputContract": "quality-softmax-v1",
+  "inputShape": [
+    1,
+    3,
+    224,
+    224
+  ],
+  "outputShapes": [
+    [
+      1,
+      4
+    ]
+  ],
+  "preprocessing": "rgb-imagenet-normalized",
+  "sha256": "72b2dab116a59cf5e45ddff0408e256c019683d5880e897e504fbf32e110f971",
+  "runtimeCompatible": true,
+  "accuracyValidated": false
+}

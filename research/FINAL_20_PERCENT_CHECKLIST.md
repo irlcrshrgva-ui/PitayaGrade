@@ -19,39 +19,39 @@ or apply any group.
 
 ## 2. Complete dataset review
 
-- [ ] Review all 3,050 rows in the public review manifest.
-- [ ] Add reviewer name or ID, review time and approved target label to every retained row.
-- [ ] Resolve uncertain, conflicting or unusable images.
+- [x] Review all 3,050 rows in the public review manifest.
+- [x] Add reviewer name or ID, review time and approved target label to every retained row.
+- [x] Resolve uncertain, conflicting or unusable images.
 - [ ] Review or create disease-segmentation masks.
-- [ ] Re-run the dataset audit after corrections.
-- [ ] Confirm there are no cross-split duplicates or source-group leaks.
-- [ ] Freeze the final train, validation and test manifests.
+- [x] Re-run the dataset audit after corrections.
+- [x] Confirm there are no cross-split duplicates or source-group leaks.
+- [x] Freeze the final train, validation and test manifests.
 
 **Evidence required:** completed review manifest, reviewed masks, clean audit report and frozen split manifests.
 
 ## 3. Train and export the missing models
 
-- [ ] Train MobileNetV2 for quality classification.
-- [ ] Train ResNet50 for quality classification.
-- [ ] Train EfficientNet-B3 for quality classification.
+- [x] Train MobileNetV2 for quality classification.
+- [x] Train ResNet50 for quality classification.
+- [x] Train EfficientNet-B3 for quality classification.
 - [ ] Train YOLOv8-Nano segmentation for visible disease regions.
-- [ ] Save training configuration, random seed, dataset version and checkpoints for every run.
-- [ ] Export the selected checkpoints to ONNX.
-- [ ] Verify input shape, output shape, class order and preprocessing contract for every ONNX file.
-- [ ] Generate and record SHA-256 checksums.
+- [x] Save training configuration, random seed, dataset version and checkpoints for every quality run.
+- [x] Export the selected quality checkpoints to ONNX.
+- [x] Verify input shape, output shape, class order and preprocessing contract for every quality ONNX file.
+- [x] Generate and record SHA-256 checksums for every quality candidate.
 - [ ] Add only evaluated assets to the application model registry.
 
 **Evidence required:** training records, selected checkpoints, ONNX files, verification reports and checksums.
 
 ## 4. Perform formal held-out evaluation
 
-- [ ] Run each quality model on the untouched test set.
-- [ ] Save one prediction row per test image.
-- [ ] Calculate accuracy, precision, recall and F1-score per class and overall.
-- [ ] Generate confusion matrices for the quality models.
+- [x] Run each quality model on the untouched test set.
+- [x] Save one prediction row per test image.
+- [x] Calculate accuracy, precision, recall and F1-score per class and overall.
+- [x] Generate confusion matrices for the quality models.
 - [ ] Calculate the approved segmentation metrics for the disease model.
-- [ ] Compare all candidate models using the same test set and rules.
-- [ ] Record model size and inference time alongside predictive performance.
+- [x] Compare all quality candidate models using the same test set and rules.
+- [x] Record quality-model size and inference time alongside predictive performance.
 - [ ] Have the results reviewed and approved before using them in the manuscript.
 
 **Evidence required:** `predictions.csv`, `model-evaluation.csv`, confusion matrices, segmentation results and signed-off comparison summary.

@@ -1,0 +1,47 @@
+{
+  "generatedAt": "2026-10-27T08:43:05.770503+00:00",
+  "status": "held-out-onnx-predictions",
+  "modelId": "mobilenetv2-quality",
+  "model": {
+    "path": "training_results\\final-quality-2026-10-27\\MobileNetV2.onnx",
+    "sha256": "72b2dab116a59cf5e45ddff0408e256c019683d5880e897e504fbf32e110f971"
+  },
+  "manifest": {
+    "path": "local-review\\finalized-human-review-2026-10-27\\frozen-quality-manifest.json",
+    "sha256": "18dcad57010432323a52f2dff08cf70803fa1676239de9b301dd87c241da447a"
+  },
+  "runtime": {
+    "name": "onnxruntime",
+    "version": "1.23.2",
+    "provider": "CPUExecutionProvider"
+  },
+  "preprocessing": {
+    "orientation": "EXIF upright RGB",
+    "size": 224,
+    "resize": "Pillow bilinear",
+    "scale": "0..1",
+    "mean": [
+      0.48500001430511475,
+      0.4560000002384186,
+      0.4059999883174896
+    ],
+    "std": [
+      0.2290000021457672,
+      0.2240000069141388,
+      0.22499999403953552
+    ]
+  },
+  "classOrder": [
+    "Grade A",
+    "Grade B",
+    "Grade C",
+    "Reject"
+  ],
+  "sampleCount": 226,
+  "meanLatencyMs": 7.266544247758513,
+  "p95LatencyMs": 15.068900000187568,
+  "predictions": {
+    "path": "training_results\\final-quality-2026-10-27\\MobileNetV2_onnx_predictions.csv",
+    "sha256": "7d1dd49904d06de6918cb5f0697ed08694e1ed933461f32e1e22e271cc46bd58"
+  }
+}

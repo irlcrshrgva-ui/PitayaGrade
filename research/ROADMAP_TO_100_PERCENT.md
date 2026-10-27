@@ -1,8 +1,9 @@
 # PitayaGrade roadmap from 80% to 100%
 
-**Status date:** 24 October 2026
-**Current retained-deliverable score:** **80/100**
-**Fast but defensible estimate:** **12–23 active workdays (about 3–4 calendar weeks)**
+**Status date:** 27 October 2026
+**Current retained-deliverable score:** **88/100**
+**Fast but defensible estimate:** **7–14 active workdays**, led by the remaining
+human disease annotation, physical-device, UAT, approval and signing work.
 
 This roadmap is the controlling procedure for finishing the capstone. A task is
 complete only when its evidence is retained and the relevant validation gate
@@ -13,14 +14,16 @@ AI-assisted labels do not count as final research evidence.
 
 - The web/PWA and Android application workflows are implemented and tested.
 - The public five-model catalog and runtime contracts are implemented.
-- The 3,050-record quality/maturity manifest is complete but still provisional:
-  791 rows retain AI-assisted attribution (292 quality and 499 maturity).
-- Three private recheck packages are ready: `recheck-01` (264 records),
-  `recheck-02` (264), and `recheck-03` (263).
-- Provisional quality baselines were run on one frozen split. MobileNetV2 reached
-  74.8% test accuracy, EfficientNet-B3 69.0%, and ResNet50 65.9%. All three ONNX
-  exports passed the browser-runtime contract check. These are engineering
-  baselines, not final capstone findings.
+- All 3,050 quality/maturity rows are human-reviewed. The finalization audit
+  reports zero validation errors and retains checksum-bound frozen manifests.
+- MobileNetV2, ResNet50 and EfficientNet-B3 were trained from that frozen data.
+  Their exact ONNX exports passed browser-runtime verification and a 226-image
+  held-out replay with complete predictions, confusion matrices and mistake
+  lists. The retained comparison is documented in
+  `research/FINAL_QUALITY_MODEL_EVALUATION_2026-10-27.md`.
+- Quality candidates remain unbundled because the fail-closed promotion audit
+  also requires the missing reviewed disease-segmentation asset and Week 4
+  evidence. No audit was bypassed to enable a partial catalog.
 - Disease-region masks, formal device-test rows, UAT responses, and release
   signing evidence are still missing.
 
@@ -46,7 +49,8 @@ PitayaGrade reaches 100% only when all of the following are true:
 | C. Formal evaluation | 95% | Technical workflow + adviser | Predictions, metrics, confusion matrices, segmentation results, latency and sign-off | Test data was used for tuning or any result lacks a source prediction |
 | D. Device/UAT/manuscript/release | 100% | Team + technical workflow + adviser | Device and UAT records, revised manuscript/deck, signed build, checksum, tag and backups | Critical defect, missing approval, unsigned build, or manuscript placeholder remains |
 
-The score must stay at 80 until Gate A genuinely passes.
+Gate A has passed for the quality/maturity data. The score remains capped at 88
+until reviewed disease annotations and the remaining Week 4 human evidence exist.
 
 ## Procedure
 

@@ -1,0 +1,64 @@
+{
+  "task": "manuscript-quality",
+  "models": [
+    "MobileNetV2",
+    "ResNet50",
+    "EfficientNetB3"
+  ],
+  "status": "human-reviewed",
+  "reviewProvenance": {
+    "reviewerCounts": {
+      "reviewer-03": 513,
+      "reviewer-01": 250,
+      "reviewer-02": 497,
+      "recheck-01": 145,
+      "coordinator-01": 4,
+      "recheck-02": 144
+    },
+    "assistedRecordCount": 0
+  },
+  "frameworks": {
+    "torch": "2.14.0+cpu",
+    "torchvision": "0.29.0+cpu",
+    "scikit-learn": "1.9.1"
+  },
+  "classToIndex": {
+    "Grade A": 0,
+    "Grade B": 1,
+    "Grade C": 2,
+    "Reject": 3
+  },
+  "imageSize": 224,
+  "batchSize": 32,
+  "seed": 42,
+  "orientation": "EXIF-transpose to upright RGB before resize and augmentation",
+  "phase1": {
+    "epochs": 10,
+    "lr": 0.001,
+    "backbone": "frozen"
+  },
+  "phase2": {
+    "epochs": 30,
+    "lr": 1e-05,
+    "backbone": "architecture-specific upper feature blocks"
+  },
+  "optimizer": {
+    "name": "Adam",
+    "weightDecay": 0.0001,
+    "betas": [
+      0.9,
+      0.999
+    ]
+  },
+  "scheduler": {
+    "name": "ReduceLROnPlateau",
+    "patience": 5,
+    "factor": 0.5
+  },
+  "selectionMetric": "val_loss",
+  "earlyStoppingPatience": 10,
+  "methodologyLimitations": [
+    "Reviewed fruit-crop provenance and full preprocessing alignment still need verification.",
+    "No metadata check establishes expert-label truth or field accuracy."
+  ]
+}
