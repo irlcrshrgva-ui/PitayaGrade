@@ -5,4 +5,5 @@ www/ort-wasm-simd-threaded.wasm binary
 www/onnxruntime-LICENSE -text
 www/model/*.onnx binary
 www/model/**/*.onnx binary
+training_results/final-quality-2026-10-27/** -text
 android/gradlew text eol=lf
