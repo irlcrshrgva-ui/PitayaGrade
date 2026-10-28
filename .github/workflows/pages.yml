@@ -51,6 +51,7 @@ jobs:
           BUILD_TIME=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
           node -e 'const fs=require("fs"); const [file,sha,bytes,commit,builtAt]=process.argv.slice(1); fs.writeFileSync("www/downloads/release.json", JSON.stringify({version:"1.0.0-testing",channel:"Testing build",file,sha256:sha,bytes:Number(bytes),commit,builtAt,signedRelease:false},null,2)+"\n");' "PitayaGrade-debug.apk" "$APK_SHA" "$APK_BYTES" "$GITHUB_SHA" "$BUILD_TIME"
           printf '%s  %s\n' "$APK_SHA" 'PitayaGrade-debug.apk' > www/downloads/PitayaGrade-debug.apk.sha256
+          python3 scripts/create_testing_pack.py --output-dir www/testing-pack --apk "$APK_PATH" --app-version 1.0.0-testing
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

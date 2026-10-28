@@ -14,6 +14,13 @@ from the frozen held-out dataset, physical Android devices and actual participan
 6. Complete approved user acceptance testing using `uat-template.csv`.
 7. Revise the manuscript using only evidence recorded in this folder.
 
+The published [Test APK page](https://irlcrshrgva-ui.github.io/PitayaGrade/site/testing.html)
+provides a device worksheet and UAT worksheet generated for the exact APK currently
+offered by the website. The generator is `scripts/create_testing_pack.py`. It
+pre-fills test procedures and the APK checksum, but deliberately leaves dates,
+devices, actual results, statuses and participant measurements blank. Those files
+are execution aids, not evidence until the approved human work is completed.
+
 ## Evidence rules
 
 - Use the same held-out samples when comparing models for the same task.

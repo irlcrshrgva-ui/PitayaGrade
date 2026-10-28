@@ -158,6 +158,13 @@ button, input, textarea, select { font: inherit; }
 .faq details { padding: 17px 19px; border: 1px solid var(--border); border-radius: 14px; background: rgba(20,29,48,.72); }
 .faq summary { cursor: pointer; font-weight: 700; }
 .faq p { color: var(--muted); margin: 10px 0 0; font-size: .9rem; }
+.testing-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.test-card { padding: 28px; border: 1px solid var(--border); border-radius: 22px; background: linear-gradient(145deg, rgba(20,29,48,.92), rgba(14,21,37,.86)); }
+.test-card h2 { margin: 18px 0 10px; font: 700 1.3rem var(--font-display); }
+.test-card p { min-height: 116px; margin: 0 0 22px; color: var(--muted); font-size: .9rem; }
+.notice { padding: 25px 28px; border-left: 4px solid var(--amber); border-radius: 12px; background: rgba(255,179,0,.07); }
+.notice strong { font: 700 1.1rem var(--font-display); }
+.notice p { margin: 7px 0 0; color: var(--muted); }
 
 .site-footer { padding: 38px 0; border-top: 1px solid var(--border); color: var(--muted); }
 .footer-grid { display: flex; align-items: center; justify-content: space-between; gap: 22px; }
@@ -181,7 +188,8 @@ button, input, textarea, select { font: inherit; }
   .hero-copy > p { margin-inline: auto; }
   .actions, .mini-proof { justify-content: center; }
   .phone-stage { min-height: 500px; }
-  .card-grid, .steps { grid-template-columns: 1fr; }
+  .card-grid, .steps, .testing-grid { grid-template-columns: 1fr; }
+  .test-card p { min-height: 0; }
   .download-panel { grid-template-columns: 1fr; }
   .story-mark { position: static; }
 }
