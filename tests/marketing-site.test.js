@@ -57,6 +57,9 @@ test('testing page links only to blank APK-bound worksheet downloads', () => {
   assert.match(page, /testing-pack\/device-test\.csv/);
   assert.match(page, /testing-pack\/uat\.csv/);
   assert.match(page, /not completed evidence/i);
+  assert.equal((page.match(/data-device-test/g) || []).length, 16);
+  assert.match(page, /not just navigation|More than navigation/i);
+  assert.match(page, /do not need 16 different fruits/i);
   const workflow = fs.readFileSync(path.join(root, '.github', 'workflows', 'pages.yml'), 'utf8');
   assert.match(workflow, /create_testing_pack\.py/);
 });
