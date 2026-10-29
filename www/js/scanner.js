@@ -744,9 +744,13 @@ const Scanner = {
       return this._buildRejectionResult(['Insufficient pink/magenta skin color detected — not a dragon fruit'], rejectionDiagnostics);
     }
     const magentaShare = avgMagentaRatio / Math.max(avgPinkRatio, 0.001);
-    const hasGreenScaleEvidence = avgGreenRatio >= 0.01;
-    const hasCoherentMagentaEvidence = avgMagentaRatio >= 0.06 && magentaShare >= 0.30;
-    if (requiresVisualGate && !hasGreenScaleEvidence && !hasCoherentMagentaEvidence) {
+    // Green background must never be enough by itself. At least a small amount
+    // of saturated fruit-magenta is mandatory, then either nearby green-scale
+    // evidence or a strong magenta share must corroborate it. This intentionally
+    // prefers false rejection over grading an empty/non-fruit scene.
+    const hasMandatoryFruitMagenta = avgMagentaRatio >= 0.05;
+    const hasCorroboratingFruitEvidence = avgGreenRatio >= 0.01 || magentaShare >= 0.30;
+    if (requiresVisualGate && (!hasMandatoryFruitMagenta || !hasCorroboratingFruitEvidence)) {
       return this._buildRejectionResult([
         'Independent dragon-fruit color evidence failed — object treated as non-dragon-fruit'
       ], rejectionDiagnostics);

@@ -27,6 +27,8 @@ const LiveScanner = {
     maturity: { status: '--', value: 0 }
   },
   smoothingFactor: 0.3, // Lower = smoother, higher = more responsive
+  positiveFrameStreak: 0,
+  requiredPositiveFrames: 3,
 
   init() {
     this.video = document.getElementById('liveVideo');
@@ -218,12 +220,15 @@ const LiveScanner = {
         frame, PitayaApp.settings.selectedDiseaseModel, model?.box || null);
       if (!this.isActive || request !== this.cameraRequest) return;
       const result = Scanner._generateResult(model, pixels, diseaseModel);
-      result.detectedObject = result.isDragonFruit
+      const stableResult = this._requireStableDetection(result);
+      stableResult.detectedObject = stableResult.verificationPending
+        ? `Verifying fruit (${stableResult.verificationFrame}/${this.requiredPositiveFrames})`
+        : stableResult.isDragonFruit
         ? 'Dragon Fruit' + (model ? '' : ' (heuristic)')
         : model && Number.isFinite(model.confidence)
           ? `No match (${Math.round(model.confidence * 100)}%)`
           : 'Unrecognized';
-      this._smoothResult(result);
+      this._smoothResult(stableResult);
       this._updateHud();
       this.frameCount++;
     } catch (error) {
@@ -232,6 +237,24 @@ const LiveScanner = {
     } finally {
       this.inferencePending = false;
     }
+  },
+
+  _requireStableDetection(result) {
+    if (!result || !result.isDragonFruit) {
+      this.positiveFrameStreak = 0;
+      return result;
+    }
+    this.positiveFrameStreak = Math.min(this.requiredPositiveFrames, this.positiveFrameStreak + 1);
+    if (this.positiveFrameStreak >= this.requiredPositiveFrames) return result;
+    return {
+      ...result,
+      isDragonFruit: false,
+      verificationPending: true,
+      verificationFrame: this.positiveFrameStreak,
+      grade: { label: 'Verifying', confidence: 0, class: 'grade-reject' },
+      disease: { name: 'Waiting', confidence: 0, isHealthy: true },
+      maturity: { status: 'Waiting', value: 0 }
+    };
   },
 
   _rgbToHsv(r, g, b) {
@@ -731,6 +754,7 @@ const LiveScanner = {
   },
 
   _resetHud() {
+    this.positiveFrameStreak = 0;
     this.smoothedResult = {
       isDragonFruit: false,
       detectedObject: 'Detecting...',

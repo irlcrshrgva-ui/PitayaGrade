@@ -360,6 +360,23 @@ test('camera stream arriving after navigation is immediately released', async ()
   await start;
   assert.equal(stopped, true); assert.equal(a.LiveScanner.isActive, false);
 });
+test('live scanner requires three consecutive fruit frames and resets on an empty frame', () => {
+  const a = app();
+  const fruit = { isDragonFruit:true, grade:{label:'Grade A',confidence:.9,class:'grade-a'},
+    disease:{name:'Healthy',confidence:.8,isHealthy:true}, maturity:{status:'Harvestable',value:90} };
+  const empty = { isDragonFruit:false, grade:{label:'Unrecognized',confidence:0,class:'grade-reject'},
+    disease:{name:'N/A',confidence:0,isHealthy:true}, maturity:{status:'N/A',value:0} };
+  const first = a.LiveScanner._requireStableDetection(fruit);
+  const second = a.LiveScanner._requireStableDetection(fruit);
+  const third = a.LiveScanner._requireStableDetection(fruit);
+  assert.equal(first.isDragonFruit, false);
+  assert.equal(first.verificationFrame, 1);
+  assert.equal(second.isDragonFruit, false);
+  assert.equal(second.verificationFrame, 2);
+  assert.equal(third.isDragonFruit, true);
+  assert.equal(a.LiveScanner._requireStableDetection(empty).isDragonFruit, false);
+  assert.equal(a.LiveScanner._requireStableDetection(fruit).verificationFrame, 1);
+});
 test('photo failure always releases processing state', async () => {
   const a = app(); a.Scanner.currentImage = 'broken';
   a.element('processingOverlay').querySelectorAll = () => [];
