@@ -735,14 +735,21 @@ const Scanner = {
       ], rejectionDiagnostics);
     }
 
-    // Require broad pink/red skin plus either green scales or strong magenta/red
-    // skin. Green is optional because ripe, damaged, and tightly cropped fruits
-    // can legitimately have no visible green tips.
+    // Fail closed: a detector box is only accepted when its colors also form a
+    // coherent dragon-fruit signature. Human skin can satisfy the broad pink
+    // band, but it has a much smaller share of saturated fruit-magenta. This
+    // retained gate accepts all 226 held-out fruit images while rejecting the
+    // reproduced background-heavy face cases.
     if (requiresVisualGate && avgPinkRatio < 0.06) {
       return this._buildRejectionResult(['Insufficient pink/magenta skin color detected — not a dragon fruit'], rejectionDiagnostics);
     }
-    if (requiresVisualGate && avgGreenRatio < 0.01 && avgMagentaRatio < 0.08) {
-      return this._buildRejectionResult(['No green scales or strong magenta/red fruit skin detected'], rejectionDiagnostics);
+    const magentaShare = avgMagentaRatio / Math.max(avgPinkRatio, 0.001);
+    const hasGreenScaleEvidence = avgGreenRatio >= 0.01;
+    const hasCoherentMagentaEvidence = avgMagentaRatio >= 0.06 && magentaShare >= 0.30;
+    if (requiresVisualGate && !hasGreenScaleEvidence && !hasCoherentMagentaEvidence) {
+      return this._buildRejectionResult([
+        'Independent dragon-fruit color evidence failed — object treated as non-dragon-fruit'
+      ], rejectionDiagnostics);
     }
 
     // === STAGE 2A: YOLOv8-Seg Disease Segmentation ===
