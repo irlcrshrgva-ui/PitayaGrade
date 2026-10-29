@@ -725,11 +725,11 @@ const Scanner = {
       return this._buildRejectionResult(['Flat surface, solid background, or extreme exposure detected'], rejectionDiagnostics);
     }
 
-    // The retained 226-image test split has a maximum skin-band ratio below
-    // 0.35, while the reproduced face false positive is above 0.59. Requiring
-    // skin tones to dominate the narrower fruit-magenta signal gives a safe
-    // margin and stops the closed-set graders from accepting faces.
-    if (requiresVisualGate && avgSkinRatio > 0.42 && avgSkinRatio > avgMagentaRatio * 1.4) {
+    // The retained 226-image test split contains no fruit that satisfies this
+    // combined rule. Requiring both substantial skin-band coverage and at
+    // least twice as much skin tone as narrow fruit-magenta catches darker or
+    // partially framed faces without rejecting warm/orange dragon fruit.
+    if (requiresVisualGate && avgSkinRatio > 0.35 && avgSkinRatio > avgMagentaRatio * 2) {
       return this._buildRejectionResult([
         'Skin-tone dominant region detected — center a dragon fruit without people in the frame'
       ], rejectionDiagnostics);

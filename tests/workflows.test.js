@@ -53,6 +53,20 @@ function faceLikePixels() {
   }
   return { width:128, height:128, data };
 }
+function partialDarkFacePixels() {
+  const width = 128, height = 128;
+  const data = new Uint8ClampedArray(width * height * 4);
+  for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
+    const offset = (y * width + x) * 4;
+    // About 38% darker skin surrounded by varied indoor/background pixels,
+    // matching the harder false-positive case without retaining a user image.
+    const isSkin = x >= 32 && x < 96 && y >= 15 && y < 115;
+    const color = isSkin ? [150, 100, 78]
+      : ((x + y) % 2 ? [35, 48, 62] : [185, 200, 210]);
+    data[offset] = color[0]; data[offset + 1] = color[1]; data[offset + 2] = color[2]; data[offset + 3] = 255;
+  }
+  return { width, height, data };
+}
 function ripeFruitWithoutGreenPixels() {
   const width = 128, height = 128;
   const data = new Uint8ClampedArray(width * height * 4);
@@ -266,6 +280,11 @@ test('trained detection requires a plausible fruit signature and rejects face-li
   assert.equal(rejectedFace.isDragonFruit, false);
   assert.equal(rejectedFace.grade.label, 'Unrecognized Object');
   assert.match(rejectedFace.disease.symptoms.join(' '), /Skin-tone dominant|green scale|Flat surface/);
+  const rejectedPartialFace = a.Scanner._generateResult({ isDragonFruit: true, grade: 'Grade C', confidence: .915,
+    requiresVisualGate:true, box: { x: 0, y: 0, right: 1, bottom: 1 }, inferenceMs: 20 },
+  partialDarkFacePixels());
+  assert.equal(rejectedPartialFace.isDragonFruit, false);
+  assert.match(rejectedPartialFace.disease.symptoms.join(' '), /Skin-tone dominant/);
   const result = a.Scanner._generateResult({ isDragonFruit: true, grade: 'Grade B', confidence: .8,
     requiresVisualGate:true, box: { x: .25, y: .25, right: .75, bottom: .75 }, inferenceMs: 20 }, pixels);
   assert.equal(result.grade.label, 'Grade B');
