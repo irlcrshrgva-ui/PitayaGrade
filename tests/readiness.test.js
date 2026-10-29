@@ -14,7 +14,7 @@ test('release gate reports evidence blockers without treating templates as resul
   assert.equal(checks['android-debug-build'].passed,
     fs.existsSync(path.resolve(__dirname, '../android/app/build/outputs/apk/debug/app-debug.apk')));
   assert.equal(checks['model-assets'].passed, false);
-  assert.match(checks['model-assets'].observed, /mobilenetv2-quality/);
+  assert.equal(checks['model-assets'].observed, 'Unavailable: yolov8n-disease-seg');
   assert.equal(checks['reviewed-labels'].passed, false);
   assert.match(checks['reviewed-labels'].observed, /^3050\/3050/);
   assert.match(checks['reviewed-labels'].observed, /"quality":1553/);

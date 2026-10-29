@@ -33,8 +33,11 @@ test('root and packaged pages use bundled assets', () => {
 test('only verified bundled models can be selected', () => {
   const instance = model('http://localhost/www/js/model-inference.js');
   assert.equal(instance.getModelCatalog().length, 5);
-  assert.deepEqual(Array.from(instance.getAvailableModels(), item => item.id), ['yolov8-nano']);
-  assert.equal(instance.selectModel('efficientnet-b3-quality'), false);
+  assert.deepEqual(Array.from(instance.getAvailableModels(), item => item.id), [
+    'yolov8-nano', 'mobilenetv2-quality', 'resnet50-quality', 'efficientnet-b3-quality'
+  ]);
+  assert.equal(instance.selectModel('efficientnet-b3-quality'), true);
+  assert.equal(instance.getSelectedModel().id, 'efficientnet-b3-quality');
   const disease = instance.MODELS.find(item => item.id === 'yolov8n-disease-seg');
   assert.deepEqual(Array.from(instance.getDiseaseModelCatalog(), item => item.id), ['yolov8n-disease-seg']);
   assert.deepEqual(Array.from(disease.classes), ['Anthracnose', 'Stem Canker', 'Soft Rot',
@@ -43,7 +46,7 @@ test('only verified bundled models can be selected', () => {
   disease.available = true;
   assert.equal(instance.canSelectModel(disease), false);
   assert.equal(instance.selectModel(disease.id), false);
-  assert.equal(instance.getSelectedModel().id, 'yolov8-nano');
+  assert.equal(instance.getSelectedModel().id, 'efficientnet-b3-quality');
 });
 test('disease segmentation contract decodes class and fruit-relative mask coverage', () => {
   const instance = model('http://localhost/www/js/model-inference.js');

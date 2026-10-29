@@ -152,6 +152,19 @@ const PitayaApp = {
         const model = ModelInference.getSelectedModel();
         modelSelect.value = model.id;
         selectedModelName.textContent = model.name + ' (verified bundled ONNX)';
+        const accuracy = document.getElementById('modelAccuracyMetric');
+        const f1 = document.getElementById('modelF1Metric');
+        const training = document.getElementById('modelTrainingMetric');
+        const percent = value => `${(value * 100).toFixed(2)}%`;
+        if (model.evaluation) {
+          accuracy.textContent = `${percent(model.evaluation.accuracy)} held-out accuracy (n=${model.evaluation.sampleCount})`;
+          f1.textContent = `Macro F1 ${percent(model.evaluation.macroF1)} · Precision ${percent(model.evaluation.macroPrecision)} · Recall ${percent(model.evaluation.macroRecall)}`;
+          training.textContent = `Human-reviewed frozen split · ONNX · ${model.inputSize}×${model.inputSize}`;
+        } else {
+          accuracy.textContent = 'Not validated for the deployed pipeline';
+          f1.textContent = 'Pending linked evaluation results';
+          training.textContent = 'See retained training experiment outputs';
+        }
       };
       updateSelectedModel();
       modelSelect.addEventListener('change', () => {

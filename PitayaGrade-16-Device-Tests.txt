@@ -1,0 +1,84 @@
+PITAYAGRADE — 16 ANDROID DEVICE TESTS
+=====================================
+
+1. Clean installation and offline first run
+   Install and open PitayaGrade without internet. Confirm that the app opens
+   correctly and honestly reports which models are available.
+
+2. Camera permission denied
+   Open the live camera, deny camera access, and confirm that the app displays
+   a clear message and remains usable.
+
+3. Camera permission granted
+   Allow camera access and confirm that the camera preview opens and can be
+   stopped without leaving the camera active.
+
+4. Gallery scan — clear dragon fruit
+   Select a clear dragon-fruit photo and analyze it. Confirm that the app shows
+   a reviewable result or an honest rejection with the model identity.
+
+5. Gallery scan — non-fruit image
+   Select a face or an unrelated object. Confirm that it is rejected instead
+   of being confidently graded as dragon fruit.
+
+6. Live-camera dragon-fruit scan
+   Scan one real dragon fruit using the live camera. Confirm that the scan
+   completes and produces only one reviewable result.
+
+7. Model selection and persistence
+   Switch between every available verified model. Close and reopen the app,
+   then confirm that the last valid model selection remains active.
+
+8. Save a scan record
+   Save one scan result. Confirm that it appears only once in History and
+   includes its model and scanning method.
+
+9. History search and notes
+   Search for a saved record, add a note, leave History, and return. Confirm
+   that the correct record is found and the note remains saved.
+
+10. Analytics and date-bounded report
+    Generate a report for a selected date range. Confirm that its totals match
+    the saved records within that range.
+
+11. Notification preferences and read status
+    Change the scan-notification setting, produce an alert, mark it as read,
+    and reopen Notifications. Confirm that both settings remain saved.
+
+12. CSV export, cancellation, and retry
+    Start an export, cancel the save operation, and then retry. Confirm that
+    cancellation causes no error and the retry creates one readable CSV file.
+
+13. Background and resume
+    Leave the app running in the background for 30 seconds and reopen it.
+    Confirm that it resumes without freezing, duplicating results, or losing
+    saved information.
+
+14. Rotation and interrupted scan
+    Start a scan, rotate the phone, leave the scan page, and return. Confirm
+    that the interface remains usable and no camera stream is left running.
+
+15. Repeated Analyze-button taps
+    Tap Analyze repeatedly in quick succession. Confirm that only one analysis
+    and one saved result are created.
+
+16. Force-stop and device restart
+    Force-stop the app and reopen it. Restart the phone and reopen the app
+    again. Confirm that saved records and valid settings remain available.
+
+
+WHAT TO RECORD FOR EVERY TEST
+=============================
+
+- Test date and time
+- Phone model
+- Android version
+- What actually happened
+- Status: Pass, Fail, or Blocked
+- Screenshot or video filename
+- Defect ID if a problem was discovered (for example, BUG-01)
+- Anonymous tester ID (for example, tester-01)
+
+You do not need 16 different dragon fruits. A few clear fruit photos, one
+non-fruit photo, and one real dragon fruit for the live-camera test are enough.
+
