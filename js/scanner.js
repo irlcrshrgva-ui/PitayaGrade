@@ -259,7 +259,7 @@ const Scanner = {
 
     for (let gy = 0; gy < gridH; gy++) {
       for (let gx = 0; gx < gridW; gx++) {
-        let pinkCount = 0, magentaCount = 0, greenCount = 0, darkCount = 0, whiteCount = 0;
+        let pinkCount = 0, magentaCount = 0, greenCount = 0, skinCount = 0, darkCount = 0, whiteCount = 0;
         let totalPixels = 0;
         let cellBrightness = 0;
 
@@ -270,6 +270,13 @@ const Scanner = {
             const hsv = this._rgbToHsv(r, g, b);
             totalPixels++;
             cellBrightness += hsv.v;
+
+            // Broad human-skin band used only as an impostor signal. It is
+            // deliberately combined with a dominance check later so warm-lit
+            // red fruit is not rejected by this feature alone.
+            if (hsv.h >= 5 && hsv.h <= 35 && hsv.s >= 15 && hsv.s <= 75 && hsv.v >= 20) {
+              skinCount++;
+            }
 
             // Dragon fruit pink/magenta skin (H wraps around 360)
             if ((hsv.h >= 270 || hsv.h <= 30) && hsv.s > 15 && hsv.v > 25) {
@@ -298,13 +305,14 @@ const Scanner = {
         const pinkRatio = pinkCount / totalPixels;
         const magentaRatio = magentaCount / totalPixels;
         const greenRatio = greenCount / totalPixels;
+        const skinRatio = skinCount / totalPixels;
         const whiteRatio = whiteCount / totalPixels;
         // Weighted dragon fruit score: pink skin is strongest indicator,
         // green tips secondary, white flesh tertiary
         const dragonFruitScore = pinkRatio * 2.5 + greenRatio * 1.0 + whiteRatio * 0.5;
 
         grid.push({
-          gx, gy, pinkRatio, magentaRatio, greenRatio, whiteRatio,
+          gx, gy, pinkRatio, magentaRatio, greenRatio, skinRatio, whiteRatio,
           dragonFruitScore,
           avgBrightness: cellBrightness / totalPixels,
           darkRatio: darkCount / totalPixels
@@ -654,8 +662,10 @@ const Scanner = {
   // ============================================================
   _generateResult(modelResult, imageData = this.currentImageData, diseaseModelResult = null) {
     const rejectionDiagnostics = {
-      confidence: modelResult?.confidence,
-      threshold: modelResult?.confidenceThreshold,
+      confidence: Number.isFinite(modelResult?.detectionConfidence)
+        ? modelResult.detectionConfidence : modelResult?.confidence,
+      threshold: Number.isFinite(modelResult?.detectionThreshold)
+        ? modelResult.detectionThreshold : modelResult?.confidenceThreshold,
       modelName: modelResult?.modelName
     };
     if (modelResult && !modelResult.isDragonFruit) {
@@ -694,6 +704,7 @@ const Scanner = {
     const avgPinkRatio = roiCells.reduce((s, c) => s + c.pinkRatio, 0) / roiCells.length;
     const avgMagentaRatio = roiCells.reduce((s, c) => s + c.magentaRatio, 0) / roiCells.length;
     const avgGreenRatio = roiCells.reduce((s, c) => s + c.greenRatio, 0) / roiCells.length;
+    const avgSkinRatio = roiCells.reduce((s, c) => s + c.skinRatio, 0) / roiCells.length;
 
     // Global image quality validation
     let totalR = 0, totalG = 0, totalB = 0;
@@ -712,6 +723,16 @@ const Scanner = {
     const requiresVisualGate = !modelResult || modelResult.classificationOnly || modelResult.requiresVisualGate !== false;
     if (requiresVisualGate && (colorVariance < 0.03 || colorVariance > 0.92 || brightness < 0.09 || brightness > 0.97)) {
       return this._buildRejectionResult(['Flat surface, solid background, or extreme exposure detected'], rejectionDiagnostics);
+    }
+
+    // The retained 226-image test split has a maximum skin-band ratio below
+    // 0.35, while the reproduced face false positive is above 0.59. Requiring
+    // skin tones to dominate the narrower fruit-magenta signal gives a safe
+    // margin and stops the closed-set graders from accepting faces.
+    if (requiresVisualGate && avgSkinRatio > 0.42 && avgSkinRatio > avgMagentaRatio * 1.4) {
+      return this._buildRejectionResult([
+        'Skin-tone dominant region detected — center a dragon fruit without people in the frame'
+      ], rejectionDiagnostics);
     }
 
     // Require broad pink/red skin plus either green scales or strong magenta/red

@@ -139,6 +139,50 @@ test('quality classifier postprocessing accepts probabilities and logits', () =>
   assert.ok(logits.confidence > 0.95);
   assert.throws(() => instance._postprocess({ dims: [1, 3], data: new Float32Array(3) }, contract), /Unsupported/);
 });
+test('quality classifiers require the detector gate before assigning a grade', async () => {
+  class Tensor { dispose() {} }
+  const instance = model('http://localhost/www/js/model-inference.js', { Tensor });
+  const tensor = (dims, values) => ({ dims, data:new Float32Array(values), dispose() {} });
+  const detectorOutput = tensor([1, 8, 1], [320, 320, 320, 320, 0.2, 0.1, 0.1, 0.1]);
+  let classifierCalls = 0;
+  instance.sessions = {
+    'yolov8-nano': { inputNames:['images'], outputNames:['output0'], run:async () => ({output0:detectorOutput}) },
+    'resnet50-quality': { inputNames:['images'], outputNames:['output'], run:async () => {
+      classifierCalls++;
+      return {output:tensor([1, 4], [0.7, 0.1, 0.1, 0.1])};
+    } }
+  };
+  instance.load = async id => Boolean(instance.sessions[id]);
+  instance._preprocess = () => new Tensor();
+  const rejected = await instance.infer({}, 'resnet50-quality', 0.5);
+  assert.equal(rejected.isDragonFruit, false);
+  assert.equal(rejected.gradingSkipped, true);
+  assert.equal(rejected.modelId, 'resnet50-quality');
+  assert.equal(classifierCalls, 0);
+});
+test('quality classifiers grade only the detector-localized fruit crop', async () => {
+  class Tensor { dispose() {} }
+  const instance = model('http://localhost/www/js/model-inference.js', { Tensor });
+  const tensor = (dims, values) => ({ dims, data:new Float32Array(values), dispose() {} });
+  const detectorOutput = tensor([1, 8, 1], [320, 320, 320, 320, 0.1, 0.9, 0.1, 0.1]);
+  let classifiedImage = null;
+  instance.sessions = {
+    'yolov8-nano': { inputNames:['images'], outputNames:['output0'], run:async () => ({output0:detectorOutput}) },
+    'efficientnet-b3-quality': { inputNames:['images'], outputNames:['output'], run:async () =>
+      ({output:tensor([1, 4], [0.1, 0.4, 0.3, 0.2])}) }
+  };
+  instance.load = async id => Boolean(instance.sessions[id]);
+  instance._preprocess = image => { classifiedImage = image; return new Tensor(); };
+  const crop = { width:160, height:160 };
+  instance._cropToBox = () => crop;
+  const result = await instance.infer({}, 'efficientnet-b3-quality', 0.5);
+  assert.equal(result.isDragonFruit, true);
+  assert.equal(result.grade, 'Grade B');
+  assert.ok(Math.abs(result.detectionConfidence - 0.9) < 1e-6);
+  assert.equal(result.box.x, 0.25);
+  assert.equal(classifiedImage, crop);
+  assert.match(result.modelName, /object gate \+ EfficientNet-B3/);
+});
 test('preprocessing follows zero-to-one and ImageNet registry contracts', () => {
   class Tensor {
     constructor(type, data, dims) { this.type = type; this.data = data; this.dims = dims; }

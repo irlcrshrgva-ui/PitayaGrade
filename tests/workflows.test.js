@@ -265,7 +265,7 @@ test('trained detection requires a plausible fruit signature and rejects face-li
   faceLikePixels());
   assert.equal(rejectedFace.isDragonFruit, false);
   assert.equal(rejectedFace.grade.label, 'Unrecognized Object');
-  assert.match(rejectedFace.disease.symptoms.join(' '), /green scale|Flat surface/);
+  assert.match(rejectedFace.disease.symptoms.join(' '), /Skin-tone dominant|green scale|Flat surface/);
   const result = a.Scanner._generateResult({ isDragonFruit: true, grade: 'Grade B', confidence: .8,
     requiresVisualGate:true, box: { x: .25, y: .25, right: .75, bottom: .75 }, inferenceMs: 20 }, pixels);
   assert.equal(result.grade.label, 'Grade B');

@@ -19,6 +19,7 @@ const ModelInference = {
   MODELS: PitayaModelRegistry.map(model => ({ ...model, classes: Array.from(model.classes) })),
   selectedModelId: 'yolov8-nano',
   selectedDiseaseModelId: 'yolov8n-disease-seg',
+  OBJECT_GATE_THRESHOLD: 0.50,
 
   _isGradeModel(model) {
     return model && ['integrated-detector-grader', 'quality-classifier'].includes(model.role);
@@ -339,33 +340,23 @@ const ModelInference = {
     };
   },
 
-  // ── Public: run full inference on an image element ────────────────────────
-  async infer(imgElement, modelId = this.selectedModelId, confidenceThreshold = this.CONF_THRESHOLD) {
-    const model = this.MODELS.find(candidate => candidate.id === modelId && this.canSelectModel(candidate));
-    if (!model || !await this.load(model.id)) return null; // model unavailable — caller should fall back
-
+  async _inferSingle(imgElement, model, confidenceThreshold) {
+    if (!model || !await this.load(model.id)) return null;
     const t0 = performance.now();
     const session = this.sessions[model.id];
-
     let inputTensor;
     let results;
     try {
-    inputTensor = this._preprocess(imgElement, model);
-    const feeds = {};
-    feeds[session.inputNames[0]] = inputTensor;
-
-    results  = await session.run(feeds);
-    const output   = results[session.outputNames[0]];
-    const threshold = Number.isFinite(confidenceThreshold)
-      ? Math.max(0, Math.min(1, confidenceThreshold)) : this.CONF_THRESHOLD;
-    const parsed   = this._postprocess(output, model, threshold);
-
-    parsed.inferenceMs = Math.round(performance.now() - t0);
-    parsed.modelId = model.id;
-    parsed.modelName = model.name;
-    parsed.requiresVisualGate = model.requiresVisualGate !== false;
-    parsed.confidenceThreshold = threshold;
-    return parsed;
+      inputTensor = this._preprocess(imgElement, model);
+      results = await session.run({ [session.inputNames[0]]: inputTensor });
+      const output = results[session.outputNames[0]];
+      const parsed = this._postprocess(output, model, confidenceThreshold);
+      parsed.inferenceMs = Math.round(performance.now() - t0);
+      parsed.modelId = model.id;
+      parsed.modelName = model.name;
+      parsed.requiresVisualGate = model.requiresVisualGate !== false;
+      parsed.confidenceThreshold = confidenceThreshold;
+      return parsed;
     } catch (err) {
       console.error('[ModelInference] Inference failed:', err);
       return null;
@@ -373,6 +364,72 @@ const ModelInference = {
       if (inputTensor) inputTensor.dispose();
       if (results) Object.values(results).forEach(tensor => tensor.dispose());
     }
+  },
+
+  _cropToBox(imgElement, box) {
+    if (!box) return imgElement;
+    const width = imgElement.naturalWidth || imgElement.videoWidth || imgElement.width;
+    const height = imgElement.naturalHeight || imgElement.videoHeight || imgElement.height;
+    if (!width || !height) return imgElement;
+    const padding = 0.04;
+    const left = Math.max(0, box.x - padding);
+    const top = Math.max(0, box.y - padding);
+    const right = Math.min(1, box.right + padding);
+    const bottom = Math.min(1, box.bottom + padding);
+    const sx = Math.floor(left * width);
+    const sy = Math.floor(top * height);
+    const sw = Math.max(1, Math.ceil((right - left) * width));
+    const sh = Math.max(1, Math.ceil((bottom - top) * height));
+    const crop = document.createElement('canvas');
+    crop.width = sw;
+    crop.height = sh;
+    crop.getContext('2d').drawImage(imgElement, sx, sy, sw, sh, 0, 0, sw, sh);
+    return crop;
+  },
+
+  // Quality classifiers assign a grade only after the bundled detector verifies
+  // and localizes a dragon fruit. This prevents a closed-set grade classifier
+  // from treating an arbitrary high-confidence object (for example, a face) as
+  // a fruit merely because it must choose one of four grade labels.
+  async infer(imgElement, modelId = this.selectedModelId, confidenceThreshold = this.CONF_THRESHOLD) {
+    const model = this.MODELS.find(candidate => candidate.id === modelId && this.canSelectModel(candidate));
+    if (!model) return null;
+    const threshold = Number.isFinite(confidenceThreshold)
+      ? Math.max(0, Math.min(1, confidenceThreshold)) : this.CONF_THRESHOLD;
+    if (model.role !== 'quality-classifier') return this._inferSingle(imgElement, model, threshold);
+
+    const detector = this.MODELS.find(candidate => candidate.id === 'yolov8-nano' && this.canSelectModel(candidate));
+    if (!detector) return null;
+    const gateThreshold = Math.max(threshold, this.OBJECT_GATE_THRESHOLD);
+    const detection = await this._inferSingle(imgElement, detector, gateThreshold);
+    if (!detection) return null;
+    if (!detection.isDragonFruit || !detection.box) {
+      return {
+        ...detection,
+        modelId: model.id,
+        requestedModelId: model.id,
+        modelName: `${detector.name} object gate → ${model.name} (grading skipped)`,
+        gradingSkipped: true,
+        detectionConfidence: detection.confidence,
+        requiresVisualGate: true
+      };
+    }
+
+    const crop = this._cropToBox(imgElement, detection.box);
+    // Object presence is already established by the detector. A four-class
+    // softmax score is grade confidence, not object confidence, so it must not
+    // turn a detected fruit into "No Dragon Fruit" merely because no grade is
+    // above the user's object-detection threshold.
+    const classification = await this._inferSingle(crop, model, 0);
+    if (!classification) return null;
+    return {
+      ...classification,
+      box: detection.box,
+      detectionConfidence: detection.confidence,
+      detectionThreshold: gateThreshold,
+      modelName: `${detector.name} object gate + ${model.name}`,
+      requiresVisualGate: true
+    };
   },
 
   async inferDisease(imgElement, modelId = this.selectedDiseaseModelId, fruitBox = null) {
