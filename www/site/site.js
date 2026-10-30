@@ -1,4 +1,11 @@
 (() => {
+  document.querySelectorAll('a[href="../"]').forEach(link => {
+    if (/open web app|try the web app/i.test(link.textContent || '')) {
+      link.href = '../reset.html';
+      link.textContent = 'Open latest web app';
+    }
+  });
+
   const menu = document.querySelector('.menu-button');
   const links = document.querySelector('.nav-links');
   menu?.addEventListener('click', () => {

@@ -27,12 +27,20 @@ test('service worker parses and versions local shell and inference caches', () =
 });
 
 test('packaged web files include exact PWA sources', () => {
-  for (const name of ['manifest.webmanifest', 'service-worker.js']) {
+  for (const name of ['manifest.webmanifest', 'service-worker.js', 'reset.html']) {
     assert.equal(
       fs.readFileSync(path.join(root, name), 'utf8'),
       fs.readFileSync(path.join(root, 'www', name), 'utf8')
     );
   }
+});
+
+test('reset route removes only PitayaGrade caches and preserves user records', () => {
+  const source = fs.readFileSync(path.join(root, 'reset.html'), 'utf8');
+  assert.match(source, /getRegistrations\(\)/);
+  assert.match(source, /startsWith\('pitayagrade-web-'\)/);
+  assert.match(source, /location\.replace/);
+  assert.doesNotMatch(source, /localStorage\.(?:clear|removeItem)/);
 });
 
 test('web UI exposes install readiness and safely applies service-worker updates', () => {

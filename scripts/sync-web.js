@@ -9,7 +9,7 @@ const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8')
   .replace('src="www/ort.min.js"', 'src="ort.min.js"');
 fs.writeFileSync(path.join(root, 'www/index.html'), html);
 fs.copyFileSync(path.join(root, 'disease-lab.html'), path.join(root, 'www', 'disease-lab.html'));
-for (const filename of ['manifest.webmanifest', 'service-worker.js']) {
+for (const filename of ['manifest.webmanifest', 'service-worker.js', 'reset.html']) {
   fs.copyFileSync(path.join(root, filename), path.join(root, 'www', filename));
 }
 fs.cpSync(path.join(root, 'review-tool'), path.join(root, 'www', 'review-tool'), { recursive: true });

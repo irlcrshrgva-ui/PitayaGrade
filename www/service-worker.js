@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pitayagrade-web-2026-10-30-5';
+const CACHE_NAME = 'pitayagrade-web-2026-10-30-6';
 const BASE_URL = new URL('./', self.location.href);
 const localUrl = path => new URL(path, BASE_URL).href;
 
@@ -93,6 +93,10 @@ self.addEventListener('fetch', event => {
   }
   if (isLargeRuntime(url.pathname)) {
     event.respondWith(cacheFirst(request));
+    return;
+  }
+  if (/\.(?:js|css|json|webmanifest)$/i.test(url.pathname)) {
+    event.respondWith(networkFirst(request));
     return;
   }
   event.respondWith(staleWhileRevalidate(request));

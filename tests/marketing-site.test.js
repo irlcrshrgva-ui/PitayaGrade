@@ -23,6 +23,7 @@ test('marketing site contains home, about, contact and direct APK navigation', (
   assert.match(home, /visible-symptom/i);
   assert.match(home, /data-build-sha/);
   assert.match(home, /SHA-256 checksum/i);
+  assert.match(home, /\.\.\/reset\.html/);
 });
 
 test('marketing site follows the app design system and supports reduced motion', () => {
@@ -36,6 +37,7 @@ test('marketing site follows the app design system and supports reduced motion',
   const script = fs.readFileSync(path.join(root, 'site', 'site.js'), 'utf8');
   assert.match(script, /downloads\/release\.json/);
   assert.match(script, /signedRelease/);
+  assert.match(script, /\.\.\/reset\.html/);
 });
 
 test('Pages workflow publishes an APK with immutable verification metadata', () => {
