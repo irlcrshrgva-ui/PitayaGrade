@@ -11,6 +11,11 @@ const Scanner = {
   currentResult: null,
   isProcessing: false,
   imageRequest: 0,
+  sourceImage: null,
+  originalImage: null,
+  adjustment: { zoom: 1, rotation: 0, panX: 0, panY: 0 },
+  adjustmentFrame: 0,
+  dragState: null,
 
   // Feature extraction parameters
   featureParams: {
@@ -28,6 +33,10 @@ const Scanner = {
     const captureBtn = document.getElementById('captureBtn');
     const uploadBtn = document.getElementById('uploadBtn');
     const analyzeBtn = document.getElementById('analyzeBtn');
+    const zoomInput = document.getElementById('imageZoom');
+    const rotateLeft = document.getElementById('rotateImageLeftBtn');
+    const rotateRight = document.getElementById('rotateImageRightBtn');
+    const resetAdjust = document.getElementById('resetImageAdjustBtn');
 
     // Click zone to upload
     zone.addEventListener('click', (e) => {
@@ -83,6 +92,41 @@ const Scanner = {
         this.analyze();
       }
     });
+
+    zoomInput?.addEventListener('input', () => {
+      this.adjustment.zoom = Math.max(1, Math.min(3, Number(zoomInput.value) || 1));
+      this._scheduleAdjustmentRender();
+    });
+    rotateLeft?.addEventListener('click', () => this.rotateImage(-90));
+    rotateRight?.addEventListener('click', () => this.rotateImage(90));
+    resetAdjust?.addEventListener('click', () => this.resetImageAdjustment());
+
+    zone.addEventListener('pointerdown', event => {
+      if (!this.sourceImage || this.isProcessing) return;
+      this.dragState = { id: event.pointerId, x: event.clientX, y: event.clientY };
+      zone.classList.add('is-panning');
+      zone.setPointerCapture?.(event.pointerId);
+      event.preventDefault();
+    });
+    zone.addEventListener('pointermove', event => {
+      if (!this.dragState || this.dragState.id !== event.pointerId) return;
+      const rect = zone.getBoundingClientRect();
+      const factor = 640 / Math.max(1, rect.width);
+      this.adjustment.panX += (event.clientX - this.dragState.x) * factor;
+      this.adjustment.panY += (event.clientY - this.dragState.y) * factor;
+      this.dragState.x = event.clientX;
+      this.dragState.y = event.clientY;
+      this._scheduleAdjustmentRender();
+      event.preventDefault();
+    });
+    const finishPan = event => {
+      if (!this.dragState || this.dragState.id !== event.pointerId) return;
+      this.dragState = null;
+      zone.classList.remove('is-panning');
+      zone.releasePointerCapture?.(event.pointerId);
+    };
+    zone.addEventListener('pointerup', finishPan);
+    zone.addEventListener('pointercancel', finishPan);
   },
 
   loadImage(file) {
@@ -93,38 +137,130 @@ const Scanner = {
     }
     const request = ++this.imageRequest;
     const reader = new FileReader();
-    reader.onload = (e) => {
-      if (request !== this.imageRequest || this.isProcessing) return;
-      const dataUrl = e.target.result;
-      this.currentImage = dataUrl;
-      this.currentFileName = file.name || '';
+    reader.onload = (e) => this.loadDataUrl(e.target.result, file.name || '', request);
+    reader.onerror = () => ToastManager.show('Unable to read image file.', 'error');
+    reader.readAsDataURL(file);
+  },
 
-      // Show preview
+  async loadDataUrl(dataUrl, fileName = '', request = ++this.imageRequest) {
+    if (request !== this.imageRequest || this.isProcessing) return false;
+    try {
+      const source = new Image();
+      await new Promise((resolve, reject) => {
+        source.onload = resolve;
+        source.onerror = () => reject(new Error('Image decoding failed'));
+        source.src = dataUrl;
+      });
+      if (request !== this.imageRequest || this.isProcessing) return false;
+      this.sourceImage = source;
+      this.originalImage = dataUrl;
+      this.currentFileName = fileName;
+      this.adjustment = { zoom: 1, rotation: 0, panX: 0, panY: 0 };
+      this._renderAdjustedImage();
+
       const preview = document.getElementById('scannerPreview');
       const placeholder = document.getElementById('scanPlaceholder');
       const overlay = document.getElementById('scannerOverlay');
       const analyzeBtn = document.getElementById('analyzeBtn');
       const resultArea = document.getElementById('resultArea');
+      const adjustPanel = document.getElementById('imageAdjustPanel');
 
-      preview.src = dataUrl;
       preview.style.display = 'block';
       placeholder.style.display = 'none';
       overlay.style.display = 'flex';
       analyzeBtn.style.display = 'flex';
+      if (adjustPanel) adjustPanel.hidden = false;
       resultArea.style.display = 'none';
       resultArea.innerHTML = '';
-
       document.getElementById('scannerZone').classList.add('has-image');
-
-      // Extract pixel data for analysis
-      this._extractPixelData(dataUrl).catch(() => {
-        if (request !== this.imageRequest) return;
+      return true;
+    } catch (_) {
+      if (request === this.imageRequest) {
         this.resetScanner();
         ToastManager.show('Unable to read this image. Please choose another file.', 'error');
-      });
-    };
-    reader.onerror = () => ToastManager.show('Unable to read image file.', 'error');
-    reader.readAsDataURL(file);
+      }
+      return false;
+    }
+  },
+
+  _renderAdjustedImage() {
+    if (!this.sourceImage) return null;
+    const size = 640;
+    const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = size;
+    const context = canvas.getContext('2d', { willReadFrequently: true });
+    context.fillStyle = '#0b1220';
+    context.fillRect(0, 0, size, size);
+
+    const angle = ((this.adjustment.rotation % 360) + 360) % 360;
+    const quarterTurn = angle === 90 || angle === 270;
+    const sourceWidth = this.sourceImage.naturalWidth || this.sourceImage.width;
+    const sourceHeight = this.sourceImage.naturalHeight || this.sourceImage.height;
+    const rotatedWidth = quarterTurn ? sourceHeight : sourceWidth;
+    const rotatedHeight = quarterTurn ? sourceWidth : sourceHeight;
+    const scale = Math.max(size / rotatedWidth, size / rotatedHeight) * this.adjustment.zoom;
+    const overflowX = Math.max(0, (rotatedWidth * scale - size) / 2);
+    const overflowY = Math.max(0, (rotatedHeight * scale - size) / 2);
+    this.adjustment.panX = Math.max(-overflowX, Math.min(overflowX, this.adjustment.panX));
+    this.adjustment.panY = Math.max(-overflowY, Math.min(overflowY, this.adjustment.panY));
+
+    context.save();
+    context.translate(size / 2 + this.adjustment.panX, size / 2 + this.adjustment.panY);
+    context.rotate(angle * Math.PI / 180);
+    context.scale(scale, scale);
+    context.drawImage(this.sourceImage, -sourceWidth / 2, -sourceHeight / 2);
+    context.restore();
+
+    this.currentImage = canvas.toDataURL('image/jpeg', 0.92);
+    const sample = document.createElement('canvas');
+    sample.width = sample.height = 128;
+    const sampleContext = sample.getContext('2d', { willReadFrequently: true });
+    sampleContext.drawImage(canvas, 0, 0, 128, 128);
+    this.currentImageData = sampleContext.getImageData(0, 0, 128, 128);
+    const preview = document.getElementById('scannerPreview');
+    if (preview) preview.src = this.currentImage;
+    const zoomInput = document.getElementById('imageZoom');
+    const zoomValue = document.getElementById('imageZoomValue');
+    if (zoomInput) zoomInput.value = String(this.adjustment.zoom);
+    if (zoomValue) zoomValue.textContent = `${Math.round(this.adjustment.zoom * 100)}%`;
+    const resultArea = document.getElementById('resultArea');
+    if (resultArea) { resultArea.style.display = 'none'; resultArea.innerHTML = ''; }
+    this.currentResult = null;
+    return this.currentImage;
+  },
+
+  _scheduleAdjustmentRender() {
+    if (this.adjustmentFrame) cancelAnimationFrame(this.adjustmentFrame);
+    this.adjustmentFrame = requestAnimationFrame(() => {
+      this.adjustmentFrame = 0;
+      this._renderAdjustedImage();
+    });
+  },
+
+  rotateImage(degrees) {
+    if (!this.sourceImage || this.isProcessing) return;
+    this.adjustment.rotation = (this.adjustment.rotation + degrees + 360) % 360;
+    this.adjustment.panX = this.adjustment.panY = 0;
+    this._renderAdjustedImage();
+  },
+
+  resetImageAdjustment() {
+    if (!this.sourceImage || this.isProcessing) return;
+    this.adjustment = { zoom: 1, rotation: 0, panX: 0, panY: 0 };
+    this._renderAdjustedImage();
+  },
+
+  focusAdjustment() {
+    const panel = document.getElementById('imageAdjustPanel');
+    panel?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    ToastManager.show('Adjust the fruit inside the square, then analyze it again.', 'info');
+  },
+
+  openCurrentValidation() {
+    if (!this.currentResult?.id || typeof PitayaApp === 'undefined' || typeof HistoryManager === 'undefined') return;
+    const id = String(this.currentResult.id);
+    PitayaApp.navigate('history');
+    setTimeout(() => HistoryManager.showDetail(id), 0);
   },
 
   _extractPixelData(dataUrl) {
@@ -1047,6 +1183,7 @@ const Scanner = {
 
     const confidenceClass = result.grade.confidence > 0.85 ? 'high' : result.grade.confidence > 0.7 ? 'medium' : 'low';
     const diseaseConfClass = result.disease.confidence > 0.85 ? 'high' : result.disease.confidence > 0.7 ? 'medium' : 'low';
+    const needsGradeReview = result.grade.label === 'Reject';
 
     area.innerHTML = `
       <div class="result-card">
@@ -1056,6 +1193,9 @@ const Scanner = {
           <div class="result-confidence">${(result.grade.confidence * 100).toFixed(1)}% confidence</div>
           <div class="confidence-bar" style="max-width:200px;margin:8px auto 0">
             <div class="confidence-fill ${confidenceClass}" style="width:${(result.grade.confidence * 100)}%"></div>
+          </div>
+          <div style="margin:10px auto 0;max-width:320px;font-size:11px;line-height:1.45;color:var(--text-secondary)">
+            AI quality suggestion—not a final human grade.${needsGradeReview ? ' If the fruit looks acceptable, adjust the crop and scan again, then record a human validation in History.' : ''}
           </div>
         </div>
 
@@ -1180,7 +1320,9 @@ const Scanner = {
           </div>
 
           <!-- Actions -->
-          <div style="display:flex;gap:8px;margin-top:8px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+            ${needsGradeReview ? `<button class="btn btn-secondary btn-full" style="grid-column:1/-1" onclick="Scanner.focusAdjustment()">Adjust &amp; Rescan</button>` : ''}
+            <button class="btn btn-secondary btn-full" onclick="Scanner.openCurrentValidation()">Human Review</button>
             <button class="btn btn-primary btn-full" onclick="Scanner.resetScanner()">
               <svg class="icon-svg" style="width:16px;height:16px" viewBox="0 0 24 24"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
               Scan Another
@@ -1266,6 +1408,12 @@ const Scanner = {
     this.currentImage = null;
     this.currentImageData = null;
     this.currentResult = null;
+    this.sourceImage = null;
+    this.originalImage = null;
+    this.dragState = null;
+    if (this.adjustmentFrame) cancelAnimationFrame(this.adjustmentFrame);
+    this.adjustmentFrame = 0;
+    this.adjustment = { zoom: 1, rotation: 0, panX: 0, panY: 0 };
 
     const preview = document.getElementById('scannerPreview');
     const placeholder = document.getElementById('scanPlaceholder');
@@ -1273,6 +1421,7 @@ const Scanner = {
     const analyzeBtn = document.getElementById('analyzeBtn');
     const resultArea = document.getElementById('resultArea');
     const zone = document.getElementById('scannerZone');
+    const adjustPanel = document.getElementById('imageAdjustPanel');
 
     preview.style.display = 'none';
     preview.src = '';
@@ -1281,7 +1430,8 @@ const Scanner = {
     analyzeBtn.style.display = 'none';
     resultArea.style.display = 'none';
     resultArea.innerHTML = '';
-    zone.classList.remove('has-image');
+    zone.classList.remove('has-image', 'is-panning');
+    if (adjustPanel) adjustPanel.hidden = true;
   },
 
   _delay(ms) {

@@ -54,3 +54,18 @@ test('web UI exposes install readiness and safely applies service-worker updates
   assert.match(app, /Scanner\.isProcessing \|\| LiveScanner\.isActive/);
   assert.match(app, /window\.location\.reload\(\)/);
 });
+
+test('photo mode supports user-controlled crop, zoom and rotation before inference', () => {
+  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  const scanner = fs.readFileSync(path.join(root, 'js/scanner.js'), 'utf8');
+  const liveScanner = fs.readFileSync(path.join(root, 'js/live-scanner.js'), 'utf8');
+  for (const id of ['imageAdjustPanel', 'imageZoom', 'rotateImageLeftBtn', 'rotateImageRightBtn', 'resetImageAdjustBtn']) {
+    assert.match(html, new RegExp(`id="${id}"`));
+  }
+  assert.match(scanner, /pointermove/);
+  assert.match(scanner, /_renderAdjustedImage\(\)/);
+  assert.match(scanner, /context\.drawImage\(this\.sourceImage/);
+  assert.match(scanner, /AI quality suggestion—not a final human grade/);
+  assert.match(scanner, /openCurrentValidation/);
+  assert.match(liveScanner, /Scanner\.loadDataUrl/);
+});

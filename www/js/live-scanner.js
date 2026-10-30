@@ -785,7 +785,7 @@ const LiveScanner = {
     if (fpsEl) fpsEl.textContent = '-- FPS';
   },
 
-  captureAndAnalyze() {
+  async captureAndAnalyze() {
     if (Scanner.isProcessing) return;
     if (!this.video || this.video.readyState < 2) {
       ToastManager.show('Camera not ready', 'warning');
@@ -815,26 +815,9 @@ const LiveScanner = {
     const photoBtn = document.getElementById('modePhotoBtn');
     if (photoBtn) photoBtn.click();
 
-    // Load into the photo scanner and auto-analyze
-    Scanner.currentImage = dataUrl;
-    Scanner.imageRequest++;
-    Scanner.currentFileName = '';
-
-    const preview = document.getElementById('scannerPreview');
-    const placeholder = document.getElementById('scanPlaceholder');
-    const overlay = document.getElementById('scannerOverlay');
-    const zone = document.getElementById('scannerZone');
-
-    if (preview) {
-      preview.src = dataUrl;
-      preview.style.display = 'block';
-    }
-    if (placeholder) placeholder.style.display = 'none';
-    if (overlay) overlay.style.display = 'flex';
-    if (zone) zone.classList.add('has-image');
-
-    // Extract pixel data then auto-analyze
-    Scanner.analyze();
+    // Load through the same square preparation used by Photo Mode, then analyze.
+    if (!await Scanner.loadDataUrl(dataUrl, 'live-capture.jpg')) return;
+    await Scanner.analyze();
 
     ToastManager.show('Frame captured. Analyzing...', 'info');
   },

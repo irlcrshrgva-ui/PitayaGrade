@@ -1197,6 +1197,12 @@ a { text-decoration: none; color: inherit; }
 .scanner-zone.has-image {
   border: none;
   padding: 0;
+  cursor: grab;
+  touch-action: none;
+}
+
+.scanner-zone.has-image.is-panning {
+  cursor: grabbing;
 }
 
 .scanner-zone .scan-placeholder-icon {
@@ -1221,7 +1227,37 @@ a { text-decoration: none; color: inherit; }
   height: 100%;
   object-fit: cover;
   border-radius: var(--radius-xl);
+  user-select: none;
+  -webkit-user-drag: none;
 }
+
+.photo-adjust-panel {
+  margin: calc(var(--space-lg) * -0.35) 0 var(--space-lg);
+  padding: 14px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  background: var(--bg-card);
+}
+
+.photo-adjust-panel[hidden] { display: none; }
+
+.photo-adjust-heading,
+.photo-zoom-control,
+.photo-adjust-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.photo-adjust-heading { justify-content: space-between; }
+.photo-adjust-heading strong { display: block; font-size: 14px; }
+.photo-adjust-heading span { display: block; margin-top: 2px; color: var(--text-secondary); font-size: 11px; }
+.photo-adjust-heading output { color: var(--color-primary-light); font-size: 12px; font-weight: 700; }
+.photo-zoom-control { margin-top: 12px; font-size: 12px; color: var(--text-secondary); }
+.photo-zoom-control input { flex: 1; accent-color: var(--color-primary); }
+.photo-adjust-actions { margin-top: 10px; }
+.photo-adjust-actions .btn { min-height: 38px; flex: 1; padding: 8px; font-size: 12px; }
+.photo-adjust-note { margin: 10px 0 0; color: var(--text-tertiary); font-size: 11px; line-height: 1.45; }
 
 .scanner-overlay {
   position: absolute;
