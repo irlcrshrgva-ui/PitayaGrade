@@ -1,6 +1,22 @@
 /* Evaluated model assets become selectable only after this registry is updated. */
 const PitayaModelRegistry = Object.freeze([
   Object.freeze({
+    id: 'dragonfruit-presence-gate',
+    name: 'Dragon Fruit Presence Gate',
+    role: 'object-presence-gate',
+    available: true,
+    status: 'bundled',
+    modelPath: 'model/gate/dragonfruit-presence-gate.onnx',
+    sha256: '2dfee37827b99ae3962fa6118b04a250137661661528f39c127a44de455639ff',
+    inputSize: 160,
+    preprocessing: 'rgb-imagenet-normalized',
+    outputContract: 'binary-presence-logits-v1',
+    threshold: 0.50,
+    evaluation: Object.freeze({ sampleCount: 1476, accuracy: 0.9966124661,
+      precision: 0.9783549784, recall: 1.0, specificity: 0.996, f1: 0.9890590810 }),
+    classes: Object.freeze(['non-dragon-fruit', 'dragon-fruit'])
+  }),
+  Object.freeze({
     id: 'yolov8-nano',
     name: 'YOLOv8-Nano',
     role: 'integrated-detector-grader',

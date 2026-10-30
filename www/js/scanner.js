@@ -185,7 +185,7 @@ const Scanner = {
     markStep(4, 'active'); await this._delay(200);
 
     const modelResult = await modelPromise;
-    const diseaseModelResult = (typeof ModelInference !== 'undefined' && imgEl)
+    const diseaseModelResult = (modelResult?.isDragonFruit && typeof ModelInference !== 'undefined' && imgEl)
       ? await ModelInference.inferDisease(imgEl, PitayaApp.settings.selectedDiseaseModel, modelResult?.box || null)
       : null;
 

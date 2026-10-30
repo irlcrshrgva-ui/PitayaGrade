@@ -216,8 +216,10 @@ const LiveScanner = {
       const pixels = this.ctx.getImageData(0, 0, 128, 128);
       const model = await ModelInference.infer(
         frame, PitayaApp.settings.selectedModel, PitayaApp.settings.threshold / 100);
-      const diseaseModel = await ModelInference.inferDisease(
-        frame, PitayaApp.settings.selectedDiseaseModel, model?.box || null);
+      const diseaseModel = model?.isDragonFruit
+        ? await ModelInference.inferDisease(
+          frame, PitayaApp.settings.selectedDiseaseModel, model?.box || null)
+        : null;
       if (!this.isActive || request !== this.cameraRequest) return;
       const result = Scanner._generateResult(model, pixels, diseaseModel);
       const stableResult = this._requireStableDetection(result);

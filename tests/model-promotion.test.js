@@ -41,7 +41,7 @@ test('promotion enables every exact audited asset and writes retained evidence',
   const value = fixture(t);
   const output = path.join(value.directory, 'private', 'promotion-audit.json');
   const result = promote(value.auditPath, output, value.directory);
-  assert.equal(result.models.length, 5);
+  assert.equal(result.models.length, readRegistry(path.join(value.directory, 'js/model-registry.js')).length);
   assert.ok(fs.existsSync(output));
   const models = verifyModelRegistry(path.join(value.directory, 'www'));
   assert.ok(models.every(model => model.available && model.status === 'bundled'));

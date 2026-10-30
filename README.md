@@ -140,11 +140,14 @@ Run `npm test` for asset wiring and inference regression checks.
 Both web entry points use the bundled ONNX runtime and model without a CDN.
 Photo scans report model fallback explicitly; disease analysis remains heuristic
 until a checksum-verified segmentation asset is registered.
-The bundled grade detector is additionally guarded by the selected confidence
-threshold and a conservative fruit-signature check requiring plausible pink skin
-and green scale-tip evidence inside its detected region. This reduces known face
-and background false positives, but it does not replace retraining with reviewed
-non-fruit negative images or establish real-world specificity.
+Every grading model is preceded by a bundled MobileNetV3-small binary presence
+gate trained on the frozen 1,553-image dragon-fruit manifest and 8,677 Caltech-101
+non-fruit images. Its retained 1,476-image test set reached 99.66% accuracy, 99.6%
+specificity and 100% dragon-fruit recall at the deployed 0.50 threshold. The app
+also keeps its conservative fruit-signature and three-frame live consensus gates.
+See `research/DRAGONFRUIT_PRESENCE_GATE_EVALUATION_2026-10-30.json`. These results
+do not establish universal or real-world specificity; device and field testing
+with locally collected negative objects remains required.
 New scans retain their analysis methods and report physical size as not measured.
 Existing records are preserved, including earlier framing-based size estimates.
 Symptom guidance describes possible signs to inspect, not confirmed findings.
@@ -199,6 +202,19 @@ accepted. Output: `android/app/build/outputs/apk/debug/app-debug.apk`.
 This is a debug build, not proof of model accuracy or device validation.
 
 ## Machine-learning assets
+
+The offline object-presence gate can be reproduced with:
+
+```bash
+python -c "from torchvision.datasets import Caltech101; Caltech101('dataset/nonfruit/caltech101', download=True)"
+python scripts/train_presence_gate.py
+```
+
+The script uses the frozen reviewed quality manifest as positives, deterministic
+Caltech-101 partitions as negatives, selects its threshold on validation data,
+exports ONNX, checks ONNX Runtime parity, and writes a checksum-bound evaluation
+report. The downloaded negative dataset and training output remain Git-ignored;
+only the evaluated runtime asset and retained report are published.
 
 The supported quality-training command requires a reviewed manifest and a fresh
 run directory. See [the preparation guide](research/PREPARATION_GUIDE.md).

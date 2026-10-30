@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pitayagrade-web-2026-10-30-4';
+const CACHE_NAME = 'pitayagrade-web-2026-10-30-5';
 const BASE_URL = new URL('./', self.location.href);
 const localUrl = path => new URL(path, BASE_URL).href;
 
@@ -12,6 +12,7 @@ const APP_SHELL = [
   'css/styles.css',
   'ort.min.js',
   'ort-wasm-simd-threaded.mjs',
+  'model/gate/dragonfruit-presence-gate.onnx',
   'js/storage.js',
   'js/language.js',
   'js/notifications.js',

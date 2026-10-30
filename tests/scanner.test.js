@@ -32,7 +32,7 @@ test('root and packaged pages use bundled assets', () => {
 });
 test('only verified bundled models can be selected', () => {
   const instance = model('http://localhost/www/js/model-inference.js');
-  assert.equal(instance.getModelCatalog().length, 5);
+  assert.equal(instance.getModelCatalog().length, 6);
   assert.deepEqual(Array.from(instance.getAvailableModels(), item => item.id), [
     'yolov8-nano', 'mobilenetv2-quality', 'resnet50-quality', 'efficientnet-b3-quality'
   ]);
@@ -139,6 +139,17 @@ test('quality classifier postprocessing accepts probabilities and logits', () =>
   assert.ok(logits.confidence > 0.95);
   assert.throws(() => instance._postprocess({ dims: [1, 3], data: new Float32Array(3) }, contract), /Unsupported/);
 });
+test('binary presence gate rejects non-fruit logits before grading', () => {
+  const instance = model('http://localhost/www/js/model-inference.js');
+  const gate = instance.MODELS.find(item => item.id === 'dragonfruit-presence-gate');
+  const rejected = instance._postprocess({ dims:[1, 2], data:new Float32Array([8, -4]) }, gate, .5);
+  assert.equal(rejected.isDragonFruit, false);
+  assert.ok(rejected.nonFruitProbability > .999);
+  const accepted = instance._postprocess({ dims:[1, 2], data:new Float32Array([-4, 8]) }, gate, .5);
+  assert.equal(accepted.isDragonFruit, true);
+  assert.ok(accepted.confidence > .999);
+  assert.throws(() => instance._postprocess({ dims:[1, 3], data:new Float32Array(3) }, gate), /presence-gate/);
+});
 test('quality classifiers require the detector gate before assigning a grade', async () => {
   class Tensor { dispose() {} }
   const instance = model('http://localhost/www/js/model-inference.js', { Tensor });
@@ -146,6 +157,8 @@ test('quality classifiers require the detector gate before assigning a grade', a
   const detectorOutput = tensor([1, 8, 1], [320, 320, 320, 320, 0.2, 0.1, 0.1, 0.1]);
   let classifierCalls = 0;
   instance.sessions = {
+    'dragonfruit-presence-gate': { inputNames:['images'], outputNames:['probabilities'], run:async () =>
+      ({probabilities:tensor([1, 2], [-5, 5])}) },
     'yolov8-nano': { inputNames:['images'], outputNames:['output0'], run:async () => ({output0:detectorOutput}) },
     'resnet50-quality': { inputNames:['images'], outputNames:['output'], run:async () => {
       classifierCalls++;
@@ -167,6 +180,8 @@ test('quality classifiers grade only the detector-localized fruit crop', async (
   const detectorOutput = tensor([1, 8, 1], [320, 320, 320, 320, 0.1, 0.9, 0.1, 0.1]);
   let classifiedImage = null;
   instance.sessions = {
+    'dragonfruit-presence-gate': { inputNames:['images'], outputNames:['probabilities'], run:async () =>
+      ({probabilities:tensor([1, 2], [-5, 5])}) },
     'yolov8-nano': { inputNames:['images'], outputNames:['output0'], run:async () => ({output0:detectorOutput}) },
     'efficientnet-b3-quality': { inputNames:['images'], outputNames:['output'], run:async () =>
       ({output:tensor([1, 4], [0.1, 0.4, 0.3, 0.2])}) }
@@ -181,7 +196,29 @@ test('quality classifiers grade only the detector-localized fruit crop', async (
   assert.ok(Math.abs(result.detectionConfidence - 0.9) < 1e-6);
   assert.equal(result.box.x, 0.25);
   assert.equal(classifiedImage, crop);
-  assert.match(result.modelName, /object gate \+ EfficientNet-B3/);
+  assert.match(result.modelName, /Presence Gate \+ YOLOv8-Nano \+ EfficientNet-B3/);
+});
+test('presence gate blocks every grading model before detector or classifier inference', async () => {
+  class Tensor { dispose() {} }
+  const instance = model('http://localhost/www/js/model-inference.js', { Tensor });
+  const tensor = (dims, values) => ({ dims, data:new Float32Array(values), dispose() {} });
+  let downstreamCalls = 0;
+  instance.sessions = {
+    'dragonfruit-presence-gate': { inputNames:['images'], outputNames:['probabilities'], run:async () =>
+      ({probabilities:tensor([1, 2], [8, -4])}) },
+    'yolov8-nano': { inputNames:['images'], outputNames:['output0'], run:async () => {
+      downstreamCalls++; return {output0:tensor([1, 8, 1], new Array(8).fill(0))};
+    } }
+  };
+  instance.load = async id => Boolean(instance.sessions[id]);
+  instance._preprocess = () => new Tensor();
+  for (const modelId of ['yolov8-nano', 'mobilenetv2-quality']) {
+    const result = await instance.infer({}, modelId, .5);
+    assert.equal(result.isDragonFruit, false);
+    assert.equal(result.gradingSkipped, true);
+    assert.match(result.modelName, /non-dragon-fruit/);
+  }
+  assert.equal(downstreamCalls, 0);
 });
 test('preprocessing follows zero-to-one and ImageNet registry contracts', () => {
   class Tensor {

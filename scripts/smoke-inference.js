@@ -20,7 +20,24 @@ async function smokeInference() {
     const output = outputs[session.outputNames[0]];
     if (output.dims.length !== 3 || output.dims[0] !== 1 || output.dims[1] !== 8 || output.dims[2] < 1 ||
         !output.data.every(Number.isFinite)) throw new Error('Unsupported or invalid deployed detector output');
-    return { input: input.dims, output: output.dims, backend: 'wasm', accuracyValidated: false };
+    const presenceSession = await ort.InferenceSession.create(new Uint8Array(fs.readFileSync(
+      path.join(www, 'model', 'gate', 'dragonfruit-presence-gate.onnx'))), {
+      executionProviders: ['wasm'], graphOptimizationLevel: 'all'
+    });
+    let presenceInput, presenceOutputs;
+    try {
+      presenceInput = new ort.Tensor('float32', new Float32Array(3 * 160 * 160), [1, 3, 160, 160]);
+      presenceOutputs = await presenceSession.run({ [presenceSession.inputNames[0]]: presenceInput });
+      const presenceOutput = presenceOutputs[presenceSession.outputNames[0]];
+      if (presenceOutput.dims.length !== 2 || presenceOutput.dims[0] !== 1 || presenceOutput.dims[1] !== 2 ||
+          !presenceOutput.data.every(Number.isFinite)) throw new Error('Invalid presence-gate output');
+      return { input: input.dims, output: output.dims, presenceInput: presenceInput.dims,
+        presenceOutput: presenceOutput.dims, backend: 'wasm', accuracyValidated: false };
+    } finally {
+      if (presenceInput) presenceInput.dispose();
+      if (presenceOutputs) Object.values(presenceOutputs).forEach(tensor => tensor.dispose());
+      await presenceSession.release();
+    }
   } finally {
     if (input) input.dispose();
     if (outputs) Object.values(outputs).forEach(tensor => tensor.dispose());

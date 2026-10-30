@@ -25,6 +25,10 @@ const ModelInference = {
     return model && ['integrated-detector-grader', 'quality-classifier'].includes(model.role);
   },
 
+  _isPresenceModel(model) {
+    return Boolean(model && model.role === 'object-presence-gate');
+  },
+
   canSelectModel(model) {
     return Boolean(model && model.available && this._isGradeModel(model));
   },
@@ -76,7 +80,7 @@ const ModelInference = {
 
   // ── Load the selected model once, then reuse its session ───────────────────
   async load(modelId = this.selectedModelId) {
-    const model = this.MODELS.find(candidate => candidate.id === modelId && this.canSelectModel(candidate));
+    const model = this.MODELS.find(candidate => candidate.id === modelId && candidate.available);
     if (!model) return false;
     if (this.sessions[model.id]) {
       this.session = this.sessions[model.id];
@@ -157,6 +161,9 @@ const ModelInference = {
 
   // ── Postprocess a verified registry output contract ──────────────────────
   _postprocess(outputTensor, model = this.getSelectedModel(), confidenceThreshold = this.CONF_THRESHOLD) {
+    if (model.outputContract === 'binary-presence-logits-v1') {
+      return this._postprocessPresence(outputTensor, model, confidenceThreshold);
+    }
     if (model.outputContract === 'quality-softmax-v1') {
       return this._postprocessQuality(outputTensor, model, confidenceThreshold);
     }
@@ -164,6 +171,29 @@ const ModelInference = {
       return this._postprocessGradeDetection(outputTensor, model, confidenceThreshold);
     }
     throw new Error('Unsupported model output contract');
+  },
+
+  _postprocessPresence(outputTensor, model, confidenceThreshold = model.threshold) {
+    const dims = Array.from(outputTensor.dims || []);
+    const values = Array.from(outputTensor.data || []);
+    const validShape = (dims.length === 1 && dims[0] === 2) ||
+      (dims.length === 2 && dims[0] === 1 && dims[1] === 2);
+    if (!validShape || values.length !== 2 || !values.every(Number.isFinite)) {
+      throw new Error('Unsupported presence-gate output shape');
+    }
+    const maximum = Math.max(...values);
+    const exponentials = values.map(value => Math.exp(value - maximum));
+    const denominator = exponentials[0] + exponentials[1];
+    const nonFruitProbability = exponentials[0] / denominator;
+    const dragonFruitProbability = exponentials[1] / denominator;
+    const threshold = Number.isFinite(confidenceThreshold) ? confidenceThreshold : model.threshold;
+    return {
+      isDragonFruit: dragonFruitProbability >= threshold && dragonFruitProbability > nonFruitProbability,
+      grade: null,
+      confidence: dragonFruitProbability,
+      nonFruitProbability,
+      presenceGate: true
+    };
   },
 
   // Classifier exports may contain probabilities or raw logits. The result is
@@ -396,7 +426,38 @@ const ModelInference = {
     if (!model) return null;
     const threshold = Number.isFinite(confidenceThreshold)
       ? Math.max(0, Math.min(1, confidenceThreshold)) : this.CONF_THRESHOLD;
-    if (model.role !== 'quality-classifier') return this._inferSingle(imgElement, model, threshold);
+    const presenceGate = this.MODELS.find(candidate => candidate.available && this._isPresenceModel(candidate));
+    const presence = presenceGate
+      ? await this._inferSingle(imgElement, presenceGate, presenceGate.threshold)
+      : null;
+    if (!presence || !presence.isDragonFruit) {
+      return {
+        isDragonFruit: false,
+        grade: null,
+        confidence: presence?.confidence || 0,
+        nonFruitProbability: presence?.nonFruitProbability ?? 1,
+        confidenceThreshold: presenceGate?.threshold ?? 1,
+        detectionConfidence: presence?.confidence || 0,
+        detectionThreshold: presenceGate?.threshold ?? 1,
+        modelId: model.id,
+        requestedModelId: model.id,
+        modelName: presence
+          ? `${presenceGate.name} → non-dragon-fruit (grading skipped)`
+          : 'Dragon Fruit Presence Gate unavailable (grading skipped)',
+        gradingSkipped: true,
+        requiresVisualGate: true
+      };
+    }
+    if (model.role !== 'quality-classifier') {
+      const graded = await this._inferSingle(imgElement, model, threshold);
+      if (!graded) return null;
+      return {
+        ...graded,
+        presenceConfidence: presence.confidence,
+        modelName: `${presenceGate.name} + ${graded.modelName}`,
+        requiresVisualGate: true
+      };
+    }
 
     const detector = this.MODELS.find(candidate => candidate.id === 'yolov8-nano' && this.canSelectModel(candidate));
     if (!detector) return null;
@@ -411,6 +472,7 @@ const ModelInference = {
         modelName: `${detector.name} object gate → ${model.name} (grading skipped)`,
         gradingSkipped: true,
         detectionConfidence: detection.confidence,
+        presenceConfidence: presence.confidence,
         requiresVisualGate: true
       };
     }
@@ -427,7 +489,8 @@ const ModelInference = {
       box: detection.box,
       detectionConfidence: detection.confidence,
       detectionThreshold: gateThreshold,
-      modelName: `${detector.name} object gate + ${model.name}`,
+      presenceConfidence: presence.confidence,
+      modelName: `${presenceGate.name} + ${detector.name} + ${model.name}`,
       requiresVisualGate: true
     };
   },

@@ -16,10 +16,13 @@ test('the bundled ONNX backend contains the matching JS, MJS and WASM files', ()
 
 test('the model catalog exposes only checksum-verified bundled assets', () => {
   const models = verifyModelRegistry(www);
-  assert.equal(models.length, 5);
+  assert.equal(models.length, 6);
   assert.deepEqual(models.filter(model => model.available).map(model => model.id), [
-    'yolov8-nano', 'mobilenetv2-quality', 'resnet50-quality', 'efficientnet-b3-quality'
+    'dragonfruit-presence-gate', 'yolov8-nano', 'mobilenetv2-quality', 'resnet50-quality', 'efficientnet-b3-quality'
   ]);
+  const gate = models.find(model => model.id === 'dragonfruit-presence-gate');
+  assert.equal(gate.outputContract, 'binary-presence-logits-v1');
+  assert.equal(gate.evaluation.specificity, 0.996);
   assert.equal(models.find(model => model.id === 'efficientnet-b3-quality').inputSize, 224);
   assert.equal(models.find(model => model.id === 'efficientnet-b3-quality').preprocessing, 'rgb-imagenet-normalized');
   assert.equal(models.find(model => model.id === 'resnet50-quality').evaluation.sampleCount, 226);
@@ -32,10 +35,13 @@ test('model registry validation rejects a forged bundled checksum', t => {
   t.after(() => fs.rmSync(temp, { recursive: true, force: true }));
   fs.mkdirSync(path.join(temp, 'js'), { recursive: true });
   fs.mkdirSync(path.join(temp, 'model'), { recursive: true });
+  fs.mkdirSync(path.join(temp, 'model', 'gate'), { recursive: true });
   const registry = fs.readFileSync(path.join(www, 'js', 'model-registry.js'), 'utf8')
     .replace(/sha256: '[a-f0-9]{64}'/, `sha256: '${'0'.repeat(64)}'`);
   fs.writeFileSync(path.join(temp, 'js', 'model-registry.js'), registry);
   fs.copyFileSync(path.join(www, 'model', 'best.onnx'), path.join(temp, 'model', 'best.onnx'));
+  fs.copyFileSync(path.join(www, 'model', 'gate', 'dragonfruit-presence-gate.onnx'),
+    path.join(temp, 'model', 'gate', 'dragonfruit-presence-gate.onnx'));
   assert.throws(() => verifyModelRegistry(temp), /checksum mismatch/);
 });
 
@@ -43,6 +49,8 @@ test('the actual bundled WASM backend executes the shipped detector', async () =
   const result = await smokeInference();
   assert.deepEqual(result.input, [1, 3, 640, 640]);
   assert.deepEqual(result.output, [1, 8, 8400]);
+  assert.deepEqual(result.presenceInput, [1, 3, 160, 160]);
+  assert.deepEqual(result.presenceOutput, [1, 2]);
   assert.equal(result.accuracyValidated, false);
 });
 

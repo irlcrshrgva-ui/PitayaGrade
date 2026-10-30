@@ -136,22 +136,18 @@ const PitayaApp = {
     const modelSelect = document.getElementById('modelSelect');
     const selectedModelName = document.getElementById('selectedModelName');
     if (modelSelect && selectedModelName && typeof ModelInference !== 'undefined') {
-      const models = ModelInference.getModelCatalog();
+      const models = ModelInference.getAvailableModels();
       modelSelect.innerHTML = '';
       models.forEach(model => {
         const option = document.createElement('option');
         option.value = model.id;
-        const selectable = ModelInference.canSelectModel(model);
-        option.disabled = !selectable;
-        option.textContent = selectable ? model.name : model.role === 'disease-segmenter'
-          ? `${model.name} — separate disease pipeline pending`
-          : `${model.name} — evaluated model pending`;
+        option.textContent = model.name;
         modelSelect.appendChild(option);
       });
       const updateSelectedModel = () => {
         const model = ModelInference.getSelectedModel();
         modelSelect.value = model.id;
-        selectedModelName.textContent = model.name + ' (verified bundled ONNX)';
+        selectedModelName.textContent = model.name + ' + trained non-fruit gate';
         const accuracy = document.getElementById('modelAccuracyMetric');
         const f1 = document.getElementById('modelF1Metric');
         const training = document.getElementById('modelTrainingMetric');
