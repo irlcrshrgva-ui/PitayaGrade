@@ -1,0 +1,83 @@
+{
+  "task": "manuscript-quality",
+  "models": [
+    "EfficientNetB3"
+  ],
+  "status": "human-reviewed",
+  "reviewProvenance": {
+    "reviewerCounts": {
+      "reviewer-03": 513,
+      "reviewer-01": 250,
+      "reviewer-02": 497,
+      "recheck-01": 145,
+      "coordinator-01": 4,
+      "recheck-02": 144
+    },
+    "assistedRecordCount": 0
+  },
+  "frameworks": {
+    "torch": "2.14.1+cu130",
+    "torchvision": "0.29.1+cu130",
+    "scikit-learn": "1.9.1"
+  },
+  "classToIndex": {
+    "Grade A": 0,
+    "Grade B": 1,
+    "Grade C": 2,
+    "Reject": 3
+  },
+  "imageSize": 224,
+  "batchSize": 32,
+  "seed": 42,
+  "orientation": "EXIF-transpose to upright RGB before resize and augmentation",
+  "phase1": {
+    "epochs": 10,
+    "lr": 0.001,
+    "backbone": "frozen"
+  },
+  "phase2": {
+    "epochs": 30,
+    "lr": 1e-05,
+    "backbone": "architecture-specific upper feature blocks"
+  },
+  "optimizer": {
+    "name": "Adam",
+    "weightDecay": 0.0001,
+    "betas": [
+      0.9,
+      0.999
+    ]
+  },
+  "scheduler": {
+    "name": "ReduceLROnPlateau",
+    "patience": 5,
+    "factor": 0.5
+  },
+  "selectionMetric": "val_loss",
+  "earlyStoppingPatience": 10,
+  "externalPretraining": {
+    "purpose": "external feature pretraining only; not official grade ground truth",
+    "audit": "training_results/external-quality-pretrain-2026-10-30/audit.json",
+    "auditSha256": "c6bbd4e3539e6acac18970fd9f288038dea66e3313af2d475f8b664ae7ff609a",
+    "source": {
+      "repository": "https://github.com/codernayeem/fruit-classification-dataset",
+      "driveFolder": "https://drive.google.com/drive/folders/1g24PoWVzFZZ5G8QUJQuMFh3Cl5o2XU-c",
+      "licenseClaim": "CC BY 4.0 (publisher claim; underlying online-image rights not independently verified)",
+      "archive": "dataset/external/codernayeem-fruit_dataset_processed.zip",
+      "archiveSha256": "092cd165f4175a4e61476d0a6da2b8d0db45cf3f3562fc6a6defa6f257a54e75"
+    },
+    "validatedCounts": {
+      "test/good": 112,
+      "test/medium": 106,
+      "train/good": 448,
+      "train/medium": 414
+    },
+    "maximumEpochs": 12,
+    "earlyStoppingPatience": 4,
+    "transferPolicy": "good/medium backbone features only; fresh four-class head for reviewed grades"
+  },
+  "methodologyLimitations": [
+    "Reviewed fruit-crop provenance and full preprocessing alignment still need verification.",
+    "No metadata check establishes expert-label truth or field accuracy."
+  ]
+}

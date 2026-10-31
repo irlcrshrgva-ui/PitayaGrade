@@ -1,0 +1,5 @@
+actual\predicted,Grade A,Grade B,Grade C,Reject
+Grade A,15,9,4,0
+Grade B,14,39,6,2
+Grade C,4,12,5,1
+Reject,2,3,0,110

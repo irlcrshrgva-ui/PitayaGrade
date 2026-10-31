@@ -1,0 +1,2 @@
+model_id,sample_count,accuracy,macro_precision,macro_recall,macro_f1,mean_latency_ms,p95_latency_ms,mistake_count
+efficientnet-b3-quality,226,0.7477876106194691,0.5886009270965022,0.5897132536031324,0.5851013213067542,17.850869911504425,21.2754,57

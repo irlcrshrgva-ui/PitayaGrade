@@ -51,10 +51,10 @@ const PitayaModelRegistry = Object.freeze([
   Object.freeze({
     id: 'efficientnet-b3-quality', name: 'EfficientNet-B3', role: 'quality-classifier',
     available: true, status: 'bundled', modelPath: 'model/quality/efficientnet-b3.onnx',
-    sha256: '8461dc36ee59e26111ea7a205095db44e5bc0d77114a1c75258761a262c2b390',
+    sha256: 'c2dbd10f72932b871e49679f07b5134a0e8de75f973084651850d61673d0c3a3',
     inputSize: 224, preprocessing: 'rgb-imagenet-normalized', outputContract: 'quality-softmax-v1',
-    evaluation: Object.freeze({ sampleCount: 226, accuracy: 0.7256637168,
-      macroPrecision: 0.5941570110, macroRecall: 0.5722070517, macroF1: 0.5780325491 }),
+    evaluation: Object.freeze({ sampleCount: 226, accuracy: 0.7477876106,
+      macroPrecision: 0.5886009271, macroRecall: 0.5897132536, macroF1: 0.5851013213 }),
     classes: Object.freeze(['Grade A', 'Grade B', 'Grade C', 'Reject'])
   }),
   Object.freeze({

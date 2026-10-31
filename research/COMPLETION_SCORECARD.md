@@ -1,6 +1,6 @@
 # PitayaGrade completion scorecard
 
-**Status date:** 27 October 2026
+**Status date:** 31 October 2026
 **Overall project-readiness estimate:** **88 / 100**
 
 This is a project-management estimate based on retained deliverables. It is not
@@ -12,9 +12,9 @@ cannot be replaced by source code, simulated values or generated evidence.
 | Scope and requirements | 10 | 10 | Scope, limitations, users, planned model catalog and architecture are documented. |
 | Repository and repeatable builds | 10 | 10 | Git history, CI, dependency lock, data-validation scripts and release-readiness gate are present. |
 | Application functionality | 20 | 20 | Photo/live scanning, model selection, local records, validation feedback, analytics, reports, notifications and PWA delivery are implemented and regression-tested. Physical-device validation is scored under release readiness. |
-| Model infrastructure | 15 | 13 | Five-model registry, ONNX contracts, checksum validation and separate quality/disease loading paths are implemented. Final MobileNetV2, ResNet50 and EfficientNet-B3 candidates have checksum-bound runtime reports and held-out ONNX results. Promotion remains blocked by the missing reviewed disease-segmentation asset and the all-model audit. |
+| Model infrastructure | 15 | 13 | Five-model registry, ONNX contracts, checksum validation and separate quality/disease loading paths are implemented. The three quality candidates are selectable and checksum-verified. External feature pretraining produced a promoted EfficientNet-B3 candidate with 74.78% internal held-out accuracy and 58.51% macro F1; the separate disease-segmentation asset remains unavailable. |
 | Data governance and preparation | 15 | 15 | All 3,050 quality/maturity rows were human-reviewed, conflicts were adjudicated, validation returned zero errors, and frozen quality, maturity and combined manifests are retained with checksums. Reviewed disease-region masks remain outside this workstream and are still missing. |
-| Formal evaluation and UAT | 10 | 5 | All three final quality ONNX candidates were evaluated on the same untouched 226-image split with retained predictions, per-class metrics, confusion matrices, mistakes and latency. Disease segmentation evaluation, adviser sign-off, device tests and UAT remain missing. |
+| Formal evaluation and UAT | 10 | 5 | All three final quality ONNX candidates and the externally pretrained EfficientNet-B3 replacement were evaluated on the same untouched 226-image split with retained predictions, per-class metrics, confusion matrices, mistakes and latency. Disease segmentation evaluation, device tests and UAT remain missing. |
 | Manuscript and defense materials | 15 | 15 | Six-chapter manuscript, figures, architecture diagrams, evaluation plan and a validated 15-slide defense deck are prepared. Measured Chapter 5 findings remain governed by the formal-evaluation workstream. |
 | Release readiness | 5 | 0 | Debug APK and automated verification pass. Release signing, target-phone verification and a signed release build remain incomplete. |
 | **Total** | **100** | **88** | **Human-reviewed quality data and final quality-model evaluation are complete; disease evidence, real-device/UAT results and release work remain the critical path.** |

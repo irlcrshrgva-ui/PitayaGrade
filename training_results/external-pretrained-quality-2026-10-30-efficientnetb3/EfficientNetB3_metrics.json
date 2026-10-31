@@ -1,0 +1,66 @@
+{
+  "model": "EfficientNetB3",
+  "test_accuracy": 0.7477876106194691,
+  "per_class": {
+    "Grade A": {
+      "precision": 0.42857142857142855,
+      "recall": 0.5357142857142857,
+      "f1_score": 0.47619047619047616,
+      "support": 28
+    },
+    "Grade B": {
+      "precision": 0.6190476190476191,
+      "recall": 0.639344262295082,
+      "f1_score": 0.6290322580645161,
+      "support": 61
+    },
+    "Grade C": {
+      "precision": 0.3333333333333333,
+      "recall": 0.22727272727272727,
+      "f1_score": 0.2702702702702703,
+      "support": 22
+    },
+    "Reject": {
+      "precision": 0.9734513274336283,
+      "recall": 0.9565217391304348,
+      "f1_score": 0.9649122807017544,
+      "support": 115
+    }
+  },
+  "confusion_matrix": [
+    [
+      15,
+      9,
+      4,
+      0
+    ],
+    [
+      14,
+      39,
+      6,
+      2
+    ],
+    [
+      4,
+      12,
+      5,
+      1
+    ],
+    [
+      2,
+      3,
+      0,
+      110
+    ]
+  ],
+  "class_names": [
+    "Grade A",
+    "Grade B",
+    "Grade C",
+    "Reject"
+  ],
+  "mean_inference_ms": 5.224030973431984,
+  "p95_inference_ms": 10.152318749987899,
+  "prediction_file": "EfficientNetB3_predictions.csv",
+  "prediction_count": 226
+}

@@ -1,0 +1,227 @@
+model_id,sample_id,predicted_label,confidence,inference_ms
+resnet50-quality,quality:0,Grade B,0.4501001572,26.172700
+resnet50-quality,quality:1027,Reject,0.9555050623,28.036500
+resnet50-quality,quality:1034,Reject,0.9660613088,26.916300
+resnet50-quality,quality:1040,Reject,0.9517182206,29.571700
+resnet50-quality,quality:1046,Reject,0.9696611950,29.856200
+resnet50-quality,quality:1050,Reject,0.9630194510,28.607200
+resnet50-quality,quality:106,Grade A,0.7898542218,30.169900
+resnet50-quality,quality:1062,Reject,0.9355327069,26.885400
+resnet50-quality,quality:1081,Reject,0.9693528719,31.263800
+resnet50-quality,quality:109,Grade A,0.4059870642,31.543000
+resnet50-quality,quality:1090,Reject,0.9746958408,28.022600
+resnet50-quality,quality:1101,Reject,0.9682710978,28.006400
+resnet50-quality,quality:1132,Reject,0.9495011265,26.633900
+resnet50-quality,quality:1138,Reject,0.9295950461,28.474200
+resnet50-quality,quality:1144,Reject,0.9671508401,29.922700
+resnet50-quality,quality:1158,Reject,0.9745165448,27.456200
+resnet50-quality,quality:1178,Reject,0.9413917288,26.339100
+resnet50-quality,quality:118,Grade B,0.4805998556,27.181600
+resnet50-quality,quality:1183,Reject,0.9618628763,28.014100
+resnet50-quality,quality:1185,Reject,0.9539379380,25.473500
+resnet50-quality,quality:1194,Reject,0.9793619735,26.295600
+resnet50-quality,quality:1205,Reject,0.9656011915,25.705000
+resnet50-quality,quality:121,Grade A,0.4086116567,26.094800
+resnet50-quality,quality:1211,Reject,0.9564793979,26.102000
+resnet50-quality,quality:1213,Reject,0.9676576001,25.392300
+resnet50-quality,quality:1215,Reject,0.9558534501,27.494200
+resnet50-quality,quality:1217,Reject,0.9395446886,26.332900
+resnet50-quality,quality:1218,Reject,0.9502699527,26.265700
+resnet50-quality,quality:122,Reject,0.6209581126,28.144300
+resnet50-quality,quality:1229,Grade C,0.5019430281,27.511600
+resnet50-quality,quality:123,Grade B,0.4276101104,27.664200
+resnet50-quality,quality:1233,Reject,0.9702645093,27.285400
+resnet50-quality,quality:1248,Reject,0.9661420702,27.373300
+resnet50-quality,quality:1265,Reject,0.9688829299,41.519300
+resnet50-quality,quality:1273,Reject,0.9616466985,27.710900
+resnet50-quality,quality:1276,Reject,0.9645236991,26.783000
+resnet50-quality,quality:1277,Reject,0.9577550108,27.030800
+resnet50-quality,quality:1285,Reject,0.9537608168,28.591600
+resnet50-quality,quality:129,Grade B,0.4530295638,26.922100
+resnet50-quality,quality:1293,Reject,0.9541800325,25.293100
+resnet50-quality,quality:1299,Reject,0.9354587985,26.763700
+resnet50-quality,quality:130,Grade A,0.3846312601,26.031700
+resnet50-quality,quality:1309,Reject,0.9005411519,25.578400
+resnet50-quality,quality:1311,Reject,0.9619774311,26.130200
+resnet50-quality,quality:1312,Reject,0.9512660689,26.840700
+resnet50-quality,quality:1314,Reject,0.9640074748,26.189100
+resnet50-quality,quality:1326,Reject,0.5685653936,27.487500
+resnet50-quality,quality:1327,Reject,0.9483462645,26.363200
+resnet50-quality,quality:1328,Reject,0.9506106851,27.092400
+resnet50-quality,quality:1329,Reject,0.9614690950,26.597700
+resnet50-quality,quality:1332,Reject,0.9547813312,26.973800
+resnet50-quality,quality:1333,Reject,0.9596250732,26.126600
+resnet50-quality,quality:1337,Reject,0.9809280270,27.354500
+resnet50-quality,quality:1338,Reject,0.9588501895,29.426500
+resnet50-quality,quality:1348,Reject,0.9557413406,33.906600
+resnet50-quality,quality:1357,Reject,0.9571611451,27.080200
+resnet50-quality,quality:1371,Reject,0.9426458182,27.340300
+resnet50-quality,quality:138,Grade B,0.3226622711,26.371900
+resnet50-quality,quality:1381,Reject,0.5155296756,26.208700
+resnet50-quality,quality:1382,Reject,0.9487765671,27.633300
+resnet50-quality,quality:1402,Reject,0.9645629771,28.044000
+resnet50-quality,quality:1403,Reject,0.9721804549,25.815100
+resnet50-quality,quality:1405,Reject,0.9512335874,27.445000
+resnet50-quality,quality:1407,Reject,0.9506127524,26.064600
+resnet50-quality,quality:1410,Reject,0.9325335740,25.821500
+resnet50-quality,quality:1412,Reject,0.9451982369,27.595100
+resnet50-quality,quality:1416,Reject,0.9540821923,26.715700
+resnet50-quality,quality:1417,Reject,0.9691156488,31.692500
+resnet50-quality,quality:1421,Reject,0.9267113319,27.433800
+resnet50-quality,quality:1430,Reject,0.9806701670,26.147700
+resnet50-quality,quality:1433,Reject,0.9505236543,29.072600
+resnet50-quality,quality:1436,Reject,0.9487506267,28.357700
+resnet50-quality,quality:1444,Reject,0.9697647457,27.804400
+resnet50-quality,quality:1446,Reject,0.9590511117,27.593800
+resnet50-quality,quality:1450,Reject,0.9638457716,28.094700
+resnet50-quality,quality:1453,Reject,0.9465594914,27.808400
+resnet50-quality,quality:1454,Reject,0.9508140725,27.353200
+resnet50-quality,quality:1459,Reject,0.9497978654,28.004400
+resnet50-quality,quality:1483,Reject,0.9580472538,28.518900
+resnet50-quality,quality:1484,Reject,0.9739143077,59.897700
+resnet50-quality,quality:1489,Reject,0.9619900781,31.920000
+resnet50-quality,quality:1492,Reject,0.9426605979,27.046400
+resnet50-quality,quality:1499,Reject,0.9516342572,29.485400
+resnet50-quality,quality:1500,Reject,0.9111948762,28.528600
+resnet50-quality,quality:1501,Reject,0.9664237989,30.243900
+resnet50-quality,quality:1509,Reject,0.9519338411,30.674500
+resnet50-quality,quality:1513,Reject,0.9487612462,32.238900
+resnet50-quality,quality:1516,Reject,0.9534744272,28.914900
+resnet50-quality,quality:1523,Reject,0.9710911615,26.391900
+resnet50-quality,quality:1534,Reject,0.9635278781,25.845500
+resnet50-quality,quality:1542,Reject,0.9674124933,26.784400
+resnet50-quality,quality:1550,Reject,0.9498381345,25.394400
+resnet50-quality,quality:1551,Reject,0.9742175236,26.246400
+resnet50-quality,quality:1564,Reject,0.9617584691,25.377400
+resnet50-quality,quality:1567,Reject,0.9365490106,26.589800
+resnet50-quality,quality:1569,Reject,0.9454857948,26.112200
+resnet50-quality,quality:1571,Reject,0.9535635901,26.496800
+resnet50-quality,quality:1577,Reject,0.9582850760,25.518500
+resnet50-quality,quality:1578,Reject,0.9160247968,26.971700
+resnet50-quality,quality:1579,Reject,0.9407085066,27.134000
+resnet50-quality,quality:1594,Reject,0.9678109569,27.210100
+resnet50-quality,quality:1599,Reject,0.9716741534,26.054300
+resnet50-quality,quality:1602,Reject,0.9667046208,26.481800
+resnet50-quality,quality:1605,Reject,0.9504639214,26.229800
+resnet50-quality,quality:1608,Reject,0.9618768264,27.575300
+resnet50-quality,quality:1611,Reject,0.9390843390,29.984600
+resnet50-quality,quality:1625,Reject,0.9774787366,29.562400
+resnet50-quality,quality:1629,Reject,0.9546816003,29.383900
+resnet50-quality,quality:1650,Reject,0.9657068208,28.335900
+resnet50-quality,quality:167,Grade A,0.6720016924,27.137200
+resnet50-quality,quality:175,Grade B,0.4121741980,56.004400
+resnet50-quality,quality:178,Grade B,0.6399875870,32.658000
+resnet50-quality,quality:188,Grade B,0.4959803881,27.134100
+resnet50-quality,quality:194,Grade C,0.3674773125,25.840900
+resnet50-quality,quality:203,Grade A,0.6677423086,26.043400
+resnet50-quality,quality:210,Grade A,0.5070373923,25.832100
+resnet50-quality,quality:213,Grade C,0.4512537996,24.764100
+resnet50-quality,quality:215,Grade A,0.9167041685,27.272400
+resnet50-quality,quality:224,Grade A,0.6774831037,31.075800
+resnet50-quality,quality:233,Grade B,0.4578969534,30.895200
+resnet50-quality,quality:235,Grade A,0.3852075571,25.902600
+resnet50-quality,quality:245,Grade B,0.5209464958,28.855500
+resnet50-quality,quality:252,Grade A,0.5571468348,26.311200
+resnet50-quality,quality:256,Grade A,0.4867866210,27.389100
+resnet50-quality,quality:259,Grade B,0.4905463785,26.636600
+resnet50-quality,quality:26,Grade B,0.4401975712,26.310100
+resnet50-quality,quality:265,Grade A,0.8860478880,25.637900
+resnet50-quality,quality:268,Grade A,0.4434149285,26.000900
+resnet50-quality,quality:282,Grade C,0.3884440291,25.751900
+resnet50-quality,quality:288,Grade C,0.5259960356,27.991000
+resnet50-quality,quality:291,Grade A,0.6400923687,26.826800
+resnet50-quality,quality:295,Grade B,0.3592416916,26.207900
+resnet50-quality,quality:342,Grade A,0.7977405575,27.388000
+resnet50-quality,quality:344,Grade B,0.7234059706,26.927000
+resnet50-quality,quality:353,Grade A,0.6208870750,26.176100
+resnet50-quality,quality:355,Grade B,0.5971060480,25.893500
+resnet50-quality,quality:362,Grade B,0.4458935942,26.667700
+resnet50-quality,quality:367,Grade B,0.5145644550,27.036400
+resnet50-quality,quality:369,Grade B,0.5136592590,26.339200
+resnet50-quality,quality:371,Grade B,0.7226423008,26.692400
+resnet50-quality,quality:385,Grade A,0.7174720169,25.598400
+resnet50-quality,quality:390,Grade B,0.3895198607,25.956400
+resnet50-quality,quality:41,Grade A,0.4294452294,25.815900
+resnet50-quality,quality:417,Grade A,0.6047001871,26.175800
+resnet50-quality,quality:419,Grade C,0.4703447062,25.924300
+resnet50-quality,quality:42,Grade C,0.4461268801,26.186800
+resnet50-quality,quality:441,Grade B,0.6751258180,25.095300
+resnet50-quality,quality:442,Grade A,0.5983208146,25.396700
+resnet50-quality,quality:45,Grade A,0.4313533878,28.315200
+resnet50-quality,quality:454,Grade B,0.5394188964,26.531500
+resnet50-quality,quality:457,Grade A,0.5783256625,26.328100
+resnet50-quality,quality:46,Grade A,0.7776901688,27.429500
+resnet50-quality,quality:47,Grade A,0.3403563966,28.278800
+resnet50-quality,quality:48,Grade A,0.4560838004,28.329100
+resnet50-quality,quality:49,Grade B,0.5210056187,25.863700
+resnet50-quality,quality:5,Grade B,0.5486554421,26.193000
+resnet50-quality,quality:50,Grade C,0.4688339751,27.385400
+resnet50-quality,quality:52,Grade A,0.4425637129,27.650500
+resnet50-quality,quality:529,Grade B,0.3584795147,27.306700
+resnet50-quality,quality:53,Grade B,0.3574988391,39.340100
+resnet50-quality,quality:547,Grade B,0.3961097000,28.014500
+resnet50-quality,quality:555,Grade C,0.4809769478,26.602000
+resnet50-quality,quality:558,Grade C,0.4206837494,27.308500
+resnet50-quality,quality:56,Grade B,0.4813196231,27.708500
+resnet50-quality,quality:579,Grade B,0.5128301917,29.334500
+resnet50-quality,quality:601,Grade B,0.6940337775,29.553800
+resnet50-quality,quality:61,Grade B,0.5084467342,28.684900
+resnet50-quality,quality:630,Grade A,0.4227321118,27.155400
+resnet50-quality,quality:638,Grade A,0.9924327577,28.798500
+resnet50-quality,quality:66,Grade B,0.4979157750,26.535100
+resnet50-quality,quality:667,Grade C,0.4691180748,28.550300
+resnet50-quality,quality:670,Grade A,0.7479182019,28.345800
+resnet50-quality,quality:688,Grade A,0.4646952655,28.796700
+resnet50-quality,quality:691,Grade A,0.4424576504,28.900700
+resnet50-quality,quality:693,Grade B,0.4093351945,26.447300
+resnet50-quality,quality:698,Grade B,0.6789662235,27.184800
+resnet50-quality,quality:70,Grade A,0.8818305797,26.007400
+resnet50-quality,quality:704,Grade B,0.5904748360,25.819700
+resnet50-quality,quality:707,Grade A,0.5031966014,25.890200
+resnet50-quality,quality:717,Reject,0.4010735011,25.727400
+resnet50-quality,quality:72,Grade A,0.4623466993,25.749200
+resnet50-quality,quality:720,Grade A,0.4584237190,25.937900
+resnet50-quality,quality:722,Grade A,0.5216269075,25.285800
+resnet50-quality,quality:728,Grade A,0.5654319806,28.522400
+resnet50-quality,quality:730,Grade C,0.3426354866,30.512800
+resnet50-quality,quality:736,Grade B,0.6128002569,24.773000
+resnet50-quality,quality:738,Grade A,0.5832876289,25.528000
+resnet50-quality,quality:747,Grade B,0.5997470185,25.168900
+resnet50-quality,quality:756,Grade B,0.5547663086,27.872700
+resnet50-quality,quality:777,Grade A,0.4074760470,26.668100
+resnet50-quality,quality:784,Grade B,0.5408588868,28.208300
+resnet50-quality,quality:786,Grade A,0.5841936557,25.125500
+resnet50-quality,quality:790,Grade B,0.6402307830,24.689000
+resnet50-quality,quality:791,Grade B,0.3883751227,19.001500
+resnet50-quality,quality:795,Grade B,0.3777256678,16.950400
+resnet50-quality,quality:803,Grade A,0.5036180867,20.149300
+resnet50-quality,quality:807,Grade A,0.4823370235,21.908600
+resnet50-quality,quality:808,Grade B,0.4875274088,25.790900
+resnet50-quality,quality:815,Grade B,0.7252935723,27.036400
+resnet50-quality,quality:827,Grade A,0.7536883053,26.854400
+resnet50-quality,quality:839,Grade A,0.5467545067,24.854600
+resnet50-quality,quality:840,Grade C,0.4570233078,26.397500
+resnet50-quality,quality:841,Grade C,0.4752599720,24.235500
+resnet50-quality,quality:843,Grade A,0.6035009470,23.909800
+resnet50-quality,quality:845,Grade A,0.5103823537,21.105100
+resnet50-quality,quality:85,Grade B,0.4382230814,22.107300
+resnet50-quality,quality:852,Grade B,0.6225416397,19.255200
+resnet50-quality,quality:855,Grade B,0.7798382655,17.799500
+resnet50-quality,quality:870,Grade B,0.8581043691,21.612000
+resnet50-quality,quality:876,Grade B,0.5499842564,19.688700
+resnet50-quality,quality:878,Grade A,0.4294030363,20.013000
+resnet50-quality,quality:886,Grade B,0.4792516242,18.417600
+resnet50-quality,quality:887,Grade A,0.3841568190,24.012700
+resnet50-quality,quality:890,Grade A,0.8574022582,16.773300
+resnet50-quality,quality:91,Grade A,0.4620979658,19.853200
+resnet50-quality,quality:924,Reject,0.9557811702,21.049100
+resnet50-quality,quality:951,Reject,0.9635020737,30.032300
+resnet50-quality,quality:957,Reject,0.9716214659,28.325200
+resnet50-quality,quality:961,Reject,0.9607311164,32.023300
+resnet50-quality,quality:962,Reject,0.9590388466,29.908900
+resnet50-quality,quality:963,Reject,0.9615730345,31.314000
+resnet50-quality,quality:967,Reject,0.9133750364,25.403800
+resnet50-quality,quality:969,Reject,0.9606604097,24.036700
+resnet50-quality,quality:98,Grade B,0.4151186915,24.936200
+resnet50-quality,quality:989,Reject,0.9669398095,24.866100
+resnet50-quality,quality:997,Reject,0.9444996386,25.738500

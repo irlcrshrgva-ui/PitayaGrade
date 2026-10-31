@@ -11,6 +11,7 @@ Follows methodology from the capstone paper:
 import os
 import json
 import time
+import hashlib
 from importlib.metadata import version
 from scripts.reviewed_training import (training_arguments, prepare_reviewed_dataset,
                                        prepared_sample_ids, write_prediction_csv)
@@ -27,7 +28,7 @@ from pathlib import Path
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Dataset
 from torchvision import datasets, transforms, models
 from sklearn.metrics import classification_report, confusion_matrix, precision_recall_fscore_support
 
@@ -39,6 +40,8 @@ PHASE2_EPOCHS = TRAINING_ARGS.phase2_epochs if TRAINING_ARGS else 30
 PATIENCE = TRAINING_ARGS.patience if TRAINING_ARGS else 10
 SEED = 42
 NUM_WORKERS = TRAINING_ARGS.num_workers if TRAINING_ARGS else 2
+EXTERNAL_PRETRAIN_EPOCHS = TRAINING_ARGS.external_pretrain_epochs if TRAINING_ARGS else 12
+EXTERNAL_PRETRAIN_PATIENCE = TRAINING_ARGS.external_pretrain_patience if TRAINING_ARGS else 4
 
 PROJECT_DIR = Path(os.path.dirname(os.path.abspath(__file__)))
 RESULTS_DIR = PROJECT_DIR / "training_results"
@@ -110,6 +113,55 @@ def create_dataloaders(prepared_dir):
 
     print(f"Train: {len(train_dataset)}, Val: {len(val_dataset)}, Test: {len(test_dataset)}")
     return train_loader, val_loader, test_loader, train_dataset.class_to_idx
+
+
+class AuditedExternalDataset(Dataset):
+    """Good/medium images used only to initialize dragon-fruit quality features."""
+
+    def __init__(self, records, transform):
+        self.records = list(records)
+        self.transform = transform
+        self.class_to_idx = {'good': 0, 'medium': 1}
+
+    def __len__(self):
+        return len(self.records)
+
+    def __getitem__(self, index):
+        row = self.records[index]
+        image = load_upright_rgb(PROJECT_DIR / row['path'])
+        return self.transform(image), self.class_to_idx[row['sourceLabel']]
+
+
+def create_external_pretraining_dataloaders(audit):
+    normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                     std=[0.229, 0.224, 0.225])
+    train_transform = transforms.Compose([
+        transforms.Resize((IMG_SIZE, IMG_SIZE)),
+        transforms.RandomHorizontalFlip(),
+        transforms.RandomVerticalFlip(),
+        transforms.RandomRotation(25),
+        transforms.ColorJitter(brightness=0.15, contrast=0.1),
+        transforms.ToTensor(),
+        normalize,
+    ])
+    val_transform = transforms.Compose([
+        transforms.Resize((IMG_SIZE, IMG_SIZE)),
+        transforms.ToTensor(),
+        normalize,
+    ])
+    train_rows = [row for row in audit['safeRecords'] if row['sourceSplit'] == 'train']
+    val_rows = [row for row in audit['safeRecords'] if row['sourceSplit'] == 'test']
+    train_dataset = AuditedExternalDataset(train_rows, train_transform)
+    val_dataset = AuditedExternalDataset(val_rows, val_transform)
+    loader_options = {
+        'num_workers': NUM_WORKERS,
+        'pin_memory': torch.cuda.is_available(),
+        'persistent_workers': NUM_WORKERS > 0,
+    }
+    train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True, **loader_options)
+    val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False, **loader_options)
+    print(f"External pretraining train: {len(train_dataset)}, validation: {len(val_dataset)}")
+    return train_loader, val_loader
 
 
 # ── Model Builder ────────────────────────────────────────────────────────────
@@ -235,6 +287,87 @@ def validate(model, loader, criterion):
             correct += predicted.eq(labels).sum().item()
 
     return running_loss / total, correct / total
+
+
+def pretrain_external_features(model_name, audit):
+    """Learn good/medium visual features without treating them as grade labels."""
+    train_loader, val_loader = create_external_pretraining_dataloaders(audit)
+    model = build_model(model_name, num_classes=2).to(device)
+    criterion = nn.CrossEntropyLoss()
+    history = {
+        'model': model_name,
+        'purpose': 'external good/medium feature pretraining only',
+        'labels': ['good', 'medium'],
+        'train_loss': [], 'train_acc': [], 'val_loss': [], 'val_acc': [],
+        'learning_rate': [], 'frozen_epochs': [], 'fine_tune_epochs': [],
+        'selection_metric': 'val_loss',
+    }
+    best_monitor = LossMonitor(EXTERNAL_PRETRAIN_EPOCHS + 1)
+    best_state = None
+    started = time.time()
+    frozen_epochs = min(2, EXTERNAL_PRETRAIN_EPOCHS)
+    phases = [(True, frozen_epochs, 1e-3)]
+    if EXTERNAL_PRETRAIN_EPOCHS > frozen_epochs:
+        phases.append((False, EXTERNAL_PRETRAIN_EPOCHS - frozen_epochs, 1e-4))
+    for frozen, epochs, learning_rate in phases:
+        phase_monitor = LossMonitor(EXTERNAL_PRETRAIN_PATIENCE)
+        if frozen:
+            freeze_backbone(model)
+        else:
+            if best_state is not None:
+                model.load_state_dict(best_state)
+            unfreeze_backbone(model)
+        optimizer = optim.Adam(
+            filter(lambda parameter: parameter.requires_grad, model.parameters()),
+            lr=learning_rate,
+            weight_decay=1e-4,
+        )
+        scheduler = optim.lr_scheduler.ReduceLROnPlateau(
+            optimizer, mode='min', factor=0.5, patience=2, threshold=0, min_lr=1e-7)
+        for _ in range(epochs):
+            current_lr = optimizer.param_groups[0]['lr']
+            train_loss, train_acc = train_one_epoch(model, train_loader, criterion, optimizer)
+            val_loss, val_acc = validate(model, val_loader, criterion)
+            epoch = len(history['val_loss']) + 1
+            phase_monitor.update(val_loss, epoch)
+            if best_monitor.update(val_loss, epoch):
+                best_state = {key: value.cpu().clone() for key, value in model.state_dict().items()}
+                history['best_val_accuracy'] = val_acc
+            scheduler.step(val_loss)
+            for key, value in (
+                ('train_loss', train_loss), ('train_acc', train_acc),
+                ('val_loss', val_loss), ('val_acc', val_acc),
+                ('learning_rate', current_lr),
+            ):
+                history[key].append(value)
+            history['frozen_epochs' if frozen else 'fine_tune_epochs'].append(epoch)
+            print(
+                f"External pretrain epoch {epoch}: val_loss={val_loss:.4f}, "
+                f"val_acc={val_acc:.4f}, lr={current_lr:.1e}")
+            if not frozen and phase_monitor.should_stop:
+                break
+        if not frozen and phase_monitor.should_stop:
+            break
+    if best_state is None:
+        raise RuntimeError('External pretraining produced no finite validation checkpoint')
+    model.load_state_dict(best_state)
+    history.update(
+        best_val_loss=best_monitor.best,
+        best_epoch=best_monitor.best_epoch,
+        total_epochs=len(history['val_loss']),
+        total_time_seconds=time.time() - started,
+    )
+    (RESULTS_DIR / f'{model_name}_external_pretrain_history.json').write_text(
+        json.dumps(history, indent=2) + '\n', encoding='utf-8')
+    torch.save(model.backbone.state_dict(), RESULTS_DIR / f'{model_name}_external_pretrain_backbone.pth')
+    backbone_state = {
+        key: value.detach().cpu().clone()
+        for key, value in model.backbone.state_dict().items()
+    }
+    del model
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+    return backbone_state, history
 
 
 def train_model(model_name, model, train_loader, val_loader):
@@ -617,6 +750,20 @@ def main():
     assisted_count = sum(count for reviewer, count in reviewer_counts.items()
                          if reviewer.lower().startswith('ai-assisted'))
 
+    external_context = None
+    if TRAINING_ARGS.external_audit:
+        audit_bytes = TRAINING_ARGS.external_pretraining_audit.read_bytes()
+        external_context = {
+            'purpose': TRAINING_ARGS.external_audit['purpose'],
+            'audit': TRAINING_ARGS.external_pretraining_audit.resolve().relative_to(PROJECT_DIR).as_posix(),
+            'auditSha256': hashlib.sha256(audit_bytes).hexdigest(),
+            'source': TRAINING_ARGS.external_audit['source'],
+            'validatedCounts': TRAINING_ARGS.external_audit['validatedCounts'],
+            'maximumEpochs': EXTERNAL_PRETRAIN_EPOCHS,
+            'earlyStoppingPatience': EXTERNAL_PRETRAIN_PATIENCE,
+            'transferPolicy': 'good/medium backbone features only; fresh four-class head for reviewed grades',
+        }
+
     (RESULTS_DIR / 'training-context.json').write_text(json.dumps({
         'task': 'manuscript-quality', 'models': TRAINING_ARGS.models,
         'status': 'provisional' if assisted_count else 'human-reviewed',
@@ -629,6 +776,7 @@ def main():
         'optimizer': {'name': 'Adam', 'weightDecay': 1e-4, 'betas': [0.9, 0.999]},
         'scheduler': {'name': 'ReduceLROnPlateau', 'patience': 5, 'factor': 0.5},
         'selectionMetric': 'val_loss', 'earlyStoppingPatience': PATIENCE,
+        'externalPretraining': external_context,
         'methodologyLimitations': [
             *(['AI-assisted labels still require independent human confirmation.'] if assisted_count else []),
             'Reviewed fruit-crop provenance and full preprocessing alignment still need verification.',
@@ -646,7 +794,13 @@ def main():
         print(f"{'#'*70}")
 
         try:
+            backbone_state = None
+            if TRAINING_ARGS.external_audit:
+                backbone_state, _ = pretrain_external_features(
+                    model_name, TRAINING_ARGS.external_audit)
             model = build_model(model_name)
+            if backbone_state is not None:
+                model.backbone.load_state_dict(backbone_state)
             model, history = train_model(model_name, model, train_loader, val_loader)
             all_histories[model_name] = history
 

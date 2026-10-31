@@ -1,0 +1,2 @@
+model_id,sample_count,accuracy,macro_precision,macro_recall,macro_f1,mean_latency_ms,p95_latency_ms,mistake_count
+resnet50-quality,226,0.7345132743362832,0.6334097275273746,0.6030628939841342,0.6022978199718706,27.137342477876103,31.314,60

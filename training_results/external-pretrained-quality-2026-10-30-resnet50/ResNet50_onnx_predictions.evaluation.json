@@ -1,0 +1,47 @@
+{
+  "generatedAt": "2026-10-30T11:22:53.533635+00:00",
+  "status": "held-out-onnx-predictions",
+  "modelId": "resnet50-quality",
+  "model": {
+    "path": "training_results\\external-pretrained-quality-2026-10-30-resnet50\\ResNet50.onnx",
+    "sha256": "e311f9415213bcfcbc876b02756587fe69d36a18957b9eab9b9c5cbae7922784"
+  },
+  "manifest": {
+    "path": "local-review\\finalized-human-review-2026-10-27\\frozen-quality-manifest.json",
+    "sha256": "18dcad57010432323a52f2dff08cf70803fa1676239de9b301dd87c241da447a"
+  },
+  "runtime": {
+    "name": "onnxruntime",
+    "version": "1.23.2",
+    "provider": "CPUExecutionProvider"
+  },
+  "preprocessing": {
+    "orientation": "EXIF upright RGB",
+    "size": 224,
+    "resize": "Pillow bilinear",
+    "scale": "0..1",
+    "mean": [
+      0.48500001430511475,
+      0.4560000002384186,
+      0.4059999883174896
+    ],
+    "std": [
+      0.2290000021457672,
+      0.2240000069141388,
+      0.22499999403953552
+    ]
+  },
+  "classOrder": [
+    "Grade A",
+    "Grade B",
+    "Grade C",
+    "Reject"
+  ],
+  "sampleCount": 226,
+  "meanLatencyMs": 27.13734247785863,
+  "p95LatencyMs": 31.31400000074791,
+  "predictions": {
+    "path": "training_results\\external-pretrained-quality-2026-10-30-resnet50\\ResNet50_onnx_predictions.csv",
+    "sha256": "5e17ae37ca9504a38536ef9d9750ed7cf754b99cf71517aaa43c5ea8a7a9ecf9"
+  }
+}

@@ -1,0 +1,432 @@
+{
+  "generatedAt": "2026-10-31T05:51:51.563571+00:00",
+  "target": "manuscript-quality",
+  "manifest": {
+    "path": "local-review\\finalized-human-review-2026-10-27\\frozen-quality-manifest.json",
+    "sha256": "18dcad57010432323a52f2dff08cf70803fa1676239de9b301dd87c241da447a"
+  },
+  "predictionFiles": [
+    {
+      "path": "training_results\\external-pretrained-quality-2026-10-30-efficientnetb3\\EfficientNetB3_onnx_predictions.csv",
+      "sha256": "2c4eb973f1461630fa800a9e82629793756f997317bcb517d780517d1efce697"
+    }
+  ],
+  "labels": [
+    "Grade A",
+    "Grade B",
+    "Grade C",
+    "Reject"
+  ],
+  "models": [
+    {
+      "modelId": "efficientnet-b3-quality",
+      "sampleCount": 226,
+      "accuracy": 0.7477876106194691,
+      "macroPrecision": 0.5886009270965022,
+      "macroRecall": 0.5897132536031324,
+      "macroF1": 0.5851013213067542,
+      "meanLatencyMs": 17.850869911504425,
+      "p95LatencyMs": 21.2754,
+      "perClass": {
+        "Grade A": {
+          "support": 28,
+          "precision": 0.42857142857142855,
+          "recall": 0.5357142857142857,
+          "f1": 0.47619047619047616
+        },
+        "Grade B": {
+          "support": 61,
+          "precision": 0.6190476190476191,
+          "recall": 0.639344262295082,
+          "f1": 0.6290322580645161
+        },
+        "Grade C": {
+          "support": 22,
+          "precision": 0.3333333333333333,
+          "recall": 0.22727272727272727,
+          "f1": 0.27027027027027023
+        },
+        "Reject": {
+          "support": 115,
+          "precision": 0.9734513274336283,
+          "recall": 0.9565217391304348,
+          "f1": 0.9649122807017544
+        }
+      },
+      "confusionMatrix": {
+        "Grade A": {
+          "Grade A": 15,
+          "Grade B": 9,
+          "Grade C": 4,
+          "Reject": 0
+        },
+        "Grade B": {
+          "Grade A": 14,
+          "Grade B": 39,
+          "Grade C": 6,
+          "Reject": 2
+        },
+        "Grade C": {
+          "Grade A": 4,
+          "Grade B": 12,
+          "Grade C": 5,
+          "Reject": 1
+        },
+        "Reject": {
+          "Grade A": 2,
+          "Grade B": 3,
+          "Grade C": 0,
+          "Reject": 110
+        }
+      },
+      "mistakes": [
+        {
+          "sampleId": "quality:0",
+          "actual": "Grade A",
+          "predicted": "Grade B",
+          "confidence": 0.7772477422
+        },
+        {
+          "sampleId": "quality:106",
+          "actual": "Grade B",
+          "predicted": "Grade A",
+          "confidence": 0.6457374261
+        },
+        {
+          "sampleId": "quality:109",
+          "actual": "Reject",
+          "predicted": "Grade B",
+          "confidence": 0.4749552567
+        },
+        {
+          "sampleId": "quality:121",
+          "actual": "Grade B",
+          "predicted": "Grade A",
+          "confidence": 0.3845489538
+        },
+        {
+          "sampleId": "quality:129",
+          "actual": "Reject",
+          "predicted": "Grade B",
+          "confidence": 0.3937267564
+        },
+        {
+          "sampleId": "quality:130",
+          "actual": "Grade B",
+          "predicted": "Grade A",
+          "confidence": 0.4403773221
+        },
+        {
+          "sampleId": "quality:1326",
+          "actual": "Grade B",
+          "predicted": "Reject",
+          "confidence": 0.5882532547
+        },
+        {
+          "sampleId": "quality:188",
+          "actual": "Grade B",
+          "predicted": "Grade A",
+          "confidence": 0.54239519
+        },
+        {
+          "sampleId": "quality:213",
+          "actual": "Grade C",
+          "predicted": "Grade B",
+          "confidence": 0.4444411345
+        },
+        {
+          "sampleId": "quality:252",
+          "actual": "Grade B",
+          "predicted": "Grade A",
+          "confidence": 0.4998925756
+        },
+        {
+          "sampleId": "quality:256",
+          "actual": "Grade B",
+          "predicted": "Grade A",
+          "confidence": 0.5698564921
+        },
+        {
+          "sampleId": "quality:26",
+          "actual": "Grade A",
+          "predicted": "Grade C",
+          "confidence": 0.35753293
+        },
+        {
+          "sampleId": "quality:268",
+          "actual": "Grade B",
+          "predicted": "Grade A",
+          "confidence": 0.61007112
+        },
+        {
+          "sampleId": "quality:282",
+          "actual": "Grade C",
+          "predicted": "Reject",
+          "confidence": 0.3898499509
+        },
+        {
+          "sampleId": "quality:288",
+          "actual": "Grade C",
+          "predicted": "Grade A",
+          "confidence": 0.3731327126
+        },
+        {
+          "sampleId": "quality:291",
+          "actual": "Grade B",
+          "predicted": "Grade A",
+          "confidence": 0.5886206541
+        },
+        {
+          "sampleId": "quality:355",
+          "actual": "Grade A",
+          "predicted": "Grade B",
+          "confidence": 0.7652807448
+        },
+        {
+          "sampleId": "quality:367",
+          "actual": "Grade A",
+          "predicted": "Grade B",
+          "confidence": 0.8027224806
+        },
+        {
+          "sampleId": "quality:371",
+          "actual": "Grade B",
+          "predicted": "Grade A",
+          "confidence": 0.3437643081
+        },
+        {
+          "sampleId": "quality:41",
+          "actual": "Grade B",
+          "predicted": "Grade A",
+          "confidence": 0.4675326226
+        },
+        {
+          "sampleId": "quality:417",
+          "actual": "Grade C",
+          "predicted": "Grade A",
+          "confidence": 0.4132612423
+        },
+        {
+          "sampleId": "quality:419",
+          "actual": "Grade C",
+          "predicted": "Grade B",
+          "confidence": 0.4450033777
+        },
+        {
+          "sampleId": "quality:42",
+          "actual": "Grade A",
+          "predicted": "Grade B",
+          "confidence": 0.3731981357
+        },
+        {
+          "sampleId": "quality:441",
+          "actual": "Grade A",
+          "predicted": "Grade B",
+          "confidence": 0.4185566511
+        },
+        {
+          "sampleId": "quality:45",
+          "actual": "Grade A",
+          "predicted": "Grade C",
+          "confidence": 0.5096768
+        },
+        {
+          "sampleId": "quality:454",
+          "actual": "Grade C",
+          "predicted": "Grade B",
+          "confidence": 0.4286806993
+        },
+        {
+          "sampleId": "quality:457",
+          "actual": "Grade C",
+          "predicted": "Grade B",
+          "confidence": 0.4521820038
+        },
+        {
+          "sampleId": "quality:50",
+          "actual": "Grade C",
+          "predicted": "Grade B",
+          "confidence": 0.5698569499
+        },
+        {
+          "sampleId": "quality:52",
+          "actual": "Grade A",
+          "predicted": "Grade B",
+          "confidence": 0.6134474038
+        },
+        {
+          "sampleId": "quality:529",
+          "actual": "Grade C",
+          "predicted": "Grade B",
+          "confidence": 0.8165490661
+        },
+        {
+          "sampleId": "quality:547",
+          "actual": "Grade B",
+          "predicted": "Grade A",
+          "confidence": 0.5058672647
+        },
+        {
+          "sampleId": "quality:579",
+          "actual": "Grade B",
+          "predicted": "Reject",
+          "confidence": 0.2908864703
+        },
+        {
+          "sampleId": "quality:630",
+          "actual": "Grade B",
+          "predicted": "Grade C",
+          "confidence": 0.6128707548
+        },
+        {
+          "sampleId": "quality:638",
+          "actual": "Grade B",
+          "predicted": "Grade A",
+          "confidence": 0.653501242
+        },
+        {
+          "sampleId": "quality:66",
+          "actual": "Grade A",
+          "predicted": "Grade B",
+          "confidence": 0.5471732516
+        },
+        {
+          "sampleId": "quality:667",
+          "actual": "Grade C",
+          "predicted": "Grade B",
+          "confidence": 0.5053110442
+        },
+        {
+          "sampleId": "quality:670",
+          "actual": "Grade B",
+          "predicted": "Grade C",
+          "confidence": 0.4573742626
+        },
+        {
+          "sampleId": "quality:693",
+          "actual": "Grade A",
+          "predicted": "Grade B",
+          "confidence": 0.5717136371
+        },
+        {
+          "sampleId": "quality:707",
+          "actual": "Grade C",
+          "predicted": "Grade A",
+          "confidence": 0.4253969352
+        },
+        {
+          "sampleId": "quality:717",
+          "actual": "Reject",
+          "predicted": "Grade A",
+          "confidence": 0.5098166745
+        },
+        {
+          "sampleId": "quality:720",
+          "actual": "Grade C",
+          "predicted": "Grade B",
+          "confidence": 0.5312016778
+        },
+        {
+          "sampleId": "quality:730",
+          "actual": "Grade A",
+          "predicted": "Grade C",
+          "confidence": 0.3813557531
+        },
+        {
+          "sampleId": "quality:738",
+          "actual": "Grade C",
+          "predicted": "Grade B",
+          "confidence": 0.4597150549
+        },
+        {
+          "sampleId": "quality:756",
+          "actual": "Grade B",
+          "predicted": "Grade A",
+          "confidence": 0.6894577122
+        },
+        {
+          "sampleId": "quality:777",
+          "actual": "Reject",
+          "predicted": "Grade B",
+          "confidence": 0.5577190241
+        },
+        {
+          "sampleId": "quality:795",
+          "actual": "Grade B",
+          "predicted": "Grade C",
+          "confidence": 0.4987947978
+        },
+        {
+          "sampleId": "quality:803",
+          "actual": "Grade B",
+          "predicted": "Grade A",
+          "confidence": 0.5455448649
+        },
+        {
+          "sampleId": "quality:827",
+          "actual": "Grade B",
+          "predicted": "Grade C",
+          "confidence": 0.455941897
+        },
+        {
+          "sampleId": "quality:839",
+          "actual": "Grade C",
+          "predicted": "Grade B",
+          "confidence": 0.4411924008
+        },
+        {
+          "sampleId": "quality:840",
+          "actual": "Grade C",
+          "predicted": "Grade A",
+          "confidence": 0.5282094706
+        },
+        {
+          "sampleId": "quality:841",
+          "actual": "Grade A",
+          "predicted": "Grade B",
+          "confidence": 0.5476083896
+        },
+        {
+          "sampleId": "quality:845",
+          "actual": "Reject",
+          "predicted": "Grade A",
+          "confidence": 0.3967921898
+        },
+        {
+          "sampleId": "quality:852",
+          "actual": "Grade B",
+          "predicted": "Grade C",
+          "confidence": 0.4057998505
+        },
+        {
+          "sampleId": "quality:878",
+          "actual": "Grade C",
+          "predicted": "Grade B",
+          "confidence": 0.4903097881
+        },
+        {
+          "sampleId": "quality:887",
+          "actual": "Grade C",
+          "predicted": "Grade B",
+          "confidence": 0.3454422092
+        },
+        {
+          "sampleId": "quality:91",
+          "actual": "Grade A",
+          "predicted": "Grade C",
+          "confidence": 0.4676657976
+        },
+        {
+          "sampleId": "quality:98",
+          "actual": "Grade B",
+          "predicted": "Grade C",
+          "confidence": 0.4657610074
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "Metrics describe only the supplied frozen test manifest.",
+    "This report does not establish field performance or clinical diagnosis."
+  ]
+}

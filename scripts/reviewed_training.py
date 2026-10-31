@@ -7,6 +7,8 @@ import json
 import shutil
 from pathlib import Path
 
+from scripts.external_pretraining import read_external_pretraining_audit
+
 ROOT = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location('research_validation', Path(__file__).with_name('validate-research-data.py'))
 validation = importlib.util.module_from_spec(spec)
@@ -99,9 +101,16 @@ def training_arguments():
                         help='Training batch size (default: 32).')
     parser.add_argument('--num-workers', type=int, default=2,
                         help='Data-loader worker processes (default: 2; use 0 for maximum Windows reliability).')
+    parser.add_argument('--external-pretraining-audit', type=Path,
+                        help='Optional leakage-audited good/medium feature-pretraining evidence.')
+    parser.add_argument('--external-pretrain-epochs', type=int, default=12,
+                        help='Maximum good/medium feature-pretraining epochs (default: 12).')
+    parser.add_argument('--external-pretrain-patience', type=int, default=4,
+                        help='Feature-pretraining early-stopping patience (default: 4).')
     args = parser.parse_args()
     try:
-        for name in ('phase1_epochs', 'phase2_epochs', 'patience', 'batch_size'):
+        for name in ('phase1_epochs', 'phase2_epochs', 'patience', 'batch_size',
+                     'external_pretrain_epochs', 'external_pretrain_patience'):
             if getattr(args, name) < 1:
                 raise ValueError(f'--{name.replace("_", "-")} must be at least 1')
         if args.num_workers < 0:
@@ -109,6 +118,10 @@ def training_arguments():
         args.rows = read_reviewed_manifest(args.manifest)
         if args.run_dir.exists():
             raise ValueError('Run directory already exists; choose a new directory.')
+        args.external_audit = None
+        if args.external_pretraining_audit:
+            args.external_audit = read_external_pretraining_audit(
+                args.external_pretraining_audit, args.manifest, ROOT)
     except (ValueError, OSError) as error:
         parser.error(str(error))
     return args

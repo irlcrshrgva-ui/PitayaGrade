@@ -1,0 +1,20 @@
+{
+  "modelId": "efficientnet-b3-quality",
+  "outputContract": "quality-softmax-v1",
+  "inputShape": [
+    1,
+    3,
+    224,
+    224
+  ],
+  "outputShapes": [
+    [
+      1,
+      4
+    ]
+  ],
+  "preprocessing": "rgb-imagenet-normalized",
+  "sha256": "c2dbd10f72932b871e49679f07b5134a0e8de75f973084651850d61673d0c3a3",
+  "runtimeCompatible": true,
+  "accuracyValidated": false
+}
