@@ -1,6 +1,7 @@
 # PitayaGrade Final 20% Checklist
 
-**Starting status:** 80% project readiness  
+**Starting status:** 80% project readiness
+**Current evidence-based status (31 October 2026):** 88% project readiness
 **Rule:** Check an item only when its required evidence has been saved in the repository or approved team storage.
 
 ## 1. Freeze the evaluation setup
@@ -99,10 +100,10 @@ Repository verification evidence: `research/AUTONOMOUS_VERIFICATION_2026-10-10.m
 ## 8. Finish the manuscript and defense materials
 
 - [ ] Replace every placeholder result with approved measured evidence.
-- [ ] Add the final model-comparison table and confusion matrices.
+- [x] Add the final quality-model comparison table and EfficientNet-B3 confusion matrix.
 - [ ] Add segmentation and device-testing results.
 - [ ] Add UAT findings and limitations.
-- [ ] Update the abstract, conclusions and recommendations to match the measured results.
+- [x] Update the abstract and conclusions to match the measured quality results and remaining limitations.
 - [x] Verify that the manuscript describes the implemented application accurately.
 - [ ] Update the defense deck with the final charts and selected model.
 - [ ] Proofread references, captions, numbering and formatting.

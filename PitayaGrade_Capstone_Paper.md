@@ -55,16 +55,15 @@ In Partial Fulfillment of the Requirements for the Degree of Bachelor of Science
 
 ## Abstract
 
-Dragon fruit (*Hylocereus* spp.) quality grading and visible disease assessment commonly rely on manual inspection, which can vary between evaluators and operating conditions. This capstone project develops **PitayaGrade**, an Android-targeted decision-support application for capturing or uploading fruit images, running local ONNX inference, presenting image-based quality and disease estimates, saving scan history, generating analytics and reports, and issuing local notifications. The implemented Capacitor application currently packages one checksum-verified YOLOv8-Nano ONNX model; its disease output still includes image heuristics. A validated dual-stage pipeline using a detector, an EfficientNet-B3 quality classifier and a disease-segmentation model remains the target research architecture. Automated software tests verify storage behavior, interface workflows, runtime asset integrity and execution of the bundled model through ONNX Runtime Web, but they do not establish agricultural accuracy. Formal performance claims remain pending reviewed grade labels, disease annotations, leakage-free held-out evaluation, physical-device trials and approved user acceptance testing. Accordingly, this manuscript reports the implemented prototype and evaluation protocol without claiming unmeasured accuracy, field impact or superiority over manual grading.
+Dragon fruit (*Hylocereus* spp.) quality grading and visible disease assessment commonly rely on manual inspection, which can vary between evaluators and operating conditions. This capstone project develops **PitayaGrade**, an Android-targeted decision-support application for capturing or uploading fruit images, running local ONNX inference, presenting image-based quality and disease estimates, saving scan history, generating analytics and reports, and issuing local notifications. The implemented Capacitor application packages a checksum-verified dragon-fruit presence gate, a YOLOv8-Nano detector/grader, and three selectable quality classifiers. The quality dataset contains 1,553 human-reviewed records with a frozen 226-image held-out test split. The selected EfficientNet-B3 classifier achieved 74.78% held-out accuracy and 58.51% macro F1; its ONNX predictions matched its PyTorch predictions on all 226 test images. Automated verification includes 112 JavaScript tests, 138 Python tests, ONNX Runtime checks, Android debug assembly, and Android lint. These results establish internal quality-model and software performance only. Disease segmentation, physical-device testing, user acceptance testing, and a signed release remain incomplete, so the study does not claim validated disease diagnosis, field effectiveness, or superiority over manual grading.
 
 **Keywords:** dragon fruit, machine learning, computer vision, quality grading, disease detection, convolutional neural network, mobile application, Philippine agriculture
 
-> **Evidence status (4 October 2026).** The software prototype and automated
-> regression checks are implemented. Numerical accuracy, field-test, manual-comparison
-> and UAT values remaining in Chapter 5 are legacy drafting placeholders, not verified
-> study results, and must not be cited or submitted as findings. They are retained only
-> to preserve the planned table structure until the Week 4 evaluation package is
-> completed from reviewed data, physical Android testing and approved participants.
+> **Evidence status (31 October 2026).** Human-reviewed quality data and exact
+> held-out ONNX evaluation are complete. Chapter 5 reports those retained results.
+> Disease-segmentation, physical-device, manual-comparison, and UAT values remain
+> pending and must not be inferred from software tests or quality-classification
+> results.
 
 ---
 
@@ -156,9 +155,9 @@ The scope of this capstone project encompasses the following:
 
 4. **Platform.** The system is developed as a mobile application using the Capacitor framework targeting Android devices, reflecting the dominant mobile operating system among Philippine farmers.
 
-5. **Machine Learning Architecture.** The intended research pipeline uses YOLOv8-Nano localization, EfficientNet-B3 quality grading and YOLOv8-Nano disease segmentation. The current application packages one YOLOv8-Nano grade-detection ONNX model and heuristic disease analysis. MobileNetV2, ResNet50, EfficientNet-B3 and disease-segmentation entries are registered but remain disabled until evaluated exports are supplied.
+5. **Machine Learning Architecture.** The implemented quality pipeline uses a dragon-fruit presence gate, YOLOv8-Nano localization, and selectable MobileNetV2, ResNet50, or EfficientNet-B3 quality grading. The application still uses heuristic disease analysis because the planned YOLOv8-Nano disease-segmentation role lacks reviewed masks and an evaluated export.
 
-6. **Dataset.** The repository contains a traceable public-data preparation manifest, but its target grade labels and disease annotations have not yet been reviewed. The final dataset size, collection locations and class counts must be reported only after expert review and leakage-safe freezing of the train, validation and test partitions.
+6. **Dataset.** The repository retains frozen, checksum-bound manifests for 1,553 reviewed quality records and 1,497 reviewed maturity records. The public-data provenance does not establish Philippine field representativeness, and reviewed disease-region annotations remain incomplete.
 
 7. **Connectivity.** The active application performs local ONNX Runtime Web inference and local record storage. It does not currently use a production cloud inference service or TensorFlow Lite backend. The Offline Mode setting communicates the local-processing preference; it does not switch between cloud and TFLite models.
 
@@ -289,8 +288,10 @@ The server layer is a proposed future component and is not present in the active
 
 The model layer distinguishes implemented and intended components:
 
-- A bundled YOLOv8-Nano ONNX grade-detection model whose runtime compatibility is verified but whose research accuracy remains unevaluated.
-- Registered but unavailable MobileNetV2, ResNet50, EfficientNet-B3 and disease-segmentation roles awaiting evaluated exports.
+- A checksum-verified MobileNetV3-Small presence gate that rejects non-dragon-fruit input before grading.
+- A bundled YOLOv8-Nano ONNX detector/grader used to localize plausible fruit regions.
+- Selectable MobileNetV2, ResNet50 and EfficientNet-B3 quality classifiers evaluated on the same frozen 226-image test split.
+- A registered but unavailable disease-segmentation role awaiting reviewed disease-region masks and an evaluated export.
 - Preprocessing and postprocessing modules that standardize input images and format output predictions.
 - A checksum-verified model registry that prevents missing or altered files from being presented as selectable. Over-the-air updates are not implemented.
 
@@ -298,50 +299,28 @@ The model layer distinguishes implemented and intended components:
 System Architecture Diagram
 
 +-----------------------------------------------------------+
-|                     CLIENT LAYER                          |
-|                 (Capacitor Mobile App)                    |
+|                CAPACITOR ANDROID APPLICATION              |
 |                                                           |
-|  +------------+  +-------------+  +-------------------+  |
-|  | Camera      |  | UI Display  |  | Local Storage     |  |
-|  | Module      |  | Module      |  | (SQLite)          |  |
-|  +------+-----+  +------+------+  +--------+----------+  |
-|         |               |                  |              |
-|  +------v---------------v------------------v-----------+  |
-|  |            Image Preprocessing Module               |  |
-|  +-------------------------+---------------------------+  |
-|                            |                              |
-+----------------------------+------------------------------+
+|  Camera / upload -> crop and orientation -> pixel input   |
+|                         |                                 |
+|                 Dragon-fruit presence gate                |
+|                         | accepted                        |
+|                 YOLOv8 fruit localization                 |
+|                         | fruit crop                      |
+|       Selectable quality classifier (MobileNetV2,         |
+|             ResNet50, or EfficientNet-B3)                 |
+|                         |                                 |
+|       Grade result, human validation, history, reports    |
+|                                                           |
+|  ONNX Runtime Web/WASM | localStorage | local alerts      |
++-----------------------------------------------------------+
                              |
-              +--------------+--------------+
-              |                             |
-      +-------v--------+          +--------v---------+
-      |  OFFLINE MODE  |          |   ONLINE MODE    |
-      |  (TFLite on    |          |   (REST API to   |
-      |   device)      |          |    Cloud)        |
-      +-------+--------+          +--------+---------+
-              |                             |
-              +-------------+---------------+
-                            |
-              +-------------v--------------+
-              |        MODEL LAYER         |
-              | (YOLOv8 & EfficientNet-B3) |
-              |                            |
-              |  +--------+  +---------+  |
-              |  | Quality |  | Disease |  |
-              |  | Grading |  | Detect. |  |
-              |  | Module  |  | Module  |  |
-              |  +----+----+  +----+----+  |
-              +-------+----------+---------+
-                      |          |
-              +-------v----------v---------+
-              |      SERVER LAYER          |
-              |   (Cloud Backend)          |
-              |                            |
-              |  +----------+ +----------+ |
-              |  | Firebase | | Push     | |
-              |  | Firestore| | Notif.  | |
-              |  +----------+ +----------+ |
-              +----------------------------+
+                  No cloud inference required
+                             |
+              +--------------v----------------+
+              | Future evaluated disease model|
+              | (currently unavailable)       |
+              +-------------------------------+
 ```
 
 **Figure 3.1.** PitayaGrade System Architecture
@@ -350,25 +329,26 @@ System Architecture Diagram
 
 ### 3.3.1 Data Sources
 
-Dataset preparation currently uses traceable public candidate images and retains source URLs and file/pixel hashes. The following review steps must be completed before the collection can be described as a training dataset:
+Dataset preparation uses traceable public candidate images and retains source URLs, source groups, and file/pixel hashes. The retained quality and maturity collection contains 3,050 reviewed records.
 
 1. **Primary Field Collection (Pending).** No retained manifest supports the previously drafted claim of 3,200 images from named provinces, devices and harvest cycles. Any original field images must be accompanied by collection permission, location/date metadata, source grouping and checksums before inclusion.
 
-2. **Public Candidate Data.** The repository documents public dataset candidates and prepares a manifest of 3,050 unique images. Source labels are not equivalent to the target Grade A/B/C/Reject and disease taxonomies; expert review is still required.
+2. **Reviewed Public Candidate Data.** Team review finalized 1,553 quality records and 1,497 maturity records. Validation found no missing target labels or checksum errors in the frozen manifests.
 
-3. **Data Augmentation.** To address class imbalance and increase the effective dataset size, the following augmentation techniques were applied to the primary and supplementary images:
+3. **External Feature-Pretraining Data.** A 1,667-image public Good/Medium/Bad collection was audited against every frozen quality image using file hashes, decoded-pixel hashes, dHash, and aHash. The audit excluded 583 overlapping records and four internal duplicates, leaving 1,080 independent Good/Medium records. These labels initialized visual features only and were never converted into Grade A/B/C/Reject ground truth. The publisher states CC BY 4.0, but the rights of every underlying online image were not independently verified.
+
+4. **Data Augmentation.** The training loader applies augmentation only to the training partition:
    - Horizontal and vertical flipping
    - Random rotation (0-30 degrees)
    - Random brightness adjustment (plus or minus 15%)
    - Random contrast adjustment (plus or minus 10%)
-   - Gaussian noise injection
-   - Random cropping and resizing
+   - Deterministic resizing to 224 x 224 pixels
 
-   Augmentation must occur only after splitting by source group and must not be counted as independent evidence. Final augmented counts remain pending a reviewed source manifest.
+   Augmented views are not counted as independent images or evaluation evidence.
 
 ### 3.3.2 Labeling and Annotation
 
-The target labeling scheme is defined below, but the public manifest currently has no completed target-grade review and no retained evidence supporting the previously drafted expert-review claim. Reviewer identity or role, review time, source group, boxes and disease polygons must be recorded before training.
+The frozen manifests retain the reviewer identifier, review time, source-fruit group, target label, split, and checksums required for quality and maturity training. Disease-region polygons remain incomplete and therefore cannot support a final disease-segmentation model.
 
 **Quality Grade Labels:**
 - **Grade A (Premium):** Well-formed fruit with uniform coloring, smooth surface, no visible blemishes, diameter greater than or equal to 10 cm.
@@ -389,23 +369,23 @@ Inter-rater reliability has not yet been measured. It should be calculated only 
 
 ### 3.3.3 Dataset Split
 
-The candidate manifest uses train, validation and test partitions, but they cannot be considered final until target labels and source groups are reviewed. Final counts must be generated from the frozen reviewed manifest rather than copied from the historical draft.
+The frozen 1,553-image quality manifest contains 1,096 training images, 231 validation images, and 226 held-out test images. Model selection and early stopping use validation loss. The test partition is reserved for final comparison.
 
-The validation tools reject exact pixel duplicates and shared source groups across partitions. Near-duplicate and consecutive-capture review remains a required manual step.
+The validation tools reject exact pixel duplicates and shared source groups across partitions. The external pretraining audit additionally excludes exact and conservative perceptual matches against all frozen partitions.
 
 ## 3.4 Image Processing Techniques
 
 Image preprocessing is a critical pipeline stage that standardizes input images to improve model accuracy and robustness. The PitayaGrade preprocessing pipeline comprises the following sequential steps:
 
-1. **Image Resizing.** All input images are resized to 128 x 128 pixels to match the grid input dimensions of the YOLOv8-Nano object detection stage, and 224 x 224 pixels for the subsequent EfficientNet-B3 grading model. Bilinear interpolation is used for downsampling to preserve visual detail.
+1. **Image Resizing.** The presence gate uses 160 x 160 input, the YOLOv8-Nano detector/grader uses 640 x 640 input, and the selectable quality classifiers use 224 x 224 fruit crops. Bilinear interpolation is used for classifier preprocessing.
 
-2. **Color Normalization.** Pixel values are normalized to the [0, 1] range by dividing by 255. Additionally, channel-wise mean subtraction and standard deviation normalization are applied to align with the pre-trained weight distributions of the YOLOv8-Nano and EfficientNet-B3 models.
+2. **Color Normalization.** YOLO input uses RGB values scaled to [0, 1]. The presence gate and quality classifiers use ImageNet channel means and standard deviations to match their pretrained torchvision weights.
 
-3. **Background Segmentation.** To reduce the influence of background elements (soil, foliage, support structures), a lightweight background segmentation step is applied using a combination of color thresholding in HSV color space and GrabCut algorithm to isolate the dragon fruit from its surroundings.
+3. **Fruit Localization.** The runtime accepts grading only after the presence gate and visual plausibility checks pass. The detector crop, rather than the full scene, is supplied to the selected quality classifier.
 
-4. **Lighting Correction.** Adaptive histogram equalization (CLAHE - Contrast Limited Adaptive Histogram Equalization) is applied to the luminance channel to normalize lighting variations across images captured in different ambient conditions.
+4. **Photo Adjustment.** Photo mode lets the user crop, zoom, and rotate an uploaded image before analysis. The application does not apply an unverified CLAHE or GrabCut stage during deployed inference.
 
-5. **Noise Reduction.** A Gaussian blur filter (kernel size 3x3) is selectively applied to images with high noise levels, determined by a variance of Laplacian threshold, to reduce noise without significantly impacting edge information critical for defect detection.
+5. **Fail-Closed Rejection.** Empty scenes and non-fruit objects are rejected before any grade is shown. Live mode also requires three consecutive accepted frames.
 
 6. **Orientation Correction.** EXIF metadata is read to correct for device orientation, ensuring all images are processed in a consistent upright orientation regardless of how the smartphone was held during capture.
 
@@ -413,13 +393,13 @@ Image preprocessing is a critical pipeline stage that standardizes input images 
 
 ### 3.5.1 Architecture Selection
 
-The intended PitayaGrade research pipeline uses **YOLOv8-Nano** (Jocher et al., 2023) and **EfficientNet-B3** (Tan & Le, 2019) as base architectures. Only the bundled YOLOv8-Nano grade-detection export is active today. The target selection is based on the following criteria:
+The implemented PitayaGrade quality pipeline uses **YOLOv8-Nano** (Jocher et al., 2023) for localization and a selectable **EfficientNet-B3**, ResNet50, or MobileNetV2 classifier. EfficientNet-B3 currently has the highest retained held-out accuracy. The selection is based on the following criteria:
 
 1. **Computational Efficiency & Local Edge Deployment.** YOLOv8-Nano is a lightweight state-of-the-art object detection and segmentation model with approximately 3.2 million parameters, allowing it to perform fast real-time inference on edge devices. EfficientNet-B3 uses compound scaling to optimize accuracy and efficiency, possessing approximately 12 million parameters, which is suitable for standard mobile processors.
 
 2. **Transfer Learning Compatibility.** Both models utilize weights pre-trained on large-scale datasets (COCO for YOLOv8 and ImageNet for EfficientNet-B3), providing a robust starting point for fine-tuning on the smaller, specific PitayaGrade dataset and mitigating overfitting.
 
-3. **Optimized for Mobile Frameworks.** Both architectures support quantization and conversion to TensorFlow Lite (TFLite) or ONNX formats, enabling seamless deployment on resource-constrained Android smartphones via the Capacitor framework.
+3. **Local Runtime Compatibility.** The exported ONNX files execute through the bundled ONNX Runtime Web/WASM backend in the Capacitor application.
 
 4. **Demonstrated Performance.** Prior research has demonstrated that YOLOv8 achieves high precision for region proposal and disease segmentation, while EfficientNet-B3 outperforms standard CNNs on quality grading classification through balanced depth, width, and resolution scaling.
 
@@ -428,7 +408,7 @@ The intended PitayaGrade research pipeline uses **YOLOv8-Nano** (Jocher et al., 
 The dual-stage pipeline is configured as follows:
 
 - **Stage 1 (Object Detection & Region of Interest):** A YOLOv8-Nano model detects the dragon fruit in the image frame and outputs a bounding box (Region of Interest) containing only the fruit.
-- **Stage 2A (Disease Segmentation):** A YOLOv8-Seg model performs pixel-level segmentation on the Region of Interest to detect and isolate symptomatic regions (e.g. Anthracnose, Stem Canker, etc.) and calculate the percentage area of disease coverage.
+- **Stage 2A (Disease Segmentation, Pending):** The registry reserves a YOLOv8-Seg role, but the application does not enable it without reviewed disease masks, held-out evaluation, and a checksum-verified export.
 - **Stage 2B (Compound Quality Grading):** An EfficientNet-B3 model classifies the Region of Interest into three quality grades (Grade A, Grade B, Grade C) or Reject, utilizing a custom head consisting of: Global Average Pooling -> Dropout (0.3) -> Dense (128, ReLU) -> Batch Normalization -> Dropout (0.2) -> Dense (4, Softmax).
 
 ### 3.5.3 Transfer Learning Strategy
@@ -453,8 +433,8 @@ Reviewed model runs are intended to use the following configuration; each comple
 | **Loss Function** | Categorical Cross-Entropy / Box Loss |
 | **Regularization** | Dropout (0.2-0.3), L2 weight decay (1e-4) |
 | **Early Stopping** | Patience=10 epochs, monitor=val_loss |
-| **Hardware** | NVIDIA Tesla T4 GPU (Google Colab Pro) |
-| **Framework** | PyTorch / TensorFlow / Ultralytics |
+| **Hardware** | NVIDIA GeForce RTX 3050 for the retained external-pretraining runs |
+| **Framework** | PyTorch / torchvision, ONNX Runtime, Ultralytics where applicable |
 
 **Table 3.1.** Training Configuration Parameters
 
@@ -582,21 +562,21 @@ This chapter provides a comprehensive description of the PitayaGrade system's fe
 
 ### 4.1.1 AI-Based Image Analysis
 
-PitayaGrade's implemented image-analysis engine accepts a captured or uploaded image, runs the selected checksum-verified ONNX asset locally and presents the result with its method and limitations. The current package contains one YOLOv8-Nano grade-detection asset plus clearly labeled image heuristics for disease-related visual cues. No retained evaluation shows that this implementation surpasses manual inspection.
+PitayaGrade's implemented image-analysis engine accepts a captured or uploaded image, applies the checksum-verified presence and localization gates, runs the selected quality ONNX asset locally, and presents the result with its method and limitations. The package contains three evaluated selectable quality classifiers plus clearly labeled image heuristics for disease-related visual cues. No retained evaluation shows that this implementation surpasses manual inspection.
 
-The intended research architecture is a multi-stage detector-to-crop pipeline with a separate EfficientNet-B3 quality classifier and YOLOv8-Nano disease-segmentation model. Those second-stage assets are not enabled until reviewed labels, held-out evaluation, compatible ONNX exports and checksums exist. Research preprocessing previews are likewise separate from the deployed runtime unless explicitly integrated and retested.
+The implemented quality architecture is a multi-stage presence-gate and detector-to-crop pipeline with selectable MobileNetV2, ResNet50, and EfficientNet-B3 classifiers. The separate YOLOv8-Nano disease-segmentation role remains unavailable until reviewed masks, held-out evaluation, a compatible ONNX export, and checksums exist.
 
 The engine is designed with a modular architecture that allows individual components, such as the preprocessing pipeline or the classification models, to be updated or replaced independently. This modularity ensures that PitayaGrade can evolve alongside advances in machine learning techniques and expand to accommodate new quality criteria or disease categories as they become relevant.
 
 ### 4.1.2 Automatic Quality Grading
 
-The active model can return one of four configured grade labels for a recognized fruit. These outputs are prototype estimates and have not yet been validated against the manuscript's reviewed grade definitions. The intended grading criteria are:
+The active models return one of four reviewed grade labels for a recognized fruit. The retained internal held-out evaluation measures image classification against those labels, while final decisions still require human validation. The grading criteria are:
 
 **Size Assessment.** Physical size is not measured by the active application. A single uncalibrated image cannot establish fruit dimensions, so current records display size as not measured.
 
-**Color Analysis.** The prototype summarizes HSV-derived color and maturity cues for interpretation. These heuristics do not replace the pending reviewed quality classifier or establish internal flesh variety from an exterior photograph.
+**Color Analysis.** The selected ONNX classifier analyzes the detector-localized RGB fruit crop. It does not establish internal flesh variety from an exterior photograph.
 
-**Surface Condition Evaluation.** The prototype reports image-derived surface cues. It has not been shown to distinguish cosmetic variation from structural damage with agricultural reliability.
+**Surface Condition Evaluation.** The quality classifier uses image-derived surface cues learned from reviewed labels. Grade A and Grade C remain the weakest held-out classes, so cosmetic and structural interpretation still requires human review.
 
 **Shape Analysis.** The detector produces a fruit region used by the visual gate. Shape conformity is a proposed grading factor rather than a separately validated active measurement.
 
@@ -767,31 +747,31 @@ PitayaGrade enables farmers to generate and share structured reports summarizing
 
 ---
 
-# Chapter 5: Results and Discussion — Evaluation Pending
+# Chapter 5: Results and Discussion
 
-> **Evidence status (10 October 2026).** This chapter reports verified software
-> checks only. Model metrics, physical-device results, UAT findings and comparisons
-> remain absent until their retained evidence is produced through
-> `research/WEEK4_EVALUATION_PLAN.md`.
+> **Evidence status (31 October 2026).** This chapter reports retained software
+> verification and internal held-out quality-classification results. Physical-device,
+> UAT, disease-segmentation, and manual-grader comparison evidence remains pending.
 
 ## 5.1 System Testing Results
 
-PitayaGrade has completed automated software regression testing and Android debug assembly/lint checks. Formal model evaluation, physical-device verification, field testing and user acceptance testing remain pending. The table below contains only retained software-verification evidence.
+PitayaGrade has completed automated regression testing, exact ONNX evaluation, and Android debug assembly/lint checks. Physical-device verification, field testing, and user acceptance testing remain pending.
 
 ### 5.1.1 Functional Testing
 
-The verified automated suite currently covers application workflows, storage integrity, localization, notifications, report safety, runtime assets and actual ONNX/WASM execution. It does not test a physical camera, Android lifecycle behavior, real model accuracy or field operation.
+The verified automated suite covers application workflows, storage integrity, localization, notifications, report safety, runtime assets, model-selection safeguards, non-fruit rejection, and actual ONNX/WASM execution. Separate held-out evaluation measures quality-classification accuracy. Neither test family replaces physical-camera or field testing.
 
-| Verified check | Result on 10 October 2026 | What the result establishes |
+| Verified check | Result on 31 October 2026 | What the result establishes |
 |---|---:|---|
-| JavaScript application and runtime tests | 73 passed, 0 failed | Browser workflows, storage safeguards, model selection, report export, review assistance, packaged assets and bundled ONNX/WASM execution behave as asserted. |
-| Python research-tool tests | 82 passed, 0 failed | Data validation, perceptual source-group suggestions, preprocessing, training-policy, export-contract and evaluation utilities behave as asserted on their test fixtures. |
-| GitHub application verification | Passed | The repository's software and Android verification workflow completed successfully for commit `756da2b`. |
-| GitHub Pages deployment | Passed | The packaged web application was published successfully for the same commit. |
+| JavaScript application and runtime tests | 112 passed, 0 failed | Browser workflows, storage safeguards, model selection, report export, image adjustment, presence-gate behavior, and packaged ONNX/WASM execution behave as asserted. |
+| Python research-tool tests | 138 passed, 0 failed | Data validation, leakage audit, preprocessing, training policy, export contracts, and evaluation utilities behave as asserted on their fixtures. |
+| Android debug assembly and lint | Passed | The synchronized web/model assets compile into a debug APK and pass Android lint. |
+| GitHub application verification | Passed | Repository verification completed for commit `e32aaa4`. |
+| GitHub Pages deployment | Passed | The updated web application was published successfully for the same commit. |
 
 **Table 5.1.** Verified Software Evidence
 
-These results establish software behavior only. They do not measure grading accuracy, disease-segmentation performance, physical-phone reliability or field usability.
+The software results establish repeatable implementation behavior. The following held-out section separately measures image-level quality classification. Neither result measures disease segmentation, physical-phone reliability, or field usability.
 
 ### 5.1.2 User Acceptance Testing
 
@@ -801,11 +781,34 @@ User acceptance testing has not yet been conducted. It must begin only after adv
 
 ### 5.2.1 Quality Grading Model Performance
 
-The deployed grading model has not yet been evaluated against a reviewed, leakage-free held-out test manifest. Final accuracy, precision, recall, F1-score, support and the confusion matrix must be generated from complete retained prediction exports using `scripts/summarize_model_evaluation.py`. No numerical quality-model result is currently reported.
+All quality candidates were evaluated against the same frozen 226-image test split from the 1,553-image human-reviewed quality manifest. The manifest SHA-256 is `18dcad57010432323a52f2dff08cf70803fa1676239de9b301dd87c241da447a`. Each ONNX file produced one prediction for every held-out image, and the selected EfficientNet-B3 ONNX labels matched its PyTorch labels on all 226 images.
+
+| Model | Accuracy | Macro precision | Macro recall | Macro F1 | ONNX CPU mean / P95 latency |
+|---|---:|---:|---:|---:|---:|
+| MobileNetV2 | 72.12% | 56.95% | 56.07% | 55.31% | 7.27 / 15.07 ms |
+| ResNet50 | 74.34% | 57.75% | 54.84% | 54.83% | 24.74 / 33.65 ms |
+| EfficientNet-B3 with audited feature pretraining | **74.78%** | **58.86%** | **58.97%** | **58.51%** | 17.85 / 21.28 ms |
+
+**Table 5.2.** Frozen Held-Out Quality-Model Comparison
+
+EfficientNet-B3 had the highest overall accuracy and macro F1 and is the promoted selectable classifier. Its 0.44 percentage-point accuracy advantage over ResNet50 is modest and should not be described as a large performance gain. External Good/Medium images initialized features only; the audit excluded every external image that matched any frozen quality record.
+
+| Actual class | Predicted A | Predicted B | Predicted C | Predicted Reject | Support |
+|---|---:|---:|---:|---:|---:|
+| Grade A | 15 | 9 | 4 | 0 | 28 |
+| Grade B | 14 | 39 | 6 | 2 | 61 |
+| Grade C | 4 | 12 | 5 | 1 | 22 |
+| Reject | 2 | 3 | 0 | 110 | 115 |
+
+**Table 5.3.** EfficientNet-B3 Held-Out Confusion Matrix
+
+The model performed strongly on Reject images (96.49% F1) but remained weak on Grade A (47.62% F1) and especially Grade C (27.03% F1). Most Grade C errors became Grade B. This class imbalance and confusion justify retaining human validation and collecting more independent Grade A/B/C field images.
+
+The separate dragon-fruit presence gate achieved 99.66% accuracy on its retained 1,476-image binary evaluation, with 97.84% precision, 100% recall, and 99.60% specificity. This gate is a safety filter for non-fruit input, not evidence of grading accuracy.
 
 ### 5.2.2 Disease Detection Model Performance
 
-The intended disease-segmentation model has not yet been supplied as an evaluated app asset. Current disease results include image heuristics and must not be reported as validated diagnoses. No disease-model precision, recall, F1-score, support, coverage metric or class comparison is currently reported.
+The intended disease-segmentation model has not yet been supplied as an evaluated app asset. Current disease results use image heuristics and must not be reported as validated diagnoses. No disease-model precision, recall, F1-score, support, coverage metric, or class comparison is currently reported.
 
 ### 5.2.3 AUC-ROC Performance
 
@@ -815,15 +818,15 @@ AUC-ROC has not been calculated. It may be reported only if the final prediction
 
 ### 5.3.1 Processing Speed
 
-Inference speed has not yet been measured on physical devices. Final measurements must identify the signed APK and model hashes, device model, Android version, warm-up rule, repetition count and summary statistic. Whether the application meets a real-time requirement remains unevaluated.
+ONNX Runtime on the development computer processed the selected EfficientNet-B3 model in a mean of 17.85 ms per held-out image, with a 21.28 ms P95. This excludes camera capture, browser preprocessing, detector/presence-gate execution, rendering, and phone hardware effects. Physical-device end-to-end time remains pending and must identify the APK checksum, device, Android version, warm-up rule, and repetition count.
 
 ### 5.3.2 Reliability
 
-A repeated physical-device stress test has not yet been performed. Completion counts, failures, crashes, memory behavior and recovery observations must be taken from `device-test.csv`; no reliability rate is currently reported.
+A repeated physical-device stress test has not yet been performed. Completion counts, failures, crashes, memory behavior, and recovery observations must come from `device-test.csv`; no phone reliability rate is currently reported.
 
 ### 5.3.3 Model Size and Resource Utilization
 
-The bundled `best.onnx` asset is 12,267,617 bytes (11.70 MiB) with SHA-256 `3E4E7A138EECC1DA53FC0F14C9400D100E79F61CF0AA2F971C8256A8AFE4796A`. The packaged threaded WASM runtime is 11,018,122 bytes (10.51 MiB). RAM, CPU and battery use have not been measured on target phones. No TFLite resource result is applicable to the active ONNX/WASM implementation.
+The promoted EfficientNet-B3 asset is 44,522,597 bytes with SHA-256 `c2dbd10f72932b871e49679f07b5134a0e8de75f973084651850d61673d0c3a3`. The bundled YOLOv8-Nano asset is 12,267,617 bytes. The published debug testing APK for commit `e32aaa4` is 167,949,482 bytes and has SHA-256 `4411b47156fd8a47ff7fd0008bbdce95fa20bd2c38c571104bfbf5681f23f748`. RAM, CPU, battery use, and installed size have not been measured on target phones.
 
 ## 5.4 Benefits Compared to Manual Grading
 
@@ -851,17 +854,17 @@ No retained cost study supports the drafted labor-savings estimate. Economic ana
 
 ## 6.1 Summary of Findings
 
-This capstone project has developed and software-tested a functional **PitayaGrade** prototype. The retained evidence supports conclusions about implementation and automated runtime behavior only. Agricultural accuracy, field performance, user acceptance and economic impact remain evaluation objectives rather than findings.
+This capstone project has developed and software-tested a functional **PitayaGrade** prototype. Retained evidence supports conclusions about the implemented local runtime and internal held-out quality classification. Disease accuracy, field performance, user acceptance, and economic impact remain evaluation objectives rather than findings.
 
-1. **Implemented ML Runtime.** The application can load and execute the bundled YOLOv8-Nano ONNX model locally through ONNX Runtime Web. This verifies deployment compatibility, not grading or disease accuracy. The intended classifier and segmentation assets remain pending reviewed training and evaluation.
+1. **Implemented ML Runtime.** The application locally executes a dragon-fruit presence gate, YOLOv8-Nano detector/grader, and three selectable quality classifiers through ONNX Runtime Web. The promoted EfficientNet-B3 classifier achieved 74.78% accuracy and 58.51% macro F1 on the frozen internal test set. The disease-segmentation asset remains pending.
 
-2. **Android Build Readiness.** The Capacitor Android debug application assembles and passes lint, and its packaged web/model assets are synchronized. Camera, offline first-run, lifecycle, export and performance behavior still require checks on physical phones before practical deployment can be claimed.
+2. **Android Build Readiness.** The Capacitor Android debug application assembles and passes lint, and its packaged web/model assets are synchronized. Camera, offline first-run, lifecycle, export, model switching, and performance behavior still require checks on physical phones before practical deployment can be claimed.
 
 3. **No Manual-Superiority Finding Yet.** No retained controlled comparison supports a speed, agreement or sensitivity advantage over experienced graders. Any future comparison must use the same reviewed samples, a documented protocol and appropriate statistical analysis.
 
 4. **User Acceptance Pending.** No approved participant evidence is retained. UAT must use anonymous participant identifiers, a consistent task script and the approved consent process before usability conclusions are written.
 
-5. **Implemented Application Features.** The prototype includes image capture/upload, local analysis, model catalog and selection controls, notifications, saved records, analytics and report export. These workflows are covered by automated tests, while their effectiveness for farmers remains subject to device testing and UAT.
+5. **Implemented Application Features.** The prototype includes image capture/upload, crop/zoom/rotation adjustment, fail-closed non-fruit rejection, local analysis, model selection, notifications, saved records, analytics, and report export. Automated tests cover these workflows, while their effectiveness for farmers remains subject to device testing and UAT.
 
 ## 6.2 Impact on Agriculture
 

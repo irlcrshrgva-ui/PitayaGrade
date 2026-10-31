@@ -8,8 +8,11 @@ ROOT = Path(__file__).resolve().parents[1]
 class ManuscriptStatusTests(unittest.TestCase):
     def test_manuscript_does_not_present_unverified_results_as_findings(self):
         text = (ROOT / 'PitayaGrade_Capstone_Paper.md').read_text(encoding='utf-8')
-        self.assertIn('Evidence status (10 October 2026)', text)
-        self.assertIn('No numerical quality-model result is currently reported', text)
+        self.assertIn('Evidence status (31 October 2026)', text)
+        self.assertIn('74.78% accuracy and 58.51% macro F1', text)
+        self.assertIn('18dcad57010432323a52f2dff08cf70803fa1676239de9b301dd87c241da447a', text)
+        self.assertIn('Physical-device end-to-end time remains pending', text)
+        self.assertIn('No disease-model precision, recall, F1-score', text)
         self.assertIn('local ONNX Runtime Web inference', text)
         forbidden = [
             'Experimental evaluation demonstrates that the system achieves',

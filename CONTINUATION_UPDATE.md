@@ -1,5 +1,22 @@
 # Project continuation update
 
+## 2026-10-31 continuation: manuscript results and human-testing handoff
+
+- Reconciled the capstone manuscript with the frozen 1,553-image quality manifest,
+  the 226-image ONNX evaluation, and the promoted EfficientNet-B3 result: 74.78%
+  accuracy and 58.51% macro F1. Added the exact model comparison, confusion matrix,
+  class limitations, runtime measurements, and current automated test counts.
+- Removed stale statements that the quality classifiers were unavailable or
+  unevaluated. The manuscript still identifies disease segmentation, physical-device
+  evidence, UAT, manual comparison, and release signing as incomplete.
+- Added `research/HUMAN_TESTING_HANDOFF_2026-10-31.md`, bound to the published
+  `e32aaa4` debug APK and SHA-256. It assigns one complete 16-test run to each of
+  three phones and explains the return package without inventing human evidence.
+- Updated the remaining-work checklist and 100% roadmap. The evidence-based score
+  stays at 88/100 because documentation cannot replace physical-device, UAT,
+  disease-scope, approval, or signing work.
+- Re-ran 112 JavaScript tests and 138 Python tests with zero failures.
+
 ## 2026-10-08 continuation: test evidence, install flow and release gate
 
 - Rejected images now accept structured testing feedback: actual object, reviewer,

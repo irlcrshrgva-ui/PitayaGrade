@@ -1,9 +1,11 @@
 # PitayaGrade roadmap from 80% to 100%
 
-**Status date:** 27 October 2026
+**Status date:** 31 October 2026
 **Current retained-deliverable score:** **88/100**
-**Fast but defensible estimate:** **7–14 active workdays**, led by the remaining
-human disease annotation, physical-device, UAT, approval and signing work.
+**Fast but defensible estimate:** **3–7 active workdays if the adviser formally
+removes disease segmentation from scope; 7–14 active workdays if reviewed disease
+masks and model evaluation remain required.** Device testing, UAT, approval, and
+release signing remain necessary in either case.
 
 This roadmap is the controlling procedure for finishing the capstone. A task is
 complete only when its evidence is retained and the relevant validation gate
@@ -21,9 +23,10 @@ AI-assisted labels do not count as final research evidence.
   held-out replay with complete predictions, confusion matrices and mistake
   lists. The retained comparison is documented in
   `research/FINAL_QUALITY_MODEL_EVALUATION_2026-10-27.md`.
-- Quality candidates remain unbundled because the fail-closed promotion audit
-  also requires the missing reviewed disease-segmentation asset and Week 4
-  evidence. No audit was bypassed to enable a partial catalog.
+- The three quality candidates are bundled and selectable with exact registry
+  checksums. An audited external Good/Medium feature-pretraining run improved the
+  promoted EfficientNet-B3 result to 74.78% held-out accuracy and 58.51% macro F1.
+  This partial quality deployment does not enable or validate disease segmentation.
 - Disease-region masks, formal device-test rows, UAT responses, and release
   signing evidence are still missing.
 
