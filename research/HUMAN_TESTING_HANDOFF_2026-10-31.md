@@ -4,15 +4,14 @@
 
 - Website: <https://irlcrshrgva-ui.github.io/PitayaGrade/site/testing.html>
 - APK: <https://irlcrshrgva-ui.github.io/PitayaGrade/downloads/PitayaGrade-debug.apk>
-- Version: `1.0.0-testing`
-- Source commit: `e32aaa42474d0c06592bbc2e772cb080b01635b0`
-- APK SHA-256: `4411b47156fd8a47ff7fd0008bbdce95fa20bd2c38c571104bfbf5681f23f748`
-- APK size: 167,949,482 bytes
-- Build time: `2026-10-31T05:59:36Z`
-- Signing status: debug testing build; not the final signed release
+- Live build metadata: <https://irlcrshrgva-ui.github.io/PitayaGrade/downloads/release.json>
+- Live checksum file: <https://irlcrshrgva-ui.github.io/PitayaGrade/downloads/PitayaGrade-debug.apk.sha256>
+- Signing status: the website provides a debug testing build, not the final signed release
 
 Every tester must download the APK and worksheets from the testing page above.
-Do not reuse a worksheet generated for an older APK checksum.
+The website generates the worksheet and checksum from the same APK during every
+deployment. Do not reuse a worksheet generated for an older APK checksum. Record
+the `sha256` and `commit` values from the live metadata file before testing.
 
 ## Three-member device plan
 
@@ -32,7 +31,7 @@ phone or tester.
 ## For every device-test row
 
 1. Record the phone model, Android version, network state, date/time with time zone,
-   anonymous tester ID, and the APK SHA-256 above.
+   anonymous tester ID, and the APK SHA-256 printed in the downloaded worksheet.
 2. Follow the listed precondition and steps without changing the expected result.
 3. Write what actually happened.
 4. Choose `Pass`, `Fail`, or `Blocked`.
