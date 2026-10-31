@@ -4,6 +4,17 @@ This folder is the evidence handoff for the final evaluation, manuscript revisio
 release build and defense. Blank rows are intentional: measured results must come
 from the frozen held-out dataset, physical Android devices and actual participants.
 
+The portable `quality-evidence-2026-10-31/` package already contains the exact
+frozen manifest, predictions, confusion matrices, runtime reports and held-out
+metrics for MobileNetV2, ResNet50 and EfficientNet-B3. Its audit is intentionally
+marked `quality-only-verified-release-incomplete`: it is research evidence, but it
+does not substitute for disease evidence, physical-device tests, UAT or signing.
+Regenerate it with:
+
+```text
+python -m scripts.stage_quality_week4_evidence --output <new-empty-folder>
+```
+
 ## Required order
 
 1. Freeze the model files and record each file path and SHA-256 hash.

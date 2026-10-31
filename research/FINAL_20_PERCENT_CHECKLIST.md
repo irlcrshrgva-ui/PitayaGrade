@@ -105,7 +105,7 @@ Repository verification evidence: `research/AUTONOMOUS_VERIFICATION_2026-10-10.m
 - [ ] Add UAT findings and limitations.
 - [x] Update the abstract and conclusions to match the measured quality results and remaining limitations.
 - [x] Verify that the manuscript describes the implemented application accurately.
-- [ ] Update the defense deck with the final charts and selected model.
+- [x] Update the defense deck with the final charts and selected model.
 - [ ] Proofread references, captions, numbering and formatting.
 - [ ] Obtain adviser approval for the final manuscript and presentation.
 

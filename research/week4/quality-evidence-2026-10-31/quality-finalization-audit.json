@@ -1,0 +1,78 @@
+{
+  "generatedAt": "2026-10-27T07:59:08.504301+00:00",
+  "status": "human-reviewed-and-validated",
+  "baseManifest": {
+    "path": "local-review\\provisional-training-manifest-adjudicated-2026-10-24.json",
+    "sha256": "6c02ba428855dc0a3edd5ee4ebe6a86b460765bd2262c0f84638ba8c13d685e8"
+  },
+  "assignmentIndex": {
+    "path": "local-review\\assisted-recheck-packages-2-member-2026-10-25\\assignment-index.json",
+    "sha256": "f8bdaa0d43003b9ac20a77929bde063f77591cd612e965c6fb998d7551e0cfde"
+  },
+  "exports": [
+    {
+      "path": "local-review\\completed-rechecks-2026-10-26\\pitayagrade-reviewed-recheck-01-2026-10-26-split-normalized.json",
+      "sha256": "f1024504087a2e75391fa91b37fd0fc10ea4a49ccea146fbf6170d5e61a3ee9c"
+    },
+    {
+      "path": "local-review\\completed-rechecks-2026-10-26\\pitayagrade-reviewed-recheck-02-2026-10-25-split-normalized.json",
+      "sha256": "335719a5f7f9ac1d6088ea1d2eac5262a5fdf704fd28ce9dc1263736b5f54288"
+    }
+  ],
+  "adjudication": {
+    "path": "local-review\\completed-rechecks-2026-10-26\\adjudication-decisions-approved.json",
+    "sha256": "207be241fe2658dd5eb71138f9e283442f5b791c483b02273bd0b4623a07b67b",
+    "decisions": [
+      {
+        "task": "quality",
+        "reviewedSourceGroup": "candidate-source-0489",
+        "reviewedLabel": "Grade B",
+        "adjudicator": "coordinator-01",
+        "adjudicatedAt": "2026-10-27T15:57:17.2717878+08:00",
+        "previousLabels": [
+          "Grade A",
+          "Grade B"
+        ],
+        "rationale": "Coordinator approved the conservative Grade B recommendation after the conflicting duplicate images were presented for review."
+      },
+      {
+        "task": "quality",
+        "reviewedSourceGroup": "candidate-source-0616",
+        "reviewedLabel": "Grade B",
+        "adjudicator": "coordinator-01",
+        "adjudicatedAt": "2026-10-27T15:57:17.2717878+08:00",
+        "previousLabels": [
+          "Grade A",
+          "Grade B"
+        ],
+        "rationale": "Coordinator approved the conservative Grade B recommendation after the conflicting duplicate images were presented for review."
+      }
+    ]
+  },
+  "rowCount": 3050,
+  "taskCounts": {
+    "maturity": 1497,
+    "quality": 1553
+  },
+  "reviewerCounts": {
+    "coordinator-01": 4,
+    "recheck-01": 395,
+    "recheck-02": 393,
+    "reviewer-01": 250,
+    "reviewer-02": 996,
+    "reviewer-03": 1012
+  },
+  "splitReconciliation": {
+    "linkedComponentsChanged": 0,
+    "rowsMoved": 0
+  },
+  "reviewedManifestSha256": "922d15be1d9b5fe8112be063837b9f35d1e87370fced45b5a54bb6d11fde6120",
+  "frozenTrainingManifestSha256": "922d15be1d9b5fe8112be063837b9f35d1e87370fced45b5a54bb6d11fde6120",
+  "frozenQualityManifestSha256": "18dcad57010432323a52f2dff08cf70803fa1676239de9b301dd87c241da447a",
+  "frozenMaturityManifestSha256": "3ddc8212c62e6f2acb4b6e917e932e0f2e4785189fb078dfbbd96f5f9429565d",
+  "validationTargets": [
+    "manuscript-quality",
+    "maturity"
+  ],
+  "validationErrors": 0
+}

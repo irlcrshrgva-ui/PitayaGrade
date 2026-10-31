@@ -1,0 +1,97 @@
+{
+  "status": "quality-only-verified-release-incomplete",
+  "purpose": "Portable Week 4 evidence for the three selectable quality classifiers.",
+  "releaseReady": false,
+  "testManifestSha256": "18dcad57010432323a52f2dff08cf70803fa1676239de9b301dd87c241da447a",
+  "testSampleCountPerModel": 226,
+  "models": [
+    {
+      "modelId": "mobilenetv2-quality",
+      "modelSha256": "72b2dab116a59cf5e45ddff0408e256c019683d5880e897e504fbf32e110f971",
+      "evaluationSource": "training_results/final-quality-2026-10-27/held-out-summary/evaluation.json",
+      "evaluationSourceSha256": "e6c9c4b2ade8ba049858171a3d24ba213b1fc517410a3fbe0bd96f7ccfdf4bfd",
+      "predictionsSha256": "7d1dd49904d06de6918cb5f0697ed08694e1ed933461f32e1e22e271cc46bd58",
+      "confusionMatrixSha256": "3318701578b2716dbb4041f5cf0f99b08251d92e31b4fd1527f17df8f7841600",
+      "runtimeVerificationSha256": "1b506f067dd1ae5020b831464681a942aa3fdad6a94d2d53190d1bdd621969eb"
+    },
+    {
+      "modelId": "resnet50-quality",
+      "modelSha256": "b87a808465b27203a9ce735f0840ce1d03e6ada2d1cc2f4a9a110548866a5673",
+      "evaluationSource": "training_results/final-quality-2026-10-27/held-out-summary/evaluation.json",
+      "evaluationSourceSha256": "e6c9c4b2ade8ba049858171a3d24ba213b1fc517410a3fbe0bd96f7ccfdf4bfd",
+      "predictionsSha256": "156dc19b6488a92b3bffccce812b0dd475ea17d0ba9e691121123dc93055c1cf",
+      "confusionMatrixSha256": "da49f6ec57ab5d107ff091535d1aeddba48cc0f141cc3da2a4a2b2c9107dfbf1",
+      "runtimeVerificationSha256": "d4508657e432d979df12645419c367a491d2e16834f0d7ea5b56df40da467505"
+    },
+    {
+      "modelId": "efficientnet-b3-quality",
+      "modelSha256": "c2dbd10f72932b871e49679f07b5134a0e8de75f973084651850d61673d0c3a3",
+      "evaluationSource": "training_results/external-pretrained-quality-2026-10-30-efficientnetb3/held-out-summary/evaluation.json",
+      "evaluationSourceSha256": "6a03765b0e87749201fdd2fbfb24ade8c0588a4d36a79430342f20f6eeebd18d",
+      "predictionsSha256": "2c4eb973f1461630fa800a9e82629793756f997317bcb517d780517d1efce697",
+      "confusionMatrixSha256": "c01f0e1b365cbf03735b59942344153d8502da2b249db9fbbbe86ab0cdbb4a67",
+      "runtimeVerificationSha256": "9b17e9ee8ff30aef4552f9258b5597eae9d783eac8b62539d3dd954b57aa2ef3"
+    }
+  ],
+  "files": {
+    "confusion-efficientnet-b3-quality.csv": {
+      "sha256": "c01f0e1b365cbf03735b59942344153d8502da2b249db9fbbbe86ab0cdbb4a67",
+      "bytes": 122
+    },
+    "confusion-mobilenetv2-quality.csv": {
+      "sha256": "3318701578b2716dbb4041f5cf0f99b08251d92e31b4fd1527f17df8f7841600",
+      "bytes": 123
+    },
+    "confusion-resnet50-quality.csv": {
+      "sha256": "da49f6ec57ab5d107ff091535d1aeddba48cc0f141cc3da2a4a2b2c9107dfbf1",
+      "bytes": 121
+    },
+    "frozen-quality-manifest.json": {
+      "sha256": "18dcad57010432323a52f2dff08cf70803fa1676239de9b301dd87c241da447a",
+      "bytes": 1095712
+    },
+    "model-evaluation.csv": {
+      "sha256": "e253ab9bbdc3294513b44498af121623bc36fada737182d349ac8902e6b227fb",
+      "bytes": 2617
+    },
+    "predictions-efficientnet-b3-quality.csv": {
+      "sha256": "2c4eb973f1461630fa800a9e82629793756f997317bcb517d780517d1efce697",
+      "bytes": 15391
+    },
+    "predictions-mobilenetv2-quality.csv": {
+      "sha256": "7d1dd49904d06de6918cb5f0697ed08694e1ed933461f32e1e22e271cc46bd58",
+      "bytes": 14307
+    },
+    "predictions-resnet50-quality.csv": {
+      "sha256": "156dc19b6488a92b3bffccce812b0dd475ea17d0ba9e691121123dc93055c1cf",
+      "bytes": 13812
+    },
+    "predictions.csv": {
+      "sha256": "63048cf77994ec305502df170b4cce5eb85785cde7e68dfce99ffcbebeef0388",
+      "bytes": 43390
+    },
+    "quality-finalization-audit.json": {
+      "sha256": "d69b89d0c106abcf0dbf68297994b2552135002c12fa30761f2e6754d637b726",
+      "bytes": 3046
+    },
+    "runtime-efficientnet-b3-quality.json": {
+      "sha256": "9b17e9ee8ff30aef4552f9258b5597eae9d783eac8b62539d3dd954b57aa2ef3",
+      "bytes": 378
+    },
+    "runtime-mobilenetv2-quality.json": {
+      "sha256": "1b506f067dd1ae5020b831464681a942aa3fdad6a94d2d53190d1bdd621969eb",
+      "bytes": 374
+    },
+    "runtime-resnet50-quality.json": {
+      "sha256": "d4508657e432d979df12645419c367a491d2e16834f0d7ea5b56df40da467505",
+      "bytes": 371
+    }
+  },
+  "missingReleaseEvidence": [
+    "evaluated YOLOv8-Nano detector row",
+    "human-reviewed disease annotations and evaluated disease-segmentation row",
+    "physical Android device-test.csv",
+    "human UAT uat.csv",
+    "signed release audit"
+  ]
+}
