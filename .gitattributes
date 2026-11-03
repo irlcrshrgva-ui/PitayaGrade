@@ -6,4 +6,5 @@ www/onnxruntime-LICENSE -text
 www/model/*.onnx binary
 www/model/**/*.onnx binary
 training_results/final-quality-2026-10-27/** -text
+research/week4/quality-evidence-2026-10-31/** -text
 android/gradlew text eol=lf
