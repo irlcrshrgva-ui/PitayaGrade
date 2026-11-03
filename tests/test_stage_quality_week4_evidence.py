@@ -10,6 +10,7 @@ from scripts.stage_quality_week4_evidence import stage_quality_evidence
 class StageQualityWeek4EvidenceTests(unittest.TestCase):
     def test_staged_package_is_complete_for_quality_but_not_release(self):
         root = Path(__file__).resolve().parents[1]
+        self.assertTrue((root / "research/week4/quality-evidence-2026-10-31/frozen-quality-manifest.json").is_file())
         build_root = root / ".codex-build"
         build_root.mkdir(exist_ok=True)
         with tempfile.TemporaryDirectory(dir=build_root) as temporary:

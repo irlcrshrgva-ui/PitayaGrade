@@ -88,8 +88,11 @@ def stage_quality_evidence(root: Path, output: Path) -> dict:
         raise FileExistsError(f"Output directory is not empty: {output}")
     output.mkdir(parents=True, exist_ok=True)
 
-    manifest_source = root / "local-review/finalized-human-review-2026-10-27/frozen-quality-manifest.json"
-    audit_source = root / "local-review/finalized-human-review-2026-10-27/finalization-audit.json"
+    # Use the retained, tracked copies so this command is reproducible on a clean
+    # clone and does not depend on the ignored local-review working directory.
+    retained = root / "research/week4/quality-evidence-2026-10-31"
+    manifest_source = retained / "frozen-quality-manifest.json"
+    audit_source = retained / "quality-finalization-audit.json"
     manifest_hash = file_hash(manifest_source)
     finalization = json.loads(audit_source.read_text(encoding="utf-8"))
     if finalization.get("status") != "human-reviewed-and-validated" or finalization.get("validationErrors") != 0:
