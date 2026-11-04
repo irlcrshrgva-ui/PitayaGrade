@@ -12,13 +12,12 @@ PitayaGrade is a capstone project for AI-assisted pre-harvest quality grading an
 
 > This is the manuscript pipeline awaiting evaluated models and integration. The current deployed application contains the YOLOv8 ONNX model, while portions of disease analysis still use image heuristics.
 
-The Settings model picker now shows the complete planned catalog: YOLOv8-Nano,
-MobileNetV2, ResNet50, EfficientNet-B3 and YOLOv8-Nano disease segmentation. Only
-the checksum-verified bundled YOLOv8-Nano asset is selectable today. Pending models
-are visibly disabled until an evaluated ONNX file, output contract and checksum are
-added to `js/model-registry.js`; the build rejects missing or altered selectable
-assets. This preserves the required selection workflow without presenting invented
-or historical checkpoints as validated models.
+The Settings quality-model picker supports the bundled YOLOv8-Nano, MobileNetV2,
+ResNet50 and EfficientNet-B3 assets. Their contracts and checksums are registered
+in `js/model-registry.js`; the build rejects missing or altered selectable assets.
+The separate YOLOv8-Nano disease segmentation entry remains disabled until its
+evaluated model is available. Disease analysis currently uses the labeled HSV
+fallback.
 
 Quality grading and disease segmentation have separate selectors because they are
 different inference tasks. The disease selector currently shows its pending
@@ -58,9 +57,9 @@ in `research/COMPLETION_SCORECARD.md`. The actionable team checklist is in
 
 Final human-reviewed quality data and exact held-out ONNX evaluations for
 MobileNetV2, ResNet50 and EfficientNet-B3 are now retained. See
-`research/FINAL_QUALITY_MODEL_EVALUATION_2026-10-27.md`. These candidates remain
-unbundled until the all-model evidence audit can also validate the pending
-disease-segmentation asset and required Week 4 evidence.
+`research/FINAL_QUALITY_MODEL_EVALUATION_2026-10-27.md`. The three quality candidates
+are now bundled and selectable. Their availability does not establish completion
+of disease segmentation or physical-device testing.
 
 The editable defense presentation is available at
 `deliverables/PitayaGrade_Defense_Deck_v1.pptx`.
@@ -138,7 +137,9 @@ After editing `index.html`, `js/`, or `css/`, run `npm run build` to update
 `www/`, or `npm run sync:android` to also synchronize the Android project.
 Run `npm test` for asset wiring and inference regression checks.
 Both web entry points use the bundled ONNX runtime and model without a CDN.
-Photo scans report model fallback explicitly; disease analysis remains heuristic
+Photo and live scans assign no grade if trained recognition is unavailable.
+Every accepted detection must pass presence checks on both the full image and
+the detected object crop. Disease analysis remains heuristic
 until a checksum-verified segmentation asset is registered.
 Every grading model is preceded by a bundled MobileNetV3-small binary presence
 gate trained on the frozen 1,553-image dragon-fruit manifest and 8,677 Caltech-101

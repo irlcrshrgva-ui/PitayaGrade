@@ -45,6 +45,8 @@ const ScanStore = {
     return record && /^[\w-]+$/.test(String(record.id)) && Number.isFinite(Date.parse(record.timestamp)) &&
       Array.isArray(record.reasons) && record.reasons.length > 0 && record.reasons.every(reason => typeof reason === 'string') &&
       ['dragon-fruit', 'not-dragon-fruit', 'unsure'].includes(record.actualObject) &&
+      (record.skinColor == null || record.skinColor === '' ||
+        (record.actualObject === 'dragon-fruit' && ['pink-red', 'yellow', 'other', 'unsure'].includes(record.skinColor))) &&
       typeof record.reviewer === 'string' && record.reviewer.trim().length > 0 && record.reviewer.length <= 100 &&
       typeof record.notes === 'string' && record.notes.length <= 500 && Number.isFinite(Date.parse(record.reviewedAt)) &&
       typeof record.model === 'string' && Number.isFinite(record.threshold) && record.threshold >= 0 && record.threshold <= 100 &&
@@ -67,6 +69,7 @@ const ScanStore = {
       timestamp: result?.timestamp,
       reasons: Array.isArray(result?.disease?.symptoms) ? result.disease.symptoms.slice(0, 10) : [],
       actualObject: String(values?.actualObject || ''),
+      skinColor: String(values?.actualObject || '') === 'dragon-fruit' ? String(values?.skinColor || '') : '',
       reviewer: String(values?.reviewer || '').trim(),
       notes: String(values?.notes || '').trim(),
       reviewedAt: new Date().toISOString(),

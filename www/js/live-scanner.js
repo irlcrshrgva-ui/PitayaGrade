@@ -226,7 +226,7 @@ const LiveScanner = {
       stableResult.detectedObject = stableResult.verificationPending
         ? `Verifying fruit (${stableResult.verificationFrame}/${this.requiredPositiveFrames})`
         : stableResult.isDragonFruit
-        ? 'Dragon Fruit' + (model ? '' : ' (heuristic)')
+        ? 'Dragon Fruit'
         : model && Number.isFinite(model.confidence)
           ? `No match (${Math.round(model.confidence * 100)}%)`
           : 'Unrecognized';
@@ -555,103 +555,8 @@ const LiveScanner = {
   },
 
   _analyzePixels(imageData) {
-    const data = imageData.data;
-    const imgWidth = imageData.width;
-    const imgHeight = imageData.height;
-    const cellSize = 16;
-
-    // === STAGE 1: YOLOv8 Grid-Based Object Detection ===
-    const gridData = this._buildGridAnalysis(data, imgWidth, imgHeight, cellSize);
-    const roi = this._findROI(gridData);
-
-    if (!roi) {
-      return {
-        isDragonFruit: false,
-        detectedObject: 'Unknown Object',
-        grade: { label: 'Unrecognized', confidence: 0.0, class: 'grade-reject' },
-        disease: { name: 'N/A', confidence: 0.0, isHealthy: true },
-        maturity: { status: 'N/A', value: 0 }
-      };
-    }
-
-    // Require both pink skin AND green scale tips
-    const roiCells = gridData.grid.filter(c =>
-      c.gx >= roi.gx && c.gx < roi.gx + roi.gw &&
-      c.gy >= roi.gy && c.gy < roi.gy + roi.gh
-    );
-    const avgPinkRatio = roiCells.reduce((s, c) => s + c.pinkRatio, 0) / roiCells.length;
-    const avgGreenRatio = roiCells.reduce((s, c) => s + c.greenRatio, 0) / roiCells.length;
-    const pinkToGreen = avgGreenRatio > 0 ? avgPinkRatio / avgGreenRatio : 999;
-    if (avgPinkRatio < 0.06 || avgGreenRatio < 0.02 || pinkToGreen < 1.5 || pinkToGreen > 25) {
-      return {
-        isDragonFruit: false,
-        detectedObject: 'Unknown Object',
-        grade: { label: 'Unrecognized', confidence: 0.0, class: 'grade-reject' },
-        disease: { name: 'N/A', confidence: 0.0, isHealthy: true },
-        maturity: { status: 'N/A', value: 0 }
-      };
-    }
-
-    // === STAGE 2A: YOLOv8-Seg Disease Segmentation ===
-    const diseaseResult = this._segmentDiseases(data, imgWidth, imgHeight, roi, cellSize);
-
-    // === STAGE 2B: EfficientNet-B3 Compound Quality Grading ===
-    const gradeResult = this._computeCompoundGrade(data, imgWidth, imgHeight, roi, cellSize);
-
-    // Determine grade label
-    let gradeLabel;
-    const cs = gradeResult.score;
-    if (cs >= 0.78) gradeLabel = 'Grade A';
-    else if (cs >= 0.58) gradeLabel = 'Grade B';
-    else if (cs >= 0.38) gradeLabel = 'Grade C';
-    else gradeLabel = 'Reject';
-
-    // Downgrade rules
-    if (diseaseResult.areaPercent > 25) {
-      gradeLabel = 'Reject';
-    } else if (diseaseResult.areaPercent > 12 && gradeLabel !== 'Reject') {
-      const downgrade = { 'Grade A': 'Grade B', 'Grade B': 'Grade C', 'Grade C': 'Reject' };
-      gradeLabel = downgrade[gradeLabel] || gradeLabel;
-    } else if (diseaseResult.areaPercent > 5 && gradeLabel === 'Grade A') {
-      gradeLabel = 'Grade B';
-    }
-
-    const gradeConfidence = Math.min(0.98, 0.65 + cs * 0.33);
-    const gradeClass = Scanner._gradeClass(gradeLabel);
-
-    // Maturity status
-    const maturityRatio = gradeResult.maturityRatio;
-    let maturityStatus, maturityValue;
-    if (maturityRatio > 0.85) {
-      maturityStatus = 'Harvestable';
-      maturityValue = Math.min(100, Math.round(75 + maturityRatio * 25));
-    } else if (maturityRatio > 0.60) {
-      maturityStatus = 'Harvestable';
-      maturityValue = Math.round(55 + maturityRatio * 30);
-    } else if (maturityRatio > 0.35) {
-      maturityStatus = 'Developing';
-      maturityValue = Math.round(25 + maturityRatio * 40);
-    } else {
-      maturityStatus = 'Developing';
-      maturityValue = Math.round(10 + maturityRatio * 30);
-    }
-
-    // Classify detected object variant
-    const pinkRatioVal = gradeResult.pinkPixels / (gradeResult.totalPixels + 1);
-    let detectedObject = 'Dragon Fruit';
-    if (pinkRatioVal > 0.40) {
-      detectedObject = 'Pitaya (Red Flesh)';
-    } else {
-      detectedObject = 'Pitaya (White Flesh)';
-    }
-
-    return {
-      isDragonFruit: true,
-      detectedObject: detectedObject,
-      grade: { label: gradeLabel, confidence: gradeConfidence, class: gradeClass },
-      disease: { name: diseaseResult.name, confidence: diseaseResult.confidence, isHealthy: diseaseResult.isHealthy },
-      maturity: { status: maturityStatus, value: Math.round(maturityValue) }
-    };
+    // A legacy entry point must never assign a grade without model verification.
+    return Scanner._generateResult(null, imageData);
   },
 
   _smoothResult(newResult) {

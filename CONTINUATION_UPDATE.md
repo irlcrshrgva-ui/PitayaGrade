@@ -790,7 +790,15 @@ evidence. Existing training experiment files are retained.
 - Full trained-model accuracy, physical camera behavior, and APK/device tests were
   not verified by these checks. No accuracy claim is implied by passing tests.
 
-## Remaining incomplete parts
+## Historical incomplete parts
+
+This list describes the earlier implementation, not the current app. As checked
+on 5 November 2026, MobileNetV2, ResNet50 and EfficientNet-B3 are bundled and
+selectable; Filipino interface translation and the notification center are
+implemented. All 112 JavaScript regression checks pass, including actual bundled
+detector execution. Disease segmentation still awaits an evaluated model and uses
+the labeled HSV fallback. Real-device camera/offline verification remains pending.
+The earlier entries below are retained as history.
 
 1. **Selectable classifiers and separate disease model:** `www/model/`,
    `js/model-inference.js`, `js/scanner.js`, and the Settings alternate-model row.

@@ -220,6 +220,64 @@ test('presence gate blocks every grading model before detector or classifier inf
   }
   assert.equal(downstreamCalls, 0);
 });
+
+test('a fruit-like scene cannot approve a non-fruit object crop for any grading model', async () => {
+  const instance = model('http://localhost/www/js/model-inference.js');
+  const full = {}, crop = {};
+  let classifierCalls = 0;
+  instance._cropToBox = () => crop;
+  instance._inferSingle = async (input, selected) => {
+    if (selected.role === 'object-presence-gate') return input === full
+      ? { isDragonFruit:true, confidence:.99 } : { isDragonFruit:false, confidence:.08 };
+    if (selected.role === 'quality-classifier') { classifierCalls++; return {}; }
+    return { isDragonFruit:true, grade:'Grade A', confidence:.98, box:{x:.2,y:.2,right:.8,bottom:.8} };
+  };
+  for (const id of ['yolov8-nano', 'mobilenetv2-quality', 'resnet50-quality', 'efficientnet-b3-quality']) {
+    const result = await instance.infer(full, id, .1);
+    assert.equal(result.isDragonFruit, false);
+    assert.equal(result.grade, null);
+    assert.equal(result.gradingSkipped, true);
+    assert.match(result.modelName, /object crop/);
+  }
+  assert.equal(classifierCalls, 0);
+});
+
+test('crop verification failure or invalid localization never falls through to grading', async () => {
+  const instance = model('http://localhost/www/js/model-inference.js');
+  const full = {};
+  instance._cropToBox = () => null;
+  instance._inferSingle = async (_, selected) => selected.role === 'object-presence-gate'
+    ? { isDragonFruit:true, confidence:.99 }
+    : { isDragonFruit:true, grade:'Grade A', confidence:.99, box:{x:0,y:0,right:0,bottom:0} };
+  const result = await instance.infer(full, 'yolov8-nano');
+  assert.equal(result.isDragonFruit, false);
+  assert.equal(result.grade, null);
+  const actual = model('http://localhost/www/js/model-inference.js');
+  assert.equal(actual._cropToBox({}, null), null);
+  assert.equal(actual._cropToBox({}, {x:0,y:0,right:0,bottom:1}), null);
+  assert.equal(actual._cropToBox({}, {x:0,y:0,right:NaN,bottom:1}), null);
+});
+
+test('integrated grader verifies both the scene and object while preserving the real grade score', async () => {
+  const instance = model('http://localhost/www/js/model-inference.js');
+  const full = {}, crop = {}, checks = [];
+  instance._cropToBox = () => crop;
+  instance._inferSingle = async (input, selected, threshold) => {
+    checks.push({ input, role:selected.role, threshold });
+    return selected.role === 'object-presence-gate'
+      ? { isDragonFruit:true, confidence:.97 }
+      : { isDragonFruit:true, grade:'Grade B', confidence:.81, box:{x:.2,y:.2,right:.8,bottom:.8} };
+  };
+  const result = await instance.infer(full, 'yolov8-nano', .1);
+  assert.equal(result.isDragonFruit, true);
+  assert.equal(result.grade, 'Grade B');
+  assert.equal(result.confidence, .81);
+  assert.equal(result.cropPresenceConfidence, .97);
+  assert.equal(checks.length, 3);
+  assert.equal(checks[0].input, full);
+  assert.equal(checks[1].threshold, .5);
+  assert.equal(checks[2].input, crop);
+});
 test('preprocessing follows zero-to-one and ImageNet registry contracts', () => {
   class Tensor {
     constructor(type, data, dims) { this.type = type; this.data = data; this.dims = dims; }

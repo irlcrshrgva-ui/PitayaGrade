@@ -397,10 +397,12 @@ const ModelInference = {
   },
 
   _cropToBox(imgElement, box) {
-    if (!box) return imgElement;
+    if (!box || ![box.x, box.y, box.right, box.bottom].every(Number.isFinite) ||
+        box.x < 0 || box.y < 0 || box.right > 1 || box.bottom > 1 ||
+        box.right <= box.x || box.bottom <= box.y) return null;
     const width = imgElement.naturalWidth || imgElement.videoWidth || imgElement.width;
     const height = imgElement.naturalHeight || imgElement.videoHeight || imgElement.height;
-    if (!width || !height) return imgElement;
+    if (!width || !height) return null;
     const padding = 0.04;
     const left = Math.max(0, box.x - padding);
     const top = Math.max(0, box.y - padding);
@@ -448,18 +450,8 @@ const ModelInference = {
         requiresVisualGate: true
       };
     }
-    if (model.role !== 'quality-classifier') {
-      const graded = await this._inferSingle(imgElement, model, threshold);
-      if (!graded) return null;
-      return {
-        ...graded,
-        presenceConfidence: presence.confidence,
-        modelName: `${presenceGate.name} + ${graded.modelName}`,
-        requiresVisualGate: true
-      };
-    }
-
-    const detector = this.MODELS.find(candidate => candidate.id === 'yolov8-nano' && this.canSelectModel(candidate));
+    const detector = model.role === 'integrated-detector-grader' ? model
+      : this.MODELS.find(candidate => candidate.id === 'yolov8-nano' && this.canSelectModel(candidate));
     if (!detector) return null;
     const gateThreshold = Math.max(threshold, this.OBJECT_GATE_THRESHOLD);
     const detection = await this._inferSingle(imgElement, detector, gateThreshold);
@@ -467,6 +459,8 @@ const ModelInference = {
     if (!detection.isDragonFruit || !detection.box) {
       return {
         ...detection,
+        isDragonFruit: false,
+        grade: null,
         modelId: model.id,
         requestedModelId: model.id,
         modelName: `${detector.name} object gate → ${model.name} (grading skipped)`,
@@ -478,6 +472,30 @@ const ModelInference = {
     }
 
     const crop = this._cropToBox(imgElement, detection.box);
+    // Scene context must not stand in for the object itself. Recheck the
+    // localized crop with the independently trained binary presence gate.
+    const cropPresence = crop ? await this._inferSingle(crop, presenceGate, presenceGate.threshold) : null;
+    if (!cropPresence?.isDragonFruit) {
+      return {
+        isDragonFruit: false, grade: null,
+        confidence: cropPresence?.confidence || 0,
+        confidenceThreshold: presenceGate.threshold,
+        detectionConfidence: cropPresence?.confidence || 0,
+        detectionThreshold: presenceGate.threshold,
+        modelId: model.id, requestedModelId: model.id,
+        modelName: `${presenceGate.name} object crop → verification failed (grading skipped)`,
+        gradingSkipped: true, requiresVisualGate: true
+      };
+    }
+    if (model.role === 'integrated-detector-grader') {
+      return {
+        ...detection, presenceConfidence: presence.confidence,
+        cropPresenceConfidence: cropPresence.confidence,
+        detectionConfidence: detection.confidence, detectionThreshold: gateThreshold,
+        modelName: `${presenceGate.name} + ${detector.name}`,
+        requiresVisualGate: true
+      };
+    }
     // Object presence is already established by the detector. A four-class
     // softmax score is grade confidence, not object confidence, so it must not
     // turn a detected fruit into "No Dragon Fruit" merely because no grade is
@@ -490,6 +508,7 @@ const ModelInference = {
       detectionConfidence: detection.confidence,
       detectionThreshold: gateThreshold,
       presenceConfidence: presence.confidence,
+      cropPresenceConfidence: cropPresence.confidence,
       modelName: `${presenceGate.name} + ${detector.name} + ${model.name}`,
       requiresVisualGate: true
     };

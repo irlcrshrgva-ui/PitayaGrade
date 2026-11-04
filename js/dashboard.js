@@ -628,10 +628,16 @@ const DashboardManager = {
     } else {
       recommendations.push({
         severity: 'low',
-        action: 'Continue standard hydration and monitoring cycles.',
-        rationale: 'Continue inspecting fruit on the plant alongside the saved image assessments.'
+        action: 'Keep inspecting fruit on the plant.',
+        rationale: 'Use the next steps below to maintain growing conditions and protect fruit quality.'
       });
     }
+
+    // Saved symptom flags prioritize care checks; they do not diagnose a farm.
+    const dominantFlag = Object.keys(diseases)
+      .filter(name => Number.isFinite(diseases[name]) && diseases[name] > 0)
+      .sort((a, b) => diseases[b] - diseases[a] || a.localeCompare(b))[0] || 'Healthy';
+    recommendations.push(...Scanner._getCareActions(dominantFlag, Number(premium) < 50));
 
     const localInsights = {
       summary: summary,
@@ -707,6 +713,7 @@ const DashboardManager = {
           `;
         }).join('')}
       </div>
+      ${Scanner._careSourcesHTML()}
     `;
   }
 };

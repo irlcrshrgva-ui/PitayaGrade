@@ -41,6 +41,10 @@
       return response.json();
     }).then(release => {
       if (!release || !release.sha256 || !release.bytes || !release.commit || !release.builtAt) throw new Error('Build metadata incomplete');
+      if (!/^[a-f0-9]{64}$/i.test(release.sha256)) throw new Error('Invalid build checksum');
+      const downloadUrl = new URL('../downloads/PitayaGrade-debug.apk', window.location.href);
+      downloadUrl.searchParams.set('v', release.sha256);
+      document.querySelectorAll('[data-apk-link]').forEach(link => { link.href = downloadUrl.href; });
       setText('[data-build-version]', `Version ${release.version}`);
       setText('[data-apk-size]', `${(release.bytes / 1024 / 1024).toFixed(1)} MB`);
       setText('[data-build-date]', `Built ${new Date(release.builtAt).toLocaleDateString()}`);

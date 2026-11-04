@@ -272,13 +272,13 @@ const ReportsManager = {
       ToastManager.show('No rejection testing feedback to export', 'warning');
       return;
     }
-    const headers = ['Scan Date', 'Scan Time', 'Actual Object', 'Detection Reasons', 'Model', 'Threshold', 'Reviewer', 'Reviewed At', 'Testing Notes'];
+    const headers = ['Scan Date', 'Scan Time', 'Actual Object', 'Detection Reasons', 'Model', 'Threshold', 'Reviewer', 'Reviewed At', 'Testing Notes', 'Observed Skin Color'];
     let csv = '\uFEFF' + headers.join(',') + '\r\n';
     records.forEach(record => {
       const date = new Date(record.timestamp);
       csv += [date.toLocaleDateString('en-PH'), date.toLocaleTimeString('en-PH'), record.actualObject,
         record.reasons.join(' | '), record.model, record.threshold + '%', record.reviewer,
-        record.reviewedAt, record.notes].map(cell => this._csvCell(cell)).join(',') + '\r\n';
+        record.reviewedAt, record.notes, record.skinColor || ''].map(cell => this._csvCell(cell)).join(',') + '\r\n';
     });
 
     this.exporting = true;

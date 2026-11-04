@@ -115,6 +115,21 @@ test('unrecognized results do not invent classifier confidence or save a grade',
   assert.match(a.element('resultArea').innerHTML, /not a quality-grade confidence/);
 });
 
+test('magenta appearance cannot produce a grade when model inference is missing or incomplete', () => {
+  const a = app();
+  const pixels = fruitPixels();
+  for (const model of [null, undefined, { isDragonFruit:true, confidence:.99 },
+    { isDragonFruit:true, grade:'Grade A', confidence:.99 },
+    { isDragonFruit:true, grade:'Grade A', confidence:NaN, box:{x:0,y:0,right:1,bottom:1} }]) {
+    const result = a.Scanner._generateResult(model, pixels);
+    assert.equal(result.isDragonFruit, false);
+    assert.equal(result.grade.confidence, 0);
+    assert.notEqual(result.grade.label, 'Grade A');
+  }
+  assert.equal(a.LiveScanner._analyzePixels(pixels).isDragonFruit, false);
+  assert.equal(a.ScanStore.getScans().length, 0);
+});
+
 test('history treats saved fields as text and never renders stored recommendation markup', () => {
   const a = app();
   const record = scan();
@@ -207,7 +222,7 @@ test('rejection testing feedback exports as its own CSV and clear removes both s
   const a = app(); let exported;
   const rejected = a.Scanner._buildRejectionResult(['Threshold not met']);
   a.ScanStore.saveRejectionFeedback(rejected, {
-    actualObject: 'dragon-fruit', reviewer: 'Tester 03', notes: 'False rejection',
+    actualObject: 'dragon-fruit', skinColor: 'yellow', reviewer: 'Tester 03', notes: 'False rejection',
     model: 'YOLOv8-Nano', threshold: 70
   });
   nativeReports(a, { saveCsv: async options => { exported = options; return { cancelled: false }; } });
@@ -215,9 +230,44 @@ test('rejection testing feedback exports as its own CSV and clear removes both s
   assert.match(exported.filename, /^PitayaGrade_Rejection_Testing_/);
   assert.match(exported.data, /Actual Object.*Detection Reasons.*Reviewer/s);
   assert.match(exported.data, /"dragon-fruit".*"False rejection"/s);
+  assert.match(exported.data, /Testing Notes,Observed Skin Color/);
+  assert.match(exported.data, /"False rejection","yellow"/);
   a.ScanStore.clear();
   assert.equal(a.ScanStore.getScans().length, 0);
   assert.equal(a.ScanStore.getRejections().length, 0);
+});
+
+test('yellow-fruit feedback preserves legacy rows and cannot introduce invalid varieties or grades', () => {
+  const a = app();
+  const rejected = a.Scanner._buildRejectionResult(['Threshold not met']);
+  const values = { actualObject: 'dragon-fruit', skinColor: 'yellow', reviewer: 'Tester',
+    notes: '', model: 'YOLOv8-Nano', threshold: 50 };
+  const yellow = a.ScanStore.saveRejectionFeedback(rejected, values);
+  assert.equal(yellow.skinColor, 'yellow');
+  assert.equal(a.ScanStore.getScans().length, 0);
+  const previous = a.data.get('pg_rejections');
+  assert.throws(() => a.ScanStore.saveRejectionFeedback(rejected, { ...values, skinColor: 'lemon' }));
+  assert.equal(a.data.get('pg_rejections'), previous);
+  const legacy = { ...yellow }; delete legacy.skinColor;
+  a.data.set('pg_rejections', JSON.stringify([legacy]));
+  assert.equal(a.ScanStore.getRejections(true).length, 1);
+  const negative = a.ScanStore.saveRejectionFeedback(rejected, { ...values, actualObject: 'not-dragon-fruit' });
+  assert.equal(negative.skinColor, '');
+  assert.equal(a.ScanStore.validRejection({ ...negative, skinColor: 'yellow' }), false);
+});
+
+test('rejected-scan interface records an explicitly selected yellow skin color', () => {
+  const a = app();
+  a.element('resultArea').scrollIntoView = () => {};
+  a.Scanner._displayResult(a.Scanner._buildRejectionResult(['Threshold not met']));
+  assert.match(a.element('resultArea').innerHTML, /Yellow-skinned dragon fruit is not supported/);
+  assert.match(a.element('resultArea').innerHTML, /id="rejectionSkinColor"/);
+  a.element('rejectionActualObject').value = 'dragon-fruit';
+  a.element('rejectionSkinColor').value = 'yellow';
+  a.element('rejectionReviewer').value = 'Tester';
+  a.Scanner.saveRejectionFeedback();
+  assert.equal(a.ScanStore.getRejections(true)[0].skinColor, 'yellow');
+  assert.equal(a.ScanStore.getScans().length, 0);
 });
 test('quota failure preserves records and does not broadcast success', () => {
   const a = app(); a.data.set('pg_scans', JSON.stringify([scan()]));
@@ -275,6 +325,34 @@ test('recommendations distinguish estimates from confirmed findings', () => {
   assert.match(text, /Possible Anthracnose/);
   assert.match(text, /Confirm ripeness/);
   assert.ok(!text.includes('Ideal for export'));
+});
+
+test('care suggestions give practical next steps for each flag and finish with a follow-up', () => {
+  const a = app();
+  const expected = { Sunburn:/sun exposure/i, 'Pest Damage':/source of damage/i,
+    Anthracnose:/prolonged wetness/i, 'Soft Rot':/separate damaged fruit/i,
+    Healthy:/growing conditions steady/i };
+  for (const [disease, action] of Object.entries(expected)) {
+    const recs = a.Scanner._getRecommendations('Grade C', disease, 'Developing');
+    const text = recs.map(item => item.text).join(' ');
+    assert.match(text, action);
+    assert.match(text, /record the actual defect/i);
+    assert.match(recs.at(-1).text, /Recheck and record changes/);
+    assert.doesNotMatch(text, /apply.*(?:pesticide|fungicide|fertilizer)|guaranteed|will cure/i);
+  }
+});
+
+test('farm insights prioritize the most frequent symptom flag and provide care steps with no disease flags', () => {
+  const a = app(); let insights;
+  a.DashboardManager._renderAIWidget = value => { insights = value; };
+  const status = {style:{}};
+  a.DashboardManager._renderOfflineInsights(10, 40, {Sunburn:4, 'Soft Rot':1}, {}, status);
+  assert.ok(insights.recommendations.some(item => /sun exposure/i.test(item.action)));
+  assert.ok(insights.recommendations.some(item => /lowered the quality/i.test(item.action)));
+  assert.match(insights.recommendations.at(-1).action, /Recheck/);
+  a.DashboardManager._renderOfflineInsights(10, 90, {}, {}, status);
+  assert.ok(insights.recommendations.some(item => /growing conditions steady/i.test(item.action)));
+  assert.ok(insights.recommendations.some(item => /harvest/i.test(item.action)));
 });
 test('empty analytics reset totals and gauge uses saved maturity, not grade', () => {
   const a = app(); a.element('analyticsPremium').textContent = '90%';

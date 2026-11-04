@@ -32,6 +32,7 @@ training_results/**/*.onnx
 training_results/mendeley-*/
 training_results/provisional-*/
 training_results/presence-gate-*/
+training_results/yellow-recognition-experiment-*/negatives/
 yolo_results/**/dataset/
 yolo_results/**/weights/
 yolo_results/train/weights/

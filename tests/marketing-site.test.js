@@ -72,3 +72,30 @@ test('packaged marketing site matches editable source', () => {
       fs.readFileSync(path.join(root, 'site', file), 'utf8'));
   }
 });
+
+test('all APK links use the published build checksum to avoid cached downloads', async () => {
+  for (const checksum of ['a'.repeat(64), 'invalid-checksum']) {
+    const links = [{href:'../downloads/PitayaGrade-debug.apk'}, {href:'../downloads/PitayaGrade-debug.apk'}];
+    const context = {
+      URL,
+      window: {location:{href:'https://irlcrshrgva-ui.github.io/PitayaGrade/site/index.html'}},
+      document: {
+        querySelector: selector => selector === '[data-apk-link]' ? links[0] : null,
+        querySelectorAll: selector => selector === '[data-apk-link]' ? links : []
+      },
+      fetch: async () => ({ok:true, json:async () => ({sha256:checksum, bytes:168000000,
+        commit:'abc1234', builtAt:'2026-11-05T00:00:00Z', version:'1.0.1-testing'})})
+    };
+    vm.runInNewContext(fs.readFileSync(path.join(root, 'site/site.js'), 'utf8'), context);
+    await new Promise(resolve => setImmediate(resolve));
+    if (checksum.length === 64) {
+      for (const link of links) {
+        const url = new URL(link.href);
+        assert.equal(url.pathname, '/PitayaGrade/downloads/PitayaGrade-debug.apk');
+        assert.equal(url.searchParams.get('v'), checksum);
+      }
+    } else {
+      assert.ok(links.every(link => link.href === '../downloads/PitayaGrade-debug.apk'));
+    }
+  }
+});

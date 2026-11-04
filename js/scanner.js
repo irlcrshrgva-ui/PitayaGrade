@@ -331,10 +331,10 @@ const Scanner = {
     const result = this._generateResult(modelResult, this.currentImageData, diseaseModelResult);
     result.details.processingTime = ((performance.now() - started) / 1000).toFixed(1) + 's';
     result.details.processingMode = 'Local (ONNX / image analysis)';
-    const gradeMethod = modelResult ? (modelResult.modelName || 'YOLOv8-Nano') + ' ONNX' : 'HSV grade heuristics';
+    const gradeMethod = modelResult ? (modelResult.modelName || 'YOLOv8-Nano') + ' ONNX' : 'Recognition unavailable (no grade assigned)';
     const diseaseMethod = diseaseModelResult ? (diseaseModelResult.modelName || 'Disease segmentation') + ' ONNX' : 'HSV disease heuristics';
-    result.details.modelUsed = `${gradeMethod} + ${diseaseMethod}`;
-    if (!modelResult) ToastManager.show('Model unavailable. Using image heuristics.', 'warning');
+    if (result.isDragonFruit) result.details.modelUsed = `${gradeMethod} + ${diseaseMethod}`;
+    if (!modelResult) ToastManager.show('Recognition model unavailable. No grade was assigned. Try again after the model loads.', 'warning');
 
     markStep(5, 'done');
     await this._delay(200);
@@ -797,6 +797,9 @@ const Scanner = {
   // All classification decisions are deterministic (no Math.random)
   // ============================================================
   _generateResult(modelResult, imageData = this.currentImageData, diseaseModelResult = null) {
+    if (!modelResult) {
+      return this._buildRejectionResult(['Recognition model unavailable — no object recognition or grading was performed']);
+    }
     const rejectionDiagnostics = {
       confidence: Number.isFinite(modelResult?.detectionConfidence)
         ? modelResult.detectionConfidence : modelResult?.confidence,
@@ -809,6 +812,10 @@ const Scanner = {
         ['The model did not detect a dragon fruit above its confidence threshold'],
         rejectionDiagnostics);
     }
+    if (!['Grade A', 'Grade B', 'Grade C', 'Reject'].includes(modelResult.grade) ||
+        !Number.isFinite(modelResult.confidence) || modelResult.confidence < 0 || modelResult.confidence > 1 || !modelResult.box) {
+      return this._buildRejectionResult(['Incomplete model verification — no grade assigned'], rejectionDiagnostics);
+    }
     if (!imageData) {
       return this._buildRejectionResult(['No image data available for analysis'], rejectionDiagnostics);
     }
@@ -820,9 +827,7 @@ const Scanner = {
 
     // === STAGE 1: YOLOv8-Nano Grid-Based Object Detection ===
     const gridData = this._buildGridAnalysis(data, imgWidth, imgHeight, cellSize);
-    const roi = modelResult?.isDragonFruit && modelResult.box
-      ? this._modelROI(modelResult.box, gridData.gridW, gridData.gridH)
-      : this._findROI(gridData);
+    const roi = this._modelROI(modelResult.box, gridData.gridW, gridData.gridH);
 
     if (!roi) {
       return this._buildRejectionResult([
@@ -947,115 +952,7 @@ const Scanner = {
         recommendations: this._getRecommendations(gl, diseaseOvr.name, matOvr.status)
       };
     }
-    // ── End YOLOv8 override ───────────────────────────────────────────────
-
-
-    // Determine grade label from compound score
-    let gradeLabel;
-    const cs = gradeResult.score;
-    if (cs >= 0.78) gradeLabel = 'Grade A';
-    else if (cs >= 0.58) gradeLabel = 'Grade B';
-    else if (cs >= 0.38) gradeLabel = 'Grade C';
-    else gradeLabel = 'Reject';
-
-    // Apply disease impact on grade (deterministic downgrade rules)
-    if (Number.isFinite(diseaseResult.areaPercent) && diseaseResult.areaPercent > 25) {
-      gradeLabel = 'Reject';
-    } else if (Number.isFinite(diseaseResult.areaPercent) && diseaseResult.areaPercent > 12 && gradeLabel !== 'Reject') {
-      const downgrade = { 'Grade A': 'Grade B', 'Grade B': 'Grade C', 'Grade C': 'Reject' };
-      gradeLabel = downgrade[gradeLabel] || gradeLabel;
-    } else if (Number.isFinite(diseaseResult.areaPercent) && diseaseResult.areaPercent > 5 && gradeLabel === 'Grade A') {
-      gradeLabel = 'Grade B';
-    }
-
-    const gradeConfidence = Math.min(0.98, 0.65 + cs * 0.33);
-
-    // Maturity determination from pink-to-green ratio
-    const maturityRatio = gradeResult.metrics.maturityRatio;
-    let maturityStatus, maturityValue;
-    if (maturityRatio > 0.85) {
-      maturityStatus = 'Harvestable';
-      maturityValue = Math.min(100, Math.round(75 + maturityRatio * 25));
-    } else if (maturityRatio > 0.60) {
-      maturityStatus = 'Harvestable';
-      maturityValue = Math.round(55 + maturityRatio * 30);
-    } else if (maturityRatio > 0.35) {
-      maturityStatus = 'Developing';
-      maturityValue = Math.round(25 + maturityRatio * 40);
-    } else {
-      maturityStatus = 'Developing';
-      maturityValue = Math.round(10 + maturityRatio * 30);
-    }
-
-    // Image coverage is a framing measure; physical size requires a scale reference.
-    const coverage = gradeResult.metrics.sizeCoverage;
-
-    // Surface condition from edge density
-    const edgeDensity = gradeResult.metrics.edgeDensity;
-    const surfaceOptions = this.featureParams.surfaceOptions;
-    const surfaceIdx = edgeDensity < 0.08 ? 0 : edgeDensity < 0.15 ? 1 : edgeDensity < 0.25 ? 2 : edgeDensity < 0.35 ? 3 : edgeDensity < 0.45 ? 4 : 5;
-
-    // Color descriptor from hue analysis
-    const colorDescriptors = this.featureParams.colorDescriptors;
-    const pinkRatioVal = gradeResult.metrics.pinkPixels / (gradeResult.metrics.totalPixels + 1);
-    let colorIdx;
-    if (pinkRatioVal > 0.5 && brightness > 0.4) colorIdx = 0;
-    else if (pinkRatioVal > 0.4 && brightness > 0.25) colorIdx = 1;
-    else if (pinkRatioVal > 0.3) colorIdx = 2;
-    else if (gradeResult.metrics.greenPixels > gradeResult.metrics.pinkPixels) colorIdx = 3;
-    else if (brightness > 0.5) colorIdx = 4;
-    else colorIdx = 5;
-
-    // Uniformity percentage
-    const uniformity = gradeResult.scores.colorUniformity;
-
-    // Disease symptoms
-    const diseaseSymptoms = diseaseResult.isHealthy
-      ? ['No visible symptoms flagged by color analysis', 'Inspect the fruit to confirm its condition']
-      : this._getDiseaseSymptoms(diseaseResult.name);
-
-    // Model metrics
-    const modelMetrics = this._getModelMetrics(gradeLabel, diseaseResult.name);
-
-    return {
-      id: Date.now(),
-      timestamp: new Date().toISOString(),
-      image: this.currentImage,
-      isDragonFruit: true,
-      grade: {
-        label: gradeLabel,
-        confidence: gradeConfidence,
-        class: this._gradeClass(gradeLabel), analysisMethod: 'Image heuristic'
-      },
-      disease: {
-        name: diseaseResult.name,
-        confidence: diseaseResult.confidence,
-        isHealthy: diseaseResult.isHealthy,
-        symptoms: diseaseSymptoms,
-        areaPercent: diseaseResult.areaPercent,
-        analysisMethod: diseaseResult.analysisMethod || 'HSV color heuristic',
-        severityMeasured: diseaseResult.severityMeasured !== false
-      },
-      maturity: {
-        status: maturityStatus,
-        value: maturityValue,
-        isHarvestable: maturityStatus === 'Harvestable'
-      },
-      details: {
-        size: 'Not measured', imageCoveragePercent: Math.round(coverage * 1000) / 10,
-        colorUniformity: (uniformity * 100).toFixed(1) + '%',
-        colorDescriptor: colorDescriptors[colorIdx],
-        surfaceCondition: surfaceOptions[surfaceIdx],
-        brightness: (brightness * 100).toFixed(0) + '%',
-        processingMode: 'Local (image analysis)',
-        processingTime: 'N/A',
-        modelUsed: 'HSV image heuristics (model unavailable)'
-      },
-      compoundScore: gradeResult.score,
-      featureScores: gradeResult.scores,
-      modelMetrics: modelMetrics,
-        recommendations: this._getRecommendations(gradeLabel, diseaseResult.name, maturityStatus, false)
-    };
+    return this._buildRejectionResult(['No verified model grade is available'], rejectionDiagnostics);
   },
 
   _getDiseaseSymptoms(diseaseName) {
@@ -1101,7 +998,53 @@ const Scanner = {
       recs.push({ type: 'red', icon: diseaseIcons[disease] || diseaseIcons.default, text: `Possible ${disease} based on image features. Inspect the fruit and consult an agricultural officer before treatment.` });
     }
 
+    const care = this._getCareActions(disease, ['Grade B', 'Grade C', 'Reject'].includes(grade));
+    care.forEach(item => recs.push({
+      type: item.severity === 'high' ? 'red' : item.severity === 'medium' ? 'yellow' : 'green',
+      icon: item.severity === 'low' ? '✓' : '!',
+      text: `${item.action} ${item.rationale}`
+    }));
     return recs;
+  },
+
+  // Practical care guidance selected by scan flags; these actions do not
+  // identify a pathogen, nutrient deficiency, or guaranteed cause of low grade.
+  _getCareActions(disease = 'Healthy', lowerGrade = false) {
+    let actions;
+    if (disease === 'Sunburn') {
+      actions = [
+        { severity:'medium', action:'Check sun exposure.', rationale:'Inspect the sun-facing fruit and stems for pale or damaged areas. If heat injury is confirmed, discuss suitable protective shade with a local grower or agricultural officer; avoid heavy shade.' },
+        { severity:'low', action:'Check soil moisture and drainage.', rationale:'For fruit still growing, water according to soil moisture and weather. Avoid both prolonged drying during fruit development and standing water around the roots.' }
+      ];
+    } else if (disease === 'Pest Damage') {
+      actions = [
+        { severity:'medium', action:'Find the source of damage.', rationale:'Inspect fruit and nearby stems for insects, fresh punctures or bird marks. Photograph what you find before choosing a control method.' },
+        { severity:'medium', action:'Improve orchard sanitation.', rationale:'Collect fallen, damaged fruit and check nearby fruit for fresh injury. Ask an agricultural officer for control suited to the pest you actually observe.' }
+      ];
+    } else if (['Anthracnose', 'Stem Canker', 'Soft Rot', 'Fungal Spots'].includes(disease)) {
+      actions = [
+        { severity:'high', action:'Inspect and separate damaged fruit.', rationale:'Check for soft tissue, leaking or enlarging lesions. Keep fruit with confirmed rot separate from sound harvested fruit and seek an agricultural assessment before treatment.' },
+        { severity:'medium', action:'Reduce prolonged wetness.', rationale:'Check drainage, avoid splashing irrigation water onto fruit and stems, and maintain airflow through appropriate pruning. Clean pruning tools between plants.' }
+      ];
+    } else {
+      actions = [
+        { severity:'low', action:'Keep growing conditions steady.', rationale:'For fruit still on the plant, check soil moisture before watering and clear blocked drainage. Avoid drought during fruit development and avoid waterlogging.' },
+        { severity:'low', action:'Protect the fruit during harvest.', rationale:'Confirm maturity by the variety and field observations. Use clean cutting tools and handle fruit gently to prevent cuts and bruises.' }
+      ];
+    }
+    if (lowerGrade) actions.unshift({
+      severity:'medium', action:'Check what lowered the quality.',
+      rationale:'Inspect for bruises, cracks, spots and uneven ripeness, then record the actual defect. A low image grade alone does not show a fertilizer or water deficiency.'
+    });
+    actions.push({
+      severity:'low', action:'Recheck and record changes.',
+      rationale:'Take another photo of the same fruit under similar lighting after your care changes. Record the date and what you changed; seek help promptly if damage spreads or tissue softens.'
+    });
+    return actions;
+  },
+
+  _careSourcesHTML() {
+    return '<p style="font-size:11px;line-height:1.5;color:var(--text-secondary);margin:12px 0 0">General care guidance: <a href="https://ask.ifas.ufl.edu/publication/HS303" target="_blank" rel="noopener noreferrer">UF/IFAS growing guide</a> · <a href="https://edis.ifas.ufl.edu/publication/PP355/pdf" target="_blank" rel="noopener noreferrer">Disease management</a> · <a href="https://nt.gov.au/industry/agriculture/food-crops-plants-and-quarantine/fruit-crops/dragon-fruit-pitaya" target="_blank" rel="noopener noreferrer">NT Agriculture</a>. Confirm suitability for your local conditions.</p>';
   },
 
   _displayResult(result) {
@@ -1131,6 +1074,7 @@ const Scanner = {
               <div style="font-size:13px;color:var(--text-secondary);line-height:1.5;margin-bottom:12px">
                 The assessment could not verify a dragon fruit in this image. Check the image and detection threshold, then try again.
               </div>
+              <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;margin-bottom:12px">Yellow-skinned dragon fruit is not supported by the current models. A rejected scan does not prove that the object is not a dragon fruit.</div>
               ${detectionEvidence}
               <div class="symptoms-list">
                 ${result.disease.symptoms.map(sym => `
@@ -1163,6 +1107,11 @@ const Scanner = {
               <select id="rejectionActualObject" class="validation-input" style="margin:5px 0 9px">
                 <option value="">Select...</option><option value="dragon-fruit">Dragon fruit</option>
                 <option value="not-dragon-fruit">Not a dragon fruit</option><option value="unsure">Unsure</option>
+              </select>
+              <label for="rejectionSkinColor" style="font-size:12px;color:var(--text-secondary)">Dragon fruit skin color (if applicable)</label>
+              <select id="rejectionSkinColor" class="validation-input" style="margin:5px 0 9px">
+                <option value="">Not recorded</option><option value="pink-red">Pink / red skin</option>
+                <option value="yellow">Yellow skin</option><option value="other">Other skin color</option><option value="unsure">Unsure</option>
               </select>
               <label for="rejectionReviewer" style="font-size:12px;color:var(--text-secondary)">Reviewer</label>
               <input id="rejectionReviewer" class="validation-input" maxlength="100" placeholder="Name or approved reviewer code" style="margin:5px 0 9px">
@@ -1317,6 +1266,7 @@ const Scanner = {
                 <span class="recommendation-text">${r.text}</span>
               </div>
             `).join('')}
+            ${this._careSourcesHTML()}
           </div>
 
           <!-- Actions -->
@@ -1350,6 +1300,7 @@ const Scanner = {
       }
       ScanStore.saveRejectionFeedback(result, {
         actualObject: document.getElementById('rejectionActualObject')?.value,
+        skinColor: document.getElementById('rejectionSkinColor')?.value,
         reviewer: document.getElementById('rejectionReviewer')?.value,
         notes: document.getElementById('rejectionNotes')?.value,
         model: typeof ModelInference !== 'undefined' ? ModelInference.getSelectedModel()?.name || 'Unknown' : 'Unknown',
