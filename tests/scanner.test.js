@@ -242,6 +242,26 @@ test('a fruit-like scene cannot approve a non-fruit object crop for any grading 
   assert.equal(classifierCalls, 0);
 });
 
+test('a borderline wide shot requires strong localized fruit evidence before grading', async () => {
+  const instance = model('http://localhost/www/js/model-inference.js');
+  const full = {}, crop = {};
+  instance._cropToBox = () => crop;
+  for (const cropScore of [.87, .60]) {
+    instance._inferSingle = async (image, selected, threshold) => {
+      if (selected.role !== 'object-presence-gate') {
+        return {isDragonFruit:true, grade:'Grade B', confidence:.64, box:{x:.2,y:.2,right:.8,bottom:.8}};
+      }
+      const confidence = image === full ? .44 : cropScore;
+      return {isDragonFruit:confidence >= threshold, confidence};
+    };
+    const result = await instance.infer(full, 'yolov8-nano', .5);
+    assert.equal(result.isDragonFruit, cropScore === .87);
+    assert.equal(result.grade, cropScore === .87 ? 'Grade B' : null);
+  }
+  instance._inferSingle = async () => null;
+  assert.equal(await instance.infer(full, 'yolov8-nano'), null);
+});
+
 test('crop verification failure or invalid localization never falls through to grading', async () => {
   const instance = model('http://localhost/www/js/model-inference.js');
   const full = {};

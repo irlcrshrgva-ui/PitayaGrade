@@ -767,6 +767,7 @@ const Scanner = {
       timestamp: new Date().toISOString(),
       image: this.currentImage,
       isDragonFruit: false,
+      recognitionUnavailable: diagnostics.recognitionUnavailable === true,
       grade: { label: 'Unrecognized Object', confidence: 0.0, class: 'grade-reject' },
       disease: {
         name: 'Not Applicable', confidence: 0.0, isHealthy: false,
@@ -798,7 +799,7 @@ const Scanner = {
   // ============================================================
   _generateResult(modelResult, imageData = this.currentImageData, diseaseModelResult = null) {
     if (!modelResult) {
-      return this._buildRejectionResult(['Recognition model unavailable — no object recognition or grading was performed']);
+      return this._buildRejectionResult(['Recognition could not run. Close and reopen the app, then try again.'], { recognitionUnavailable: true });
     }
     const rejectionDiagnostics = {
       confidence: Number.isFinite(modelResult?.detectionConfidence)
@@ -809,7 +810,7 @@ const Scanner = {
     };
     if (modelResult && !modelResult.isDragonFruit) {
       return this._buildRejectionResult(
-        ['The model did not detect a dragon fruit above its confidence threshold'],
+        [modelResult.rejectionReason || 'The model did not detect a dragon fruit above its confidence threshold'],
         rejectionDiagnostics);
     }
     if (!['Grade A', 'Grade B', 'Grade C', 'Reject'].includes(modelResult.grade) ||
@@ -1065,7 +1066,7 @@ const Scanner = {
         <div class="result-card critical-alert-card" style="border-top: 4px solid var(--color-error)">
           <div class="result-header grade-reject" style="padding: 24px">
             <div class="result-grade-label" style="color:var(--color-error);font-weight:700">Object Unrecognized</div>
-            <div class="result-grade-value grade-reject" style="font-size:24px;margin:8px 0">No Dragon Fruit Detected</div>
+            <div class="result-grade-value grade-reject" style="font-size:24px;margin:8px 0">${result.recognitionUnavailable ? 'Recognition Unavailable' : 'No Dragon Fruit Detected'}</div>
             <div class="result-confidence" style="color:var(--text-secondary)">No grading confidence is available for an unrecognized image.</div>
           </div>
           <div class="result-body" style="padding: 20px">

@@ -432,20 +432,22 @@ const ModelInference = {
     const presence = presenceGate
       ? await this._inferSingle(imgElement, presenceGate, presenceGate.threshold)
       : null;
-    if (!presence || !presence.isDragonFruit) {
+    if (!presence) return null;
+    // A wider frame can dilute the fruit signal. Allow localization when the
+    // scene score is borderline, then require stronger evidence on the crop.
+    if (!presence.isDragonFruit && presence.confidence < 0.25) {
       return {
         isDragonFruit: false,
         grade: null,
-        confidence: presence?.confidence || 0,
-        nonFruitProbability: presence?.nonFruitProbability ?? 1,
-        confidenceThreshold: presenceGate?.threshold ?? 1,
-        detectionConfidence: presence?.confidence || 0,
-        detectionThreshold: presenceGate?.threshold ?? 1,
+        confidence: presence.confidence,
+        nonFruitProbability: presence.nonFruitProbability,
+        confidenceThreshold: presenceGate.threshold,
+        detectionConfidence: presence.confidence,
+        detectionThreshold: presenceGate.threshold,
         modelId: model.id,
         requestedModelId: model.id,
-        modelName: presence
-          ? `${presenceGate.name} → non-dragon-fruit (grading skipped)`
-          : 'Dragon Fruit Presence Gate unavailable (grading skipped)',
+        rejectionReason: 'The full image scored too low for dragon fruit. Move closer and center one fruit.',
+        modelName: `${presenceGate.name} → non-dragon-fruit (grading skipped)`,
         gradingSkipped: true,
         requiresVisualGate: true
       };
@@ -466,6 +468,8 @@ const ModelInference = {
         modelName: `${detector.name} object gate → ${model.name} (grading skipped)`,
         gradingSkipped: true,
         detectionConfidence: detection.confidence,
+        detectionThreshold: gateThreshold,
+        rejectionReason: 'The detector could not locate a fruit confidently. Center the fruit and keep its outline in view.',
         presenceConfidence: presence.confidence,
         requiresVisualGate: true
       };
@@ -474,14 +478,17 @@ const ModelInference = {
     const crop = this._cropToBox(imgElement, detection.box);
     // Scene context must not stand in for the object itself. Recheck the
     // localized crop with the independently trained binary presence gate.
-    const cropPresence = crop ? await this._inferSingle(crop, presenceGate, presenceGate.threshold) : null;
+    const cropThreshold = presence.isDragonFruit ? presenceGate.threshold : Math.max(presenceGate.threshold, 0.85);
+    const cropPresence = crop ? await this._inferSingle(crop, presenceGate, cropThreshold) : null;
+    if (crop && !cropPresence) return null;
     if (!cropPresence?.isDragonFruit) {
       return {
         isDragonFruit: false, grade: null,
         confidence: cropPresence?.confidence || 0,
-        confidenceThreshold: presenceGate.threshold,
+        confidenceThreshold: cropThreshold,
         detectionConfidence: cropPresence?.confidence || 0,
-        detectionThreshold: presenceGate.threshold,
+        detectionThreshold: cropThreshold,
+        rejectionReason: 'The detected crop could not be verified as dragon fruit. Try a clear photo with the whole fruit visible.',
         modelId: model.id, requestedModelId: model.id,
         modelName: `${presenceGate.name} object crop → verification failed (grading skipped)`,
         gradingSkipped: true, requiresVisualGate: true
