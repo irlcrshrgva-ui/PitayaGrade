@@ -1,0 +1,942 @@
+{
+  "generatedAt": "2026-11-06T15:30:20.605053+00:00",
+  "status": "validation-selected-development-probe-not-field-accuracy",
+  "selectionRule": "maximum validation macro F1, then validation accuracy",
+  "classOrder": [
+    "Grade A",
+    "Grade B",
+    "Grade C",
+    "Reject"
+  ],
+  "inputs": {
+    "cnnFeatures": {
+      "path": "training_results\\crop-aligned-probe-2026-11-06\\features.npz",
+      "sha256": "5bcad29ba2d16f1ca7e145ebd53f368501b41f7822719ab3d0dba3c7ee4f1975"
+    },
+    "dinoFeatures": {
+      "path": "training_results\\dinov2-probe-quality-2026-11-06\\features.npz",
+      "sha256": "46dfdcb84e86e34f2d94e68d1dcf1ccdc59ce440723e863049dd2f92965567ab"
+    }
+  },
+  "selected": {
+    "view": "cnn-mean",
+    "C": 0.01,
+    "balanced": true,
+    "thresholds": [
+      0.35,
+      0.5499999999999999,
+      0.35
+    ]
+  },
+  "validation": {
+    "correct": 173,
+    "count": 231,
+    "accuracy": 0.7489177489177489,
+    "macroF1": 0.6229080578252165,
+    "confusionMatrix": [
+      [
+        24,
+        12,
+        8,
+        1
+      ],
+      [
+        4,
+        26,
+        11,
+        2
+      ],
+      [
+        7,
+        6,
+        10,
+        1
+      ],
+      [
+        1,
+        2,
+        3,
+        113
+      ]
+    ]
+  },
+  "test": {
+    "correct": 161,
+    "count": 226,
+    "accuracy": 0.7123893805309734,
+    "macroF1": 0.5744957533854782,
+    "confusionMatrix": [
+      [
+        15,
+        7,
+        5,
+        1
+      ],
+      [
+        11,
+        25,
+        20,
+        5
+      ],
+      [
+        3,
+        6,
+        10,
+        3
+      ],
+      [
+        2,
+        1,
+        1,
+        111
+      ]
+    ]
+  },
+  "leaderboard": [
+    {
+      "view": "cnn-mean",
+      "C": 0.01,
+      "balanced": true,
+      "thresholds": [
+        0.35,
+        0.5499999999999999,
+        0.35
+      ],
+      "validation": {
+        "correct": 173,
+        "count": 231,
+        "accuracy": 0.7489177489177489,
+        "macroF1": 0.6229080578252165,
+        "confusionMatrix": [
+          [
+            24,
+            12,
+            8,
+            1
+          ],
+          [
+            4,
+            26,
+            11,
+            2
+          ],
+          [
+            7,
+            6,
+            10,
+            1
+          ],
+          [
+            1,
+            2,
+            3,
+            113
+          ]
+        ]
+      }
+    },
+    {
+      "view": "cnn-mean",
+      "C": 0.03,
+      "balanced": true,
+      "thresholds": [
+        0.35,
+        0.7,
+        0.3
+      ],
+      "validation": {
+        "correct": 172,
+        "count": 231,
+        "accuracy": 0.7445887445887446,
+        "macroF1": 0.6201348176448631,
+        "confusionMatrix": [
+          [
+            26,
+            10,
+            8,
+            1
+          ],
+          [
+            6,
+            24,
+            11,
+            2
+          ],
+          [
+            7,
+            6,
+            10,
+            1
+          ],
+          [
+            1,
+            2,
+            4,
+            112
+          ]
+        ]
+      }
+    },
+    {
+      "view": "cnn-mean",
+      "C": 0.3,
+      "balanced": false,
+      "thresholds": [
+        0.3,
+        0.35,
+        0.49999999999999994
+      ],
+      "validation": {
+        "correct": 173,
+        "count": 231,
+        "accuracy": 0.7489177489177489,
+        "macroF1": 0.616193853427896,
+        "confusionMatrix": [
+          [
+            22,
+            16,
+            6,
+            1
+          ],
+          [
+            1,
+            33,
+            7,
+            2
+          ],
+          [
+            4,
+            11,
+            7,
+            2
+          ],
+          [
+            0,
+            5,
+            3,
+            111
+          ]
+        ]
+      }
+    },
+    {
+      "view": "cnn-mean",
+      "C": 0.3,
+      "balanced": true,
+      "thresholds": [
+        0.3,
+        0.3,
+        0.5999999999999999
+      ],
+      "validation": {
+        "correct": 173,
+        "count": 231,
+        "accuracy": 0.7489177489177489,
+        "macroF1": 0.616193853427896,
+        "confusionMatrix": [
+          [
+            22,
+            16,
+            6,
+            1
+          ],
+          [
+            1,
+            33,
+            7,
+            2
+          ],
+          [
+            4,
+            11,
+            7,
+            2
+          ],
+          [
+            0,
+            5,
+            3,
+            111
+          ]
+        ]
+      }
+    },
+    {
+      "view": "cnn-mean",
+      "C": 0.03,
+      "balanced": false,
+      "thresholds": [
+        0.7,
+        0.3,
+        0.5499999999999999
+      ],
+      "validation": {
+        "correct": 175,
+        "count": 231,
+        "accuracy": 0.7575757575757576,
+        "macroF1": 0.6157142688671299,
+        "confusionMatrix": [
+          [
+            20,
+            18,
+            6,
+            1
+          ],
+          [
+            0,
+            38,
+            5,
+            0
+          ],
+          [
+            3,
+            14,
+            6,
+            1
+          ],
+          [
+            0,
+            6,
+            2,
+            111
+          ]
+        ]
+      }
+    },
+    {
+      "view": "cnn-flat",
+      "C": 0.01,
+      "balanced": true,
+      "thresholds": [
+        0.3,
+        0.6499999999999999,
+        0.3
+      ],
+      "validation": {
+        "correct": 171,
+        "count": 231,
+        "accuracy": 0.7402597402597403,
+        "macroF1": 0.6148718634188275,
+        "confusionMatrix": [
+          [
+            25,
+            12,
+            6,
+            2
+          ],
+          [
+            4,
+            26,
+            11,
+            2
+          ],
+          [
+            7,
+            7,
+            9,
+            1
+          ],
+          [
+            1,
+            2,
+            5,
+            111
+          ]
+        ]
+      }
+    },
+    {
+      "view": "cnn-mean",
+      "C": 3.0,
+      "balanced": true,
+      "thresholds": [
+        0.39999999999999997,
+        0.5499999999999999,
+        0.7
+      ],
+      "validation": {
+        "correct": 173,
+        "count": 231,
+        "accuracy": 0.7489177489177489,
+        "macroF1": 0.6114862004829642,
+        "confusionMatrix": [
+          [
+            26,
+            14,
+            5,
+            0
+          ],
+          [
+            5,
+            30,
+            6,
+            2
+          ],
+          [
+            5,
+            11,
+            6,
+            2
+          ],
+          [
+            0,
+            5,
+            3,
+            111
+          ]
+        ]
+      }
+    },
+    {
+      "view": "cnn-mean",
+      "C": 1.0,
+      "balanced": false,
+      "thresholds": [
+        0.3,
+        0.7,
+        0.39999999999999997
+      ],
+      "validation": {
+        "correct": 172,
+        "count": 231,
+        "accuracy": 0.7445887445887446,
+        "macroF1": 0.611124794093189,
+        "confusionMatrix": [
+          [
+            24,
+            15,
+            6,
+            0
+          ],
+          [
+            4,
+            30,
+            7,
+            2
+          ],
+          [
+            5,
+            10,
+            7,
+            2
+          ],
+          [
+            0,
+            5,
+            3,
+            111
+          ]
+        ]
+      }
+    },
+    {
+      "view": "cnn-mean",
+      "C": 3.0,
+      "balanced": false,
+      "thresholds": [
+        0.49999999999999994,
+        0.6499999999999999,
+        0.5999999999999999
+      ],
+      "validation": {
+        "correct": 173,
+        "count": 231,
+        "accuracy": 0.7489177489177489,
+        "macroF1": 0.611114582366971,
+        "confusionMatrix": [
+          [
+            26,
+            14,
+            5,
+            0
+          ],
+          [
+            6,
+            30,
+            5,
+            2
+          ],
+          [
+            5,
+            11,
+            6,
+            2
+          ],
+          [
+            0,
+            5,
+            3,
+            111
+          ]
+        ]
+      }
+    },
+    {
+      "view": "cnn-flat",
+      "C": 1.0,
+      "balanced": false,
+      "thresholds": [
+        0.35,
+        0.7,
+        0.7
+      ],
+      "validation": {
+        "correct": 174,
+        "count": 231,
+        "accuracy": 0.7532467532467533,
+        "macroF1": 0.6097276631046233,
+        "confusionMatrix": [
+          [
+            25,
+            16,
+            2,
+            2
+          ],
+          [
+            3,
+            33,
+            6,
+            1
+          ],
+          [
+            6,
+            10,
+            5,
+            3
+          ],
+          [
+            1,
+            5,
+            2,
+            111
+          ]
+        ]
+      }
+    },
+    {
+      "view": "cnn-mean+dino",
+      "C": 0.01,
+      "balanced": true,
+      "thresholds": [
+        0.44999999999999996,
+        0.49999999999999994,
+        0.35
+      ],
+      "validation": {
+        "correct": 172,
+        "count": 231,
+        "accuracy": 0.7445887445887446,
+        "macroF1": 0.609621695228704,
+        "confusionMatrix": [
+          [
+            23,
+            14,
+            6,
+            2
+          ],
+          [
+            3,
+            28,
+            12,
+            0
+          ],
+          [
+            5,
+            10,
+            8,
+            1
+          ],
+          [
+            1,
+            4,
+            1,
+            113
+          ]
+        ]
+      }
+    },
+    {
+      "view": "cnn-mean",
+      "C": 0.01,
+      "balanced": false,
+      "thresholds": [
+        0.35,
+        0.6499999999999999,
+        0.3
+      ],
+      "validation": {
+        "correct": 172,
+        "count": 231,
+        "accuracy": 0.7445887445887446,
+        "macroF1": 0.6096033216347805,
+        "confusionMatrix": [
+          [
+            24,
+            13,
+            7,
+            1
+          ],
+          [
+            4,
+            27,
+            10,
+            2
+          ],
+          [
+            7,
+            8,
+            8,
+            1
+          ],
+          [
+            1,
+            3,
+            2,
+            113
+          ]
+        ]
+      }
+    },
+    {
+      "view": "cnn-flat",
+      "C": 3.0,
+      "balanced": false,
+      "thresholds": [
+        0.3,
+        0.7,
+        0.7
+      ],
+      "validation": {
+        "correct": 174,
+        "count": 231,
+        "accuracy": 0.7532467532467533,
+        "macroF1": 0.6095877505127636,
+        "confusionMatrix": [
+          [
+            26,
+            15,
+            3,
+            1
+          ],
+          [
+            4,
+            32,
+            6,
+            1
+          ],
+          [
+            6,
+            10,
+            5,
+            3
+          ],
+          [
+            1,
+            5,
+            2,
+            111
+          ]
+        ]
+      }
+    },
+    {
+      "view": "cnn-flat",
+      "C": 0.01,
+      "balanced": false,
+      "thresholds": [
+        0.5499999999999999,
+        0.49999999999999994,
+        0.5999999999999999
+      ],
+      "validation": {
+        "correct": 174,
+        "count": 231,
+        "accuracy": 0.7532467532467533,
+        "macroF1": 0.6067008583489314,
+        "confusionMatrix": [
+          [
+            22,
+            20,
+            2,
+            1
+          ],
+          [
+            2,
+            36,
+            5,
+            0
+          ],
+          [
+            5,
+            13,
+            5,
+            1
+          ],
+          [
+            0,
+            7,
+            1,
+            111
+          ]
+        ]
+      }
+    },
+    {
+      "view": "cnn-mean+dino",
+      "C": 0.01,
+      "balanced": false,
+      "thresholds": [
+        0.49999999999999994,
+        0.5999999999999999,
+        0.5499999999999999
+      ],
+      "validation": {
+        "correct": 175,
+        "count": 231,
+        "accuracy": 0.7575757575757576,
+        "macroF1": 0.6065094479988097,
+        "confusionMatrix": [
+          [
+            23,
+            16,
+            4,
+            2
+          ],
+          [
+            4,
+            34,
+            5,
+            0
+          ],
+          [
+            5,
+            13,
+            5,
+            1
+          ],
+          [
+            1,
+            4,
+            1,
+            113
+          ]
+        ]
+      }
+    },
+    {
+      "view": "cnn-flat",
+      "C": 3.0,
+      "balanced": true,
+      "thresholds": [
+        0.3,
+        0.5999999999999999,
+        0.6499999999999999
+      ],
+      "validation": {
+        "correct": 173,
+        "count": 231,
+        "accuracy": 0.7489177489177489,
+        "macroF1": 0.6054430060583585,
+        "confusionMatrix": [
+          [
+            26,
+            13,
+            5,
+            1
+          ],
+          [
+            3,
+            31,
+            8,
+            1
+          ],
+          [
+            6,
+            10,
+            5,
+            3
+          ],
+          [
+            1,
+            5,
+            2,
+            111
+          ]
+        ]
+      }
+    },
+    {
+      "view": "cnn-flat",
+      "C": 0.3,
+      "balanced": false,
+      "thresholds": [
+        0.6499999999999999,
+        0.7,
+        0.39999999999999997
+      ],
+      "validation": {
+        "correct": 172,
+        "count": 231,
+        "accuracy": 0.7445887445887446,
+        "macroF1": 0.6048800176622532,
+        "confusionMatrix": [
+          [
+            24,
+            15,
+            5,
+            1
+          ],
+          [
+            2,
+            31,
+            9,
+            1
+          ],
+          [
+            6,
+            11,
+            6,
+            1
+          ],
+          [
+            1,
+            5,
+            2,
+            111
+          ]
+        ]
+      }
+    },
+    {
+      "view": "cnn-mean",
+      "C": 0.1,
+      "balanced": true,
+      "thresholds": [
+        0.7,
+        0.44999999999999996,
+        0.5499999999999999
+      ],
+      "validation": {
+        "correct": 171,
+        "count": 231,
+        "accuracy": 0.7402597402597403,
+        "macroF1": 0.6043079717648683,
+        "confusionMatrix": [
+          [
+            22,
+            17,
+            6,
+            0
+          ],
+          [
+            3,
+            31,
+            8,
+            1
+          ],
+          [
+            4,
+            12,
+            7,
+            1
+          ],
+          [
+            0,
+            5,
+            3,
+            111
+          ]
+        ]
+      }
+    },
+    {
+      "view": "cnn-flat",
+      "C": 0.3,
+      "balanced": true,
+      "thresholds": [
+        0.44999999999999996,
+        0.5999999999999999,
+        0.7
+      ],
+      "validation": {
+        "correct": 173,
+        "count": 231,
+        "accuracy": 0.7489177489177489,
+        "macroF1": 0.6033272283272284,
+        "confusionMatrix": [
+          [
+            24,
+            16,
+            4,
+            1
+          ],
+          [
+            2,
+            33,
+            7,
+            1
+          ],
+          [
+            6,
+            11,
+            5,
+            2
+          ],
+          [
+            1,
+            5,
+            2,
+            111
+          ]
+        ]
+      }
+    },
+    {
+      "view": "cnn-flat",
+      "C": 0.1,
+      "balanced": true,
+      "thresholds": [
+        0.44999999999999996,
+        0.6499999999999999,
+        0.6499999999999999
+      ],
+      "validation": {
+        "correct": 173,
+        "count": 231,
+        "accuracy": 0.7489177489177489,
+        "macroF1": 0.6029608914003565,
+        "confusionMatrix": [
+          [
+            24,
+            15,
+            5,
+            1
+          ],
+          [
+            2,
+            33,
+            7,
+            1
+          ],
+          [
+            6,
+            12,
+            5,
+            1
+          ],
+          [
+            1,
+            5,
+            2,
+            111
+          ]
+        ]
+      }
+    }
+  ],
+  "limitations": [
+    "The frozen test split has been used by earlier development experiments.",
+    "This result is not field accuracy and does not replace external validation.",
+    "No labels or production model assets were changed."
+  ]
+}

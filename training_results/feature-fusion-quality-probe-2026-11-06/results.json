@@ -1,0 +1,132 @@
+{
+  "generatedAt": "2026-11-06T15:27:57.084975+00:00",
+  "status": "validation-selected-development-probe-not-field-accuracy",
+  "selectionRule": "maximum validation macro F1, then validation accuracy",
+  "classOrder": [
+    "Grade A",
+    "Grade B",
+    "Grade C",
+    "Reject"
+  ],
+  "inputs": {
+    "cnnFeatures": {
+      "path": "training_results\\crop-aligned-probe-2026-11-06\\features.npz",
+      "sha256": "5bcad29ba2d16f1ca7e145ebd53f368501b41f7822719ab3d0dba3c7ee4f1975"
+    },
+    "dinoFeatures": {
+      "path": "training_results\\dinov2-probe-quality-2026-11-06\\features.npz",
+      "sha256": "46dfdcb84e86e34f2d94e68d1dcf1ccdc59ce440723e863049dd2f92965567ab"
+    }
+  },
+  "selected": {
+    "view": "cnn-mean+dino",
+    "model": "rbf-svm-balanced-c1"
+  },
+  "validation": {
+    "correct": 175,
+    "count": 231,
+    "accuracy": 0.7575757575757576,
+    "macroF1": 0.6309693574399458,
+    "confusionMatrix": [
+      [
+        26,
+        15,
+        4,
+        0
+      ],
+      [
+        6,
+        30,
+        7,
+        0
+      ],
+      [
+        6,
+        9,
+        8,
+        1
+      ],
+      [
+        1,
+        5,
+        2,
+        111
+      ]
+    ]
+  },
+  "test": {
+    "correct": 171,
+    "count": 226,
+    "accuracy": 0.7566371681415929,
+    "macroF1": 0.6258234718481079,
+    "confusionMatrix": [
+      [
+        13,
+        11,
+        4,
+        0
+      ],
+      [
+        12,
+        42,
+        7,
+        0
+      ],
+      [
+        2,
+        9,
+        10,
+        1
+      ],
+      [
+        2,
+        3,
+        4,
+        106
+      ]
+    ]
+  },
+  "leaderboard": [
+    {
+      "view": "cnn-mean+dino",
+      "model": "rbf-svm-balanced-c1",
+      "validation": {
+        "correct": 175,
+        "count": 231,
+        "accuracy": 0.7575757575757576,
+        "macroF1": 0.6309693574399458,
+        "confusionMatrix": [
+          [
+            26,
+            15,
+            4,
+            0
+          ],
+          [
+            6,
+            30,
+            7,
+            0
+          ],
+          [
+            6,
+            9,
+            8,
+            1
+          ],
+          [
+            1,
+            5,
+            2,
+            111
+          ]
+        ]
+      }
+    }
+  ],
+  "limitations": [
+    "The frozen test split has been evaluated by earlier development experiments.",
+    "This probe is not field accuracy and cannot replace external validation.",
+    "No production model is changed by this experiment."
+  ]
+}
