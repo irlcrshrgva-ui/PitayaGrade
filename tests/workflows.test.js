@@ -455,6 +455,12 @@ test('live scanner requires three consecutive fruit frames and resets on an empt
   assert.equal(a.LiveScanner._requireStableDetection(empty).isDragonFruit, false);
   assert.equal(a.LiveScanner._requireStableDetection(fruit).verificationFrame, 1);
 });
+
+test('live scanner explains that the HUD updates without taking a photo', () => {
+  const page = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  assert.match(page, /Live estimates update automatically/);
+  assert.match(page, /Tap the center button only when you want to save a full result/);
+});
 test('photo failure always releases processing state', async () => {
   const a = app(); a.Scanner.currentImage = 'broken';
   a.element('processingOverlay').querySelectorAll = () => [];
