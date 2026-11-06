@@ -2,13 +2,17 @@
 import argparse
 import hashlib
 import json
+import sys
 from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
 from scripts.reviewed_segmentation import SYMPTOMS, validate_segmentation
 
-ROOT = Path(__file__).resolve().parents[1]
 PROTECTED_FIELDS = (
     'id', 'candidateSplit', 'fileSha256', 'pixelSha256', 'reviewedSourceGroup',
     'imageRole', 'roiSourceId', 'maskCoordinateSpace',
