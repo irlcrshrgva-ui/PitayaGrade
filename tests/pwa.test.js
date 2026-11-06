@@ -66,6 +66,8 @@ test('photo mode supports user-controlled crop, zoom and rotation before inferen
   assert.match(scanner, /_renderAdjustedImage\(\)/);
   assert.match(scanner, /context\.drawImage\(this\.sourceImage/);
   assert.match(scanner, /AI quality suggestion—not a final human grade/);
+  assert.match(scanner, /70%\+<\/strong> app harvest-ready estimate/);
+  assert.match(scanner, /Image-based estimate only\. Confirm skin color, days after flowering and field condition before harvesting\./);
   assert.match(scanner, /openCurrentValidation/);
   assert.match(liveScanner, /Scanner\.loadDataUrl/);
 });

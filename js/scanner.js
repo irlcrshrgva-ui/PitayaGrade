@@ -1162,9 +1162,18 @@ const Scanner = {
               <span style="flex:1">${result.maturity.status} Stage</span>
               <span style="font-weight:700">${result.maturity.value}% Readiness</span>
             </div>
-            <div class="confidence-bar" style="margin-top:6px">
-              <div class="confidence-fill ${result.maturity.value > 70 ? 'high' : 'medium'}" style="width:${result.maturity.value}%"></div>
+            <div style="position:relative;margin-top:8px;padding-top:8px" aria-label="Harvest readiness estimate ${result.maturity.value} percent; app harvest-ready indicator begins at 70 percent">
+              <div class="confidence-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${result.maturity.value}">
+                <div class="confidence-fill ${result.maturity.value >= 70 ? 'high' : 'medium'}" style="width:${result.maturity.value}%"></div>
+              </div>
+              <span title="App harvest-ready indicator: 70%" style="position:absolute;left:70%;top:2px;width:2px;height:18px;background:var(--text-primary);transform:translateX(-1px);border-radius:2px;box-shadow:0 0 0 1px rgba(0,0,0,.2)"></span>
+              <span style="position:absolute;left:70%;top:-8px;transform:translateX(-50%);font-size:9px;font-weight:800;color:var(--text-secondary);white-space:nowrap">70% marker</span>
             </div>
+            <div style="display:flex;justify-content:space-between;gap:12px;margin-top:6px;font-size:10px;color:var(--text-secondary)">
+              <span>Developing estimate</span>
+              <span><strong>70%+</strong> app harvest-ready estimate</span>
+            </div>
+            <p style="margin:7px 0 0;font-size:10px;line-height:1.4;color:var(--text-secondary)">Image-based estimate only. Confirm skin color, days after flowering and field condition before harvesting.</p>
           </div>
 
           <!-- Disease Status -->
