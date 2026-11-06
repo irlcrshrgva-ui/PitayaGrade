@@ -1,8 +1,15 @@
+import csv
+import io
+import json
+import tempfile
 import unittest
+import zipfile
+from pathlib import Path
 
 import numpy as np
 
 from scripts.create_fast_quality_recheck import priority_score, select_groups
+from scripts.finalize_fast_quality_rechecks import load_assignment, row_map
 
 
 class FastQualityRecheckTests(unittest.TestCase):
@@ -25,6 +32,24 @@ class FastQualityRecheckTests(unittest.TestCase):
         ]
         selected = select_groups(candidates, 1)
         self.assertEqual({item["row"]["id"] for item in selected[0]}, {"quality:1", "quality:2"})
+
+    def test_completed_rows_require_unique_ids(self):
+        with self.assertRaisesRegex(ValueError, 'duplicate id'):
+            row_map([{'id': 'quality:1'}, {'id': 'quality:1'}], 'completed')
+
+    def test_assignment_audit_forbids_test_records(self):
+        with tempfile.TemporaryDirectory() as directory:
+            archive = Path(directory) / 'assignment.zip'
+            stream = io.StringIO(newline='')
+            writer = csv.DictWriter(stream, fieldnames=['id'])
+            writer.writeheader()
+            writer.writerow({'id': 'quality:1'})
+            audit = {'reviewerId': 'reviewer-01', 'recordCount': 1, 'testRecordsIncluded': 1}
+            with zipfile.ZipFile(archive, 'w') as bundle:
+                bundle.writestr('audit.json', json.dumps(audit))
+                bundle.writestr('review.csv', stream.getvalue().encode('utf-8-sig'))
+            with self.assertRaisesRegex(ValueError, 'invalid assignment audit'):
+                load_assignment(archive)
 
 
 if __name__ == "__main__":
