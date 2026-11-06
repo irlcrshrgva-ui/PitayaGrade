@@ -1,0 +1,105 @@
+{
+  "generatedAt": "2026-11-06T14:53:07.245782+00:00",
+  "status": "validation-selected-development-ensemble-not-field-accuracy",
+  "selectionRule": "maximum validation macro F1, then validation accuracy",
+  "gridDenominator": 20,
+  "manifest": {
+    "path": "local-review\\finalized-human-review-2026-10-27\\frozen-quality-manifest.json",
+    "sha256": "18dcad57010432323a52f2dff08cf70803fa1676239de9b301dd87c241da447a"
+  },
+  "models": [
+    {
+      "modelId": "mobilenetv2",
+      "path": "training_results\\final-quality-2026-10-27\\MobileNetV2.onnx",
+      "sha256": "72b2dab116a59cf5e45ddff0408e256c019683d5880e897e504fbf32e110f971",
+      "weight": 0.3
+    },
+    {
+      "modelId": "resnet50",
+      "path": "training_results\\final-quality-2026-10-27\\ResNet50.onnx",
+      "sha256": "b87a808465b27203a9ce735f0840ce1d03e6ada2d1cc2f4a9a110548866a5673",
+      "weight": 0.15
+    },
+    {
+      "modelId": "efficientnet-b3-bundled",
+      "path": "training_results\\final-quality-2026-10-27\\EfficientNetB3.onnx",
+      "sha256": "8461dc36ee59e26111ea7a205095db44e5bc0d77114a1c75258761a262c2b390",
+      "weight": 0.0
+    },
+    {
+      "modelId": "efficientnet-b3-external",
+      "path": "training_results\\external-pretrained-quality-2026-10-30-efficientnetb3\\EfficientNetB3.onnx",
+      "sha256": "c2dbd10f72932b871e49679f07b5134a0e8de75f973084651850d61673d0c3a3",
+      "weight": 0.55
+    }
+  ],
+  "validation": {
+    "correct": 176,
+    "count": 231,
+    "accuracy": 0.7619047619047619,
+    "macroF1": 0.596969133753294,
+    "confusionMatrix": [
+      [
+        26,
+        18,
+        1,
+        0
+      ],
+      [
+        5,
+        35,
+        3,
+        0
+      ],
+      [
+        6,
+        14,
+        3,
+        1
+      ],
+      [
+        1,
+        4,
+        2,
+        112
+      ]
+    ]
+  },
+  "test": {
+    "correct": 174,
+    "count": 226,
+    "accuracy": 0.7699115044247787,
+    "macroF1": 0.621010101010101,
+    "confusionMatrix": [
+      [
+        13,
+        12,
+        3,
+        0
+      ],
+      [
+        13,
+        45,
+        2,
+        1
+      ],
+      [
+        5,
+        10,
+        7,
+        0
+      ],
+      [
+        1,
+        4,
+        1,
+        109
+      ]
+    ]
+  },
+  "limitations": [
+    "Weights were selected only from the validation split.",
+    "The frozen test split has been used by earlier development experiments.",
+    "This result is not field accuracy and does not replace external validation."
+  ]
+}
