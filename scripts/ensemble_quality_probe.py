@@ -100,6 +100,10 @@ def main():
     parser.add_argument("--model", required=True, action="append", type=parse_model)
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--grid-denominator", type=int, default=20)
+    parser.add_argument(
+        "--selection-metric", choices=("macro-f1", "accuracy"), default="macro-f1",
+        help="Primary validation metric used to select weights (default: macro-f1)",
+    )
     args = parser.parse_args()
     if args.output.exists():
         parser.error("output already exists; choose a new path")
@@ -115,7 +119,10 @@ def main():
     for weights in weight_grid(len(args.model), args.grid_denominator):
         combined = np.tensordot(weights, validation["scores"], axes=(0, 0))
         result = metrics(validation["expected"], combined.argmax(axis=1))
-        key = (result["macroF1"], result["accuracy"], -int((weights == 0).sum()))
+        if args.selection_metric == "accuracy":
+            key = (result["accuracy"], result["macroF1"], -int((weights == 0).sum()))
+        else:
+            key = (result["macroF1"], result["accuracy"], -int((weights == 0).sum()))
         if best is None or key > best[0]:
             best = (key, weights, result)
 
@@ -125,7 +132,11 @@ def main():
     report = {
         "generatedAt": datetime.now(timezone.utc).isoformat(),
         "status": "validation-selected-development-ensemble-not-field-accuracy",
-        "selectionRule": "maximum validation macro F1, then validation accuracy",
+        "selectionRule": (
+            "maximum validation accuracy, then macro F1"
+            if args.selection_metric == "accuracy"
+            else "maximum validation macro F1, then validation accuracy"
+        ),
         "gridDenominator": args.grid_denominator,
         "manifest": {"path": str(args.manifest), "sha256": sha256(args.manifest)},
         "models": [

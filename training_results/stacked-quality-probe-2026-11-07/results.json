@@ -1,0 +1,112 @@
+{
+  "generatedAt": "2026-11-06T18:04:02.037800+00:00",
+  "status": "validation-cross-validated-stacker-development-probe",
+  "selectionRule": "maximum mean validation macro F1, then accuracy",
+  "manifest": {
+    "path": "local-review\\finalized-human-review-2026-10-27\\frozen-quality-manifest.json",
+    "sha256": "18dcad57010432323a52f2dff08cf70803fa1676239de9b301dd87c241da447a"
+  },
+  "models": [
+    {
+      "modelId": "mobilenetv2",
+      "path": "training_results\\final-quality-2026-10-27\\MobileNetV2.onnx",
+      "sha256": "72b2dab116a59cf5e45ddff0408e256c019683d5880e897e504fbf32e110f971"
+    },
+    {
+      "modelId": "resnet50",
+      "path": "training_results\\final-quality-2026-10-27\\ResNet50.onnx",
+      "sha256": "b87a808465b27203a9ce735f0840ce1d03e6ada2d1cc2f4a9a110548866a5673"
+    },
+    {
+      "modelId": "efficientnet-b3-bundled",
+      "path": "training_results\\final-quality-2026-10-27\\EfficientNetB3.onnx",
+      "sha256": "8461dc36ee59e26111ea7a205095db44e5bc0d77114a1c75258761a262c2b390"
+    },
+    {
+      "modelId": "efficientnet-b3-external",
+      "path": "training_results\\external-pretrained-quality-2026-10-30-efficientnetb3\\EfficientNetB3.onnx",
+      "sha256": "c2dbd10f72932b871e49679f07b5134a0e8de75f973084651850d61673d0c3a3"
+    }
+  ],
+  "crossValidation": {
+    "specification": {
+      "family": "logistic-regression",
+      "view": "probabilities+log",
+      "balanced": true,
+      "C": 0.01
+    },
+    "meanMacroF1": 0.592112853929731,
+    "macroF1Std": 0.08292908531359136,
+    "meanAccuracy": 0.7316373728029602,
+    "accuracyStd": 0.044476889425032876
+  },
+  "validationRefit": {
+    "correct": 171,
+    "count": 231,
+    "accuracy": 0.7402597402597403,
+    "macroF1": 0.6116741953698476,
+    "confusionMatrix": [
+      [
+        24,
+        12,
+        9,
+        0
+      ],
+      [
+        8,
+        27,
+        8,
+        0
+      ],
+      [
+        6,
+        8,
+        9,
+        1
+      ],
+      [
+        1,
+        2,
+        5,
+        111
+      ]
+    ]
+  },
+  "test": {
+    "correct": 154,
+    "count": 226,
+    "accuracy": 0.6814159292035398,
+    "macroF1": 0.5355082682604074,
+    "confusionMatrix": [
+      [
+        13,
+        9,
+        6,
+        0
+      ],
+      [
+        16,
+        27,
+        18,
+        0
+      ],
+      [
+        5,
+        9,
+        8,
+        0
+      ],
+      [
+        0,
+        0,
+        9,
+        106
+      ]
+    ]
+  },
+  "limitations": [
+    "The meta-model was selected only through cross-validation inside the validation split.",
+    "The frozen test split has been reused by earlier development experiments.",
+    "This result is not field accuracy and does not replace external validation."
+  ]
+}

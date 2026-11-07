@@ -88,7 +88,8 @@ def training_arguments():
     parser = argparse.ArgumentParser(description='Train selectable quality models using reviewed grade labels and source-group partitions.')
     parser.add_argument('--manifest', required=True, type=Path)
     parser.add_argument('--run-dir', required=True, type=Path, help='New directory; existing results are never overwritten or resumed.')
-    parser.add_argument('--models', nargs='+', choices=['MobileNetV2', 'ResNet50', 'EfficientNetB3'],
+    parser.add_argument('--models', nargs='+',
+                        choices=['MobileNetV2', 'ResNet50', 'EfficientNetB3', 'ConvNeXtTiny'],
                         default=['MobileNetV2', 'ResNet50', 'EfficientNetB3'],
                         help='Quality architectures to train; defaults to all selectable classifiers.')
     parser.add_argument('--phase1-epochs', type=int, default=10,

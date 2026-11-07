@@ -51,6 +51,7 @@ MODEL_IDS = {
     'MobileNetV2': 'mobilenetv2-quality',
     'ResNet50': 'resnet50-quality',
     'EfficientNetB3': 'efficientnet-b3-quality',
+    'ConvNeXtTiny': 'convnext-tiny-quality',
 }
 
 torch.manual_seed(SEED)
@@ -185,6 +186,11 @@ def build_model(model_name, num_classes=4):
         base = models.resnet50(weights=models.ResNet50_Weights.IMAGENET1K_V2)
         in_features = base.fc.in_features
         base.fc = nn.Identity()
+
+    elif model_name == "ConvNeXtTiny":
+        base = models.convnext_tiny(weights=models.ConvNeXt_Tiny_Weights.IMAGENET1K_V1)
+        in_features = base.classifier[2].in_features
+        base.classifier = nn.Identity()
 
     else:
         raise ValueError(f"Unknown model: {model_name}")
@@ -509,7 +515,7 @@ def generate_visualizations(all_histories, all_metrics, model_names):
     from matplotlib.gridspec import GridSpec
     from matplotlib.patches import FancyBboxPatch
 
-    COLORS = {"MobileNetV2": "#2196F3", "EfficientNetB3": "#4CAF50", "ResNet50": "#E91E8C", "ResNet50V2": "#E91E8C"}
+    COLORS = {"MobileNetV2": "#2196F3", "EfficientNetB3": "#4CAF50", "ResNet50": "#E91E8C", "ResNet50V2": "#E91E8C", "ConvNeXtTiny": "#7E57C2"}
     BLACK = "#212121"
 
     plt.rcParams.update({"font.family": "DejaVu Sans", "figure.facecolor": "white", "axes.facecolor": "white"})
@@ -589,7 +595,7 @@ def generate_visualizations(all_histories, all_metrics, model_names):
     rh = (y_s - 0.06) / (n + 1)
     xs = 0.04
 
-    mbg = {"MobileNetV2": "#E3F2FD", "EfficientNetB3": "#E8F5E9", "ResNet50V2": "#FCE4EC"}
+    mbg = {"MobileNetV2": "#E3F2FD", "EfficientNetB3": "#E8F5E9", "ResNet50": "#FCE4EC", "ResNet50V2": "#FCE4EC", "ConvNeXtTiny": "#EDE7F6"}
 
     def cell(x, y, w, h, text, bold=False, bg=None, tc=BLACK):
         if bg:

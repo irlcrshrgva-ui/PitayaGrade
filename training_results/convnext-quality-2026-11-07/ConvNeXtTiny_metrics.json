@@ -1,0 +1,66 @@
+{
+  "model": "ConvNeXtTiny",
+  "test_accuracy": 0.7256637168141593,
+  "per_class": {
+    "Grade A": {
+      "precision": 0.32653061224489793,
+      "recall": 0.5714285714285714,
+      "f1_score": 0.4155844155844156,
+      "support": 28
+    },
+    "Grade B": {
+      "precision": 0.6666666666666666,
+      "recall": 0.4918032786885246,
+      "f1_score": 0.5660377358490566,
+      "support": 61
+    },
+    "Grade C": {
+      "precision": 0.42857142857142855,
+      "recall": 0.2727272727272727,
+      "f1_score": 0.3333333333333333,
+      "support": 22
+    },
+    "Reject": {
+      "precision": 0.9491525423728814,
+      "recall": 0.9739130434782609,
+      "f1_score": 0.9613733905579399,
+      "support": 115
+    }
+  },
+  "confusion_matrix": [
+    [
+      16,
+      7,
+      4,
+      1
+    ],
+    [
+      24,
+      30,
+      4,
+      3
+    ],
+    [
+      8,
+      6,
+      6,
+      2
+    ],
+    [
+      1,
+      2,
+      0,
+      112
+    ]
+  ],
+  "class_names": [
+    "Grade A",
+    "Grade B",
+    "Grade C",
+    "Reject"
+  ],
+  "mean_inference_ms": 8.977592477883496,
+  "p95_inference_ms": 9.104337500048132,
+  "prediction_file": "ConvNeXtTiny_predictions.csv",
+  "prediction_count": 226
+}

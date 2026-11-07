@@ -14,7 +14,10 @@ from scripts.image_orientation import load_upright_rgb
 from scripts.reviewed_training import ROOT, read_reviewed_manifest, write_prediction_csv
 
 CLASS_NAMES = ['Grade A', 'Grade B', 'Grade C', 'Reject']
-MODEL_IDS = {'mobilenetv2-quality', 'resnet50-quality', 'efficientnet-b3-quality'}
+MODEL_IDS = {
+    'mobilenetv2-quality', 'resnet50-quality', 'efficientnet-b3-quality',
+    'convnext-tiny-quality',
+}
 MEAN = np.array([0.485, 0.456, 0.406], dtype=np.float32)
 STD = np.array([0.229, 0.224, 0.225], dtype=np.float32)
 

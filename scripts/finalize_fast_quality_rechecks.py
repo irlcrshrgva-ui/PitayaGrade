@@ -16,8 +16,22 @@ from pathlib import Path
 from scripts.reviewed_training import ROOT, validation
 
 
-LABELS = {"Grade A", "Grade B", "Grade C"}
+LABELS = {"Grade A", "Grade B", "Grade C", "Reject"}
 EDITABLE_FIELDS = {"confirmed_label", "review_note"}
+NUMERIC_PRESENTATION_FIELDS = {"priority", "ensemble_confidence"}
+
+
+def immutable_values_match(field, returned, original):
+    returned = returned or ""
+    original = original or ""
+    if returned == original:
+        return True
+    if field in NUMERIC_PRESENTATION_FIELDS:
+        try:
+            return float(returned) == float(original)
+        except ValueError:
+            return False
+    return False
 
 
 def sha256(path):
@@ -72,6 +86,14 @@ def main():
     parser.add_argument("--package", required=True, action="append", type=Path)
     parser.add_argument("--completed", required=True, action="append", type=parse_completed)
     parser.add_argument("--output-dir", required=True, type=Path)
+    parser.add_argument(
+        "--allow-missing-change-notes", action="store_true",
+        help="Accept changed labels with blank notes while recording the waiver in the audit",
+    )
+    parser.add_argument(
+        "--normalize-known-label-typos", action="store_true",
+        help="Normalize the known typo 'Grabe B' to 'Grade B' and record every change",
+    )
     args = parser.parse_args()
     if args.output_dir.exists():
         parser.error("output directory already exists; evidence is never overwritten")
@@ -98,6 +120,8 @@ def main():
             f"expected {sorted(assignments)}, received {sorted(completed)}")
 
     patches = []
+    normalized_labels = []
+    missing_change_notes = []
     groups = defaultdict(list)
     for reviewer in sorted(assignments):
         assignment = assignments[reviewer]
@@ -114,14 +138,35 @@ def main():
             if set(result) != set(source):
                 parser.error(f"{reviewer}/{identifier}: CSV columns changed")
             for field in source:
-                if field not in EDITABLE_FIELDS and (result.get(field) or "") != (source.get(field) or ""):
+                if field not in EDITABLE_FIELDS and not immutable_values_match(
+                        field, result.get(field), source.get(field)):
                     parser.error(f"{reviewer}/{identifier}: immutable field changed: {field}")
-            confirmed = (result.get("confirmed_label") or "").strip()
+            raw_confirmed = result.get("confirmed_label") or ""
+            confirmed = raw_confirmed.strip()
+            if args.normalize_known_label_typos:
+                confirmed = {
+                    "grade a": "Grade A", "grade b": "Grade B",
+                    "grade c": "Grade C", "reject": "Reject",
+                    "grabe b": "Grade B",
+                }.get(confirmed.lower(), confirmed)
+            if confirmed != raw_confirmed:
+                normalized_labels.append({
+                    "id": identifier, "reviewerId": reviewer,
+                    "originalValue": raw_confirmed, "normalizedValue": confirmed,
+                })
             note = (result.get("review_note") or "").strip()
             if confirmed not in LABELS:
-                parser.error(f"{reviewer}/{identifier}: confirmed_label must be Grade A, Grade B, or Grade C")
+                parser.error(
+                    f"{reviewer}/{identifier}: confirmed_label must be Grade A, Grade B, "
+                    "Grade C, or Reject"
+                )
             if confirmed != source["current_label"] and not note:
-                parser.error(f"{reviewer}/{identifier}: changed labels require review_note")
+                if not args.allow_missing_change_notes:
+                    parser.error(f"{reviewer}/{identifier}: changed labels require review_note")
+                missing_change_notes.append({
+                    "id": identifier, "reviewerId": reviewer,
+                    "priorLabel": source["current_label"], "confirmedLabel": confirmed,
+                })
             if source.get("split") not in {"train", "val"}:
                 parser.error(f"{reviewer}/{identifier}: frozen test rows are forbidden")
             base = base_by_id.get(identifier)
@@ -178,7 +223,11 @@ def main():
     candidate_path.write_text(json.dumps(candidate, indent=2) + "\n", encoding="utf-8")
     audit = {
         "schemaVersion": 1,
-        "status": "human-fast-rechecks-validated-and-applied-to-candidate",
+        "status": (
+            "human-fast-rechecks-validated-with-explicit-waivers-and-applied-to-candidate"
+            if missing_change_notes or normalized_labels
+            else "human-fast-rechecks-validated-and-applied-to-candidate"
+        ),
         "mergeRecordedAt": merge_recorded_at,
         "baseManifest": {"path": str(args.base_manifest), "sha256": base_hash},
         "assignments": [{
@@ -190,6 +239,14 @@ def main():
         } for reviewer in sorted(assignments)],
         "recordsValidated": len(patches),
         "labelsChanged": sum(row["priorLabel"] != row["confirmedLabel"] for row in patches),
+        "missingChangeNoteCount": len(missing_change_notes),
+        "missingChangeNotes": missing_change_notes,
+        "normalizedLabelCount": len(normalized_labels),
+        "normalizedLabels": normalized_labels,
+        "operatorPolicy": {
+            "allowedMissingChangeNotes": args.allow_missing_change_notes,
+            "normalizedKnownLabelTypos": args.normalize_known_label_typos,
+        },
         "frozenTestRecordsIncluded": 0,
         "patchSha256": sha256(patch_path),
         "candidateManifestSha256": sha256(candidate_path),

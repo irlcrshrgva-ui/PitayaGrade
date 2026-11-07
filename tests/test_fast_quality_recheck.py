@@ -9,7 +9,7 @@ from pathlib import Path
 import numpy as np
 
 from scripts.create_fast_quality_recheck import priority_score, select_groups
-from scripts.finalize_fast_quality_rechecks import load_assignment, row_map
+from scripts.finalize_fast_quality_rechecks import immutable_values_match, load_assignment, row_map
 
 
 class FastQualityRecheckTests(unittest.TestCase):
@@ -50,6 +50,11 @@ class FastQualityRecheckTests(unittest.TestCase):
                 bundle.writestr('review.csv', stream.getvalue().encode('utf-8-sig'))
             with self.assertRaisesRegex(ValueError, 'invalid assignment audit'):
                 load_assignment(archive)
+
+    def test_numeric_csv_formatting_can_change_without_changing_evidence(self):
+        self.assertTrue(immutable_values_match('ensemble_confidence', '0.31716', '0.317160'))
+        self.assertFalse(immutable_values_match('ensemble_confidence', '0.31717', '0.317160'))
+        self.assertFalse(immutable_values_match('source_group', 'fruit-2', 'fruit-1'))
 
 
 if __name__ == "__main__":
