@@ -38,6 +38,8 @@ are stored under `local-review/finalized-fast-quality-recheck-2026-11-07/`.
 | Recheck-trained ResNet50 | 75.76% observed; loss-selected checkpoint | 73.01% | Reject |
 | Recheck-trained EfficientNet-B3 | 74.46% observed; loss-selected checkpoint | 73.45% | Reject |
 | Old/new five-model ensemble | **80.52%** | 75.22% | Reject; validation gain did not generalize |
+| Nonlinear score stacker | 80.54% cross-validated; 89.18% refit | 75.22% | Reject; refit result overfit |
+| Separate Reject gate + A/B/C grader | 77.49% | 76.99% | Reject; does not beat retained ensemble |
 
 ## Evidence-based conclusion
 
@@ -45,6 +47,11 @@ The remaining errors are concentrated in visually adjacent Grade A, B and C
 boundaries. The new human decisions changed many development labels but did not
 improve generalization to the frozen test set. Model-size increases, score
 stacking, test-time augmentation and old/new ensembles did not close the gap.
+
+The hierarchical probe isolated the bottleneck: its Reject gate reached 96.10%
+validation accuracy, while the dedicated A/B/C grader reached only 61.26%.
+The principal limitation is therefore inconsistent or visually overlapping
+grade boundaries, not the ability to reject non-fruit records.
 
 An honest 85% claim now requires stronger evidence, not more tuning against the
 reused split. The next defensible route is an adviser-approved grading rubric,

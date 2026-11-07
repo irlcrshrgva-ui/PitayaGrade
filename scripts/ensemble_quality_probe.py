@@ -61,7 +61,7 @@ def weight_grid(model_count, denominator):
             yield np.asarray(parts, dtype=np.float64) / denominator
 
 
-def infer(rows, models):
+def infer(rows, models, splits=("val", "test")):
     import onnxruntime as ort
 
     sessions = []
@@ -75,7 +75,7 @@ def infer(rows, models):
 
     split_outputs = {}
     class_to_index = {label: index for index, label in enumerate(CLASS_NAMES)}
-    for split in ("val", "test"):
+    for split in splits:
         selected = sorted(
             (row for row in rows if row.get("candidateSplit") == split),
             key=lambda row: row["id"],

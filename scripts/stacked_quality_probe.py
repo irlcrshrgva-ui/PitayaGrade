@@ -11,6 +11,7 @@ from pathlib import Path
 
 import numpy as np
 from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import ExtraTreesClassifier, RandomForestClassifier
 from sklearn.metrics import accuracy_score, f1_score
 from sklearn.model_selection import StratifiedKFold
 from sklearn.pipeline import make_pipeline
@@ -51,6 +52,30 @@ def candidate_models():
                         solver="lbfgs", random_state=20261107,
                     ),
                 )
+        for balanced in (False, True):
+            class_weight = "balanced" if balanced else None
+            for depth in (None, 6, 12):
+                for minimum_leaf in (1, 2, 4):
+                    yield {
+                        "family": "extra-trees", "view": view,
+                        "balanced": balanced, "maxDepth": depth,
+                        "minimumLeaf": minimum_leaf,
+                    }, ExtraTreesClassifier(
+                        n_estimators=400, max_depth=depth,
+                        min_samples_leaf=minimum_leaf, class_weight=class_weight,
+                        max_features="sqrt", n_jobs=-1, random_state=20261107,
+                    )
+            for depth in (6, 12, None):
+                for minimum_leaf in (1, 3):
+                    yield {
+                        "family": "random-forest", "view": view,
+                        "balanced": balanced, "maxDepth": depth,
+                        "minimumLeaf": minimum_leaf,
+                    }, RandomForestClassifier(
+                        n_estimators=400, max_depth=depth,
+                        min_samples_leaf=minimum_leaf, class_weight=class_weight,
+                        max_features="sqrt", n_jobs=-1, random_state=20261107,
+                    )
             for c_value in (0.1, 0.3, 1.0, 3.0, 10.0):
                 for gamma in ("scale", 0.01, 0.03, 0.1):
                     yield {
@@ -65,7 +90,7 @@ def candidate_models():
                     )
 
 
-def cross_validate(scores, expected, folds=5):
+def cross_validate(scores, expected, selection_metric="macro-f1", folds=5):
     splitter = StratifiedKFold(n_splits=folds, shuffle=True, random_state=20261107)
     best = None
     for specification, estimator in candidate_models():
@@ -87,7 +112,10 @@ def cross_validate(scores, expected, folds=5):
             "meanAccuracy": float(np.mean(fold_accuracy)),
             "accuracyStd": float(np.std(fold_accuracy)),
         }
-        key = (result["meanMacroF1"], result["meanAccuracy"], -result["macroF1Std"])
+        if selection_metric == "accuracy":
+            key = (result["meanAccuracy"], result["meanMacroF1"], -result["accuracyStd"])
+        else:
+            key = (result["meanMacroF1"], result["meanAccuracy"], -result["macroF1Std"])
         if best is None or key > best[0]:
             best = (key, result, estimator)
     return best[1], best[2]
@@ -98,6 +126,9 @@ def main():
     parser.add_argument("--manifest", required=True, type=Path)
     parser.add_argument("--model", required=True, action="append", type=parse_model)
     parser.add_argument("--output", required=True, type=Path)
+    parser.add_argument(
+        "--selection-metric", choices=("macro-f1", "accuracy"), default="macro-f1",
+    )
     args = parser.parse_args()
     if args.output.exists():
         parser.error("output already exists; choose a new path")
@@ -107,7 +138,9 @@ def main():
     rows = read_reviewed_manifest(args.manifest)
     outputs = infer(rows, args.model)
     validation = outputs["val"]
-    selection, estimator = cross_validate(validation["scores"], validation["expected"])
+    selection, estimator = cross_validate(
+        validation["scores"], validation["expected"], args.selection_metric
+    )
     validation_features = feature_view(
         validation["scores"], selection["specification"]["view"]
     )
@@ -120,7 +153,11 @@ def main():
     report = {
         "generatedAt": datetime.now(timezone.utc).isoformat(),
         "status": "validation-cross-validated-stacker-development-probe",
-        "selectionRule": "maximum mean validation macro F1, then accuracy",
+        "selectionRule": (
+            "maximum mean cross-validated validation accuracy, then macro F1"
+            if args.selection_metric == "accuracy"
+            else "maximum mean validation macro F1, then accuracy"
+        ),
         "manifest": {"path": str(args.manifest), "sha256": sha256(args.manifest)},
         "models": [
             {"modelId": model_id, "path": str(path), "sha256": sha256(path)}

@@ -1,0 +1,126 @@
+{
+  "generatedAt": "2026-11-07T05:16:31.927824+00:00",
+  "status": "validation-selected-hierarchical-score-development-probe",
+  "selectionRule": "maximum validation accuracy, then macro F1 among top gate/grader candidates",
+  "gate": {
+    "specification": {
+      "family": "logistic-regression",
+      "view": "probabilities",
+      "balanced": false,
+      "C": 0.003
+    },
+    "binaryValidationAccuracy": 0.961038961038961,
+    "binaryValidationF1": 0.9613733905579399
+  },
+  "grader": {
+    "specification": {
+      "family": "rbf-svm",
+      "view": "probabilities",
+      "balanced": false,
+      "C": 0.1,
+      "gamma": "scale"
+    },
+    "gradeOnlyValidationAccuracy": 0.6126126126126126,
+    "gradeOnlyValidationMacroF1": 0.530634278002699
+  },
+  "validation": {
+    "correct": 179,
+    "count": 231,
+    "accuracy": 0.7748917748917749,
+    "macroF1": 0.6110711957407507,
+    "confusionMatrix": [
+      [
+        25,
+        14,
+        3,
+        0
+      ],
+      [
+        7,
+        39,
+        1,
+        0
+      ],
+      [
+        4,
+        14,
+        3,
+        1
+      ],
+      [
+        1,
+        6,
+        1,
+        112
+      ]
+    ]
+  },
+  "test": {
+    "correct": 174,
+    "count": 226,
+    "accuracy": 0.7699115044247787,
+    "macroF1": 0.6237408472462848,
+    "confusionMatrix": [
+      [
+        13,
+        14,
+        1,
+        0
+      ],
+      [
+        12,
+        48,
+        0,
+        1
+      ],
+      [
+        5,
+        11,
+        6,
+        0
+      ],
+      [
+        1,
+        7,
+        0,
+        107
+      ]
+    ]
+  },
+  "manifest": {
+    "path": "local-review\\finalized-fast-quality-recheck-2026-11-07\\candidate-manifest.json",
+    "sha256": "3fb1cee95ccb0da2cc4ece1f624c4f314f3ab2914a18e83df2b3f7ab6412d0e0"
+  },
+  "models": [
+    {
+      "modelId": "old-mobilenetv2",
+      "path": "training_results\\final-quality-2026-10-27\\MobileNetV2.onnx",
+      "sha256": "72b2dab116a59cf5e45ddff0408e256c019683d5880e897e504fbf32e110f971"
+    },
+    {
+      "modelId": "old-resnet50",
+      "path": "training_results\\final-quality-2026-10-27\\ResNet50.onnx",
+      "sha256": "b87a808465b27203a9ce735f0840ce1d03e6ada2d1cc2f4a9a110548866a5673"
+    },
+    {
+      "modelId": "old-efficientnet-external",
+      "path": "training_results\\external-pretrained-quality-2026-10-30-efficientnetb3\\EfficientNetB3.onnx",
+      "sha256": "c2dbd10f72932b871e49679f07b5134a0e8de75f973084651850d61673d0c3a3"
+    },
+    {
+      "modelId": "new-resnet50",
+      "path": "training_results\\human-recheck-quality-2026-11-07\\ResNet50.onnx",
+      "sha256": "430c73ee2cb916d48210a2e5c5acdf256c7362baba515ac78e89d5f89a22ca3c"
+    },
+    {
+      "modelId": "new-efficientnet-b3",
+      "path": "training_results\\human-recheck-quality-2026-11-07\\EfficientNetB3.onnx",
+      "sha256": "43339ec2da1afb993b93707d5116949d140890b9fe83197c2bdbfcd3be4f29c9"
+    }
+  ],
+  "limitations": [
+    "The frozen test split has been reused by earlier development experiments.",
+    "This probe is not field accuracy and does not replace external validation.",
+    "No production asset is changed by this experiment."
+  ]
+}
