@@ -74,6 +74,15 @@
       if (ids.some(id => !known.has(id) || assigned.has(id))) {
         throw new Error('Assignment IDs must be known and non-overlapping');
       }
+      if (assignment.sourceGroups != null) {
+        if (!assignment.sourceGroups || typeof assignment.sourceGroups !== 'object' ||
+            Array.isArray(assignment.sourceGroups) ||
+            Object.keys(assignment.sourceGroups).some(id => !ids.includes(id)) ||
+            Object.entries(assignment.sourceGroups).some(([id, group]) =>
+              !ids.includes(id) || !String(group || '').trim())) {
+          throw new Error('Assignment source groups must map assigned record IDs to non-empty groups');
+        }
+      }
       reviewers.add(reviewer);
       ids.forEach(id => assigned.add(id));
     }

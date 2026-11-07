@@ -58,3 +58,34 @@ reused split. The next defensible route is an adviser-approved grading rubric,
 independent adjudication of ambiguous source-fruit groups, additional balanced
 expert-reviewed Grade A/B/C fruit groups, and a new source-group-held-out test
 set evaluated once after the revised training protocol is frozen.
+
+## Activated recovery plan
+
+The full non-test A/B/C repair workload is now packaged under
+`local-review/full-grade-regrade-packages-2026-11-07/`:
+
+- 630 training/validation images across 573 source-fruit groups;
+- three balanced assignments of 210 images each;
+- existing source-fruit groups are prefilled and kept with one reviewer;
+- no frozen test record is present; and
+- model proposals are deliberately excluded from the fresh human pass.
+
+The packages must not be used until an adviser or qualified agriculture expert
+approves the A/B/C rubric included in each ZIP. After the three exports return,
+`scripts/finalize_full_grade_repair.py` verifies assignment completeness,
+reviewer attribution, protected fields, source groups, timestamps, conflicts,
+manifest validity and exact preservation of the frozen test rows before it
+produces a repaired training candidate.
+
+After label repair, the team should add independent fruit groups, prioritizing
+the underrepresented Grade C and Grade A classes. The current training data has
+about 95 Grade C groups, 162 Grade A groups and 212 Grade B groups. A practical
+first balance target is roughly 200 unique groups per grade, which means about
+105 additional Grade C groups and 38 Grade A groups. Multiple views of one fruit
+may be collected, but every view of that fruit must remain in one split.
+
+The final accuracy claim must be made on a newly collected, untouched,
+source-group-held-out test set after the revised rubric, labels and training
+protocol are frozen. The promotion gate is at least 85% overall accuracy with
+macro and per-grade results reported; a high overall score cannot hide weak
+Grade A or Grade C performance.

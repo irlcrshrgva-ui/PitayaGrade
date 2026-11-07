@@ -37,6 +37,15 @@ test('local recheck assignments require known non-overlapping records', () => {
   assert.throws(() => state.assignmentIndex({ ...valid, assignments:[
     valid.assignments[0], { reviewerId:'recheck-02', recordCount:1, recordIds:['one'] },
   ] }, manifest), /non-overlapping/);
+  const seeded = { schemaVersion:1, assignments:[
+    { reviewerId:'grade-repair-01', recordCount:2, recordIds:['one', 'two'],
+      sourceGroups:{ one:'fruit-001', two:'fruit-002' } },
+  ] };
+  assert.equal(state.assignmentIndex(seeded, manifest), seeded);
+  assert.throws(() => state.assignmentIndex({ schemaVersion:1, assignments:[
+    { reviewerId:'grade-repair-01', recordCount:2, recordIds:['one', 'two'],
+      sourceGroups:{ unknown:'fruit-003' } },
+  ] }, manifest), /source groups/);
 });
 
 test('visual review export preserves rows and refuses retained conflicts', () => {

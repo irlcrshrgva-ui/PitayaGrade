@@ -21,7 +21,14 @@
   function persist() { localStorage.setItem(STORAGE, JSON.stringify(drafts)); }
   function toast(message) { els.toast.textContent = message; els.toast.classList.add('show'); setTimeout(() => els.toast.classList.remove('show'), 2400); }
   function current() { return rows[index]; }
-  function effectiveReview(row) { return drafts[row.id] || row; }
+  function selectedAssignment() {
+    return assignmentConfig?.assignments?.find(item => item.reviewerId === els.assignment.value);
+  }
+  function effectiveReview(row) {
+    if (drafts[row.id]) return drafts[row.id];
+    const seededGroup = selectedAssignment()?.sourceGroups?.[row.id];
+    return seededGroup ? { ...row, reviewedSourceGroup:seededGroup } : row;
+  }
   function currentGroupMembers(row) {
     const group = String(effectiveReview(row)?.reviewedSourceGroup || '').trim();
     if (!group) return [];
@@ -128,7 +135,7 @@
     if (!row) { els.image.removeAttribute('src'); els.recordId.textContent = 'No matching records';
       els.suggestionText.textContent = 'No proposal for this view.'; els.useSuggestion.disabled = true;
       renderLabels(els.task.value); return; }
-    const draft = drafts[row.id] || row;
+    const draft = effectiveReview(row);
     renderLabels(row.task, draft.reviewedLabel);
     els.sourceGroup.value = draft.reviewedSourceGroup || '';
     els.recordId.textContent = row.id; els.split.textContent = row.candidateSplit;
