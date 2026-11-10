@@ -18,8 +18,10 @@ test('marketing site contains home, about, contact and direct APK navigation', (
     assert.match(html, /href="contact\.html"/);
   }
   const home = fs.readFileSync(path.join(root, 'site', 'index.html'), 'utf8');
-  assert.match(home, /downloads\/PitayaGrade-debug\.apk/);
-  assert.match(home, /testing build/i);
+  const apkUrl = 'https://github.com/irlcrshrgva-ui/PitayaGrade/releases/download/v1.0.3/PitayaGrade-1.0.3.apk';
+  assert.equal(home.split(`href="${apkUrl}"`).length - 1, 2);
+  assert.match(home, /Signed Android release/i);
+  assert.doesNotMatch(home, /PitayaGrade-debug\.apk/);
   assert.match(home, /visible-symptom/i);
   assert.match(home, /data-build-sha/);
   assert.match(home, /SHA-256 checksum/i);
@@ -35,8 +37,6 @@ test('marketing site follows the app design system and supports reduced motion',
   assert.match(css, /prefers-reduced-motion/);
   assert.doesNotThrow(() => new vm.Script(fs.readFileSync(path.join(root, 'site', 'site.js'), 'utf8')));
   const script = fs.readFileSync(path.join(root, 'site', 'site.js'), 'utf8');
-  assert.match(script, /downloads\/release\.json/);
-  assert.match(script, /signedRelease/);
   assert.match(script, /\.\.\/reset\.html/);
 });
 
@@ -52,6 +52,7 @@ test('application links testers to the PitayaGrade website', () => {
   const app = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
   assert.match(app, /https:\/\/irlcrshrgva-ui\.github\.io\/PitayaGrade\/site\//);
   assert.match(app, /site\/testing\.html/);
+  assert.ok(app.includes('https://github.com/irlcrshrgva-ui/PitayaGrade/releases/download/v1.0.3/PitayaGrade-1.0.3.apk'));
 });
 
 test('testing page links only to blank APK-bound worksheet downloads', () => {
@@ -73,29 +74,25 @@ test('packaged marketing site matches editable source', () => {
   }
 });
 
-test('all APK links use the published build checksum to avoid cached downloads', async () => {
-  for (const checksum of ['a'.repeat(64), 'invalid-checksum']) {
-    const links = [{href:'../downloads/PitayaGrade-debug.apk'}, {href:'../downloads/PitayaGrade-debug.apk'}];
-    const context = {
-      URL,
-      window: {location:{href:'https://irlcrshrgva-ui.github.io/PitayaGrade/site/index.html'}},
-      document: {
-        querySelector: selector => selector === '[data-apk-link]' ? links[0] : null,
-        querySelectorAll: selector => selector === '[data-apk-link]' ? links : []
+test('the checksum button copies the signed APK digest', async () => {
+  const checksum = fs.readFileSync(path.join(root, 'site/index.html'), 'utf8')
+    .match(/<code data-build-sha>([a-f0-9]{64})<\/code>/)[1];
+  let onClick;
+  let copied;
+  const button = {addEventListener: (_name, handler) => { onClick = handler; }};
+  const context = {
+    window: {setTimeout() {}},
+    document: {
+      querySelector: selector => {
+        if (selector === '[data-copy-checksum]') return button;
+        if (selector === '[data-build-sha]') return {textContent: checksum};
+        return null;
       },
-      fetch: async () => ({ok:true, json:async () => ({sha256:checksum, bytes:168000000,
-        commit:'abc1234', builtAt:'2026-11-05T00:00:00Z', version:'1.0.1-testing'})})
-    };
-    vm.runInNewContext(fs.readFileSync(path.join(root, 'site/site.js'), 'utf8'), context);
-    await new Promise(resolve => setImmediate(resolve));
-    if (checksum.length === 64) {
-      for (const link of links) {
-        const url = new URL(link.href);
-        assert.equal(url.pathname, '/PitayaGrade/downloads/PitayaGrade-debug.apk');
-        assert.equal(url.searchParams.get('v'), checksum);
-      }
-    } else {
-      assert.ok(links.every(link => link.href === '../downloads/PitayaGrade-debug.apk'));
-    }
-  }
+      querySelectorAll: () => []
+    },
+    navigator: {clipboard: {writeText: async value => { copied = value; }}}
+  };
+  vm.runInNewContext(fs.readFileSync(path.join(root, 'site/site.js'), 'utf8'), context);
+  await onClick();
+  assert.equal(copied, '5cc6b976b77b83715d870bedd00c4e0a7c11cbd584e1aef7ea2977f6a1182f84');
 });
