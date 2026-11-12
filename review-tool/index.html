@@ -72,14 +72,15 @@
     <aside class="panel export-panel">
       <h2>Evidence export</h2>
       <a class="guide-link" href="https://github.com/irlcrshrgva-ui/PitayaGrade/blob/main/research/THREE_MEMBER_DATASET_REVIEW_GUIDE.md" target="_blank" rel="noopener">Open three-member review instructions</a>
-      <p>The online Review Desk does not publish the dataset. Select the local <strong>prepared</strong> dataset folder to display its images.</p>
-      <label class="import primary-import">Load local dataset folder<input id="datasetFolder" type="file" webkitdirectory multiple accept="image/*"></label>
+      <p>The online Review Desk does not publish the dataset. Select the photos folder from your assigned review pack to display its images.</p>
+      <label class="import primary-import">Load your assigned photos folder<input id="datasetFolder" type="file" webkitdirectory multiple accept="image/*"></label>
       <p id="datasetStatus" class="hint">No local dataset folder selected.</p>
       <p>Export often. JSON preserves the complete manifest; CSV opens in Excel and can be merged with the command-line validator.</p>
       <button id="exportJson" class="primary">Export reviewed manifest</button>
       <button id="exportCsv">Export current task CSV</button>
       <button id="backup">Export draft backup</button>
-      <label class="import">Load recheck assignment<input id="assignmentFile" type="file" accept="application/json"></label>
+      <label class="import">Load your reviewer pack assignment JSON<input id="assignmentFile" type="file" accept="application/json"></label>
+      <p class="hint">For a reviewer pack: load its photos folder, then load <strong>online-review-import.json</strong> from the same pack. You will be assigned only your 500 photos. Export the CSV when finished. Reject labels are recorded honestly but excluded from the A/B/C training additions.</p>
       <label class="import">Load model proposals<input id="proposalFile" type="file" accept="application/json"></label>
       <label class="import">Load source-group suggestions<input id="groupProposalFile" type="file" accept="application/json"></label>
       <label class="import">Restore draft backup<input id="restore" type="file" accept="application/json"></label>
@@ -92,3 +93,4 @@
   <script src="./app.js?v=2026-10-25-7"></script>
 </body>
 </html>
+
