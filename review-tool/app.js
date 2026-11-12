@@ -246,6 +246,49 @@
   els.backup.addEventListener('click', () => download(`review-draft-${dateTag()}.json`, JSON.stringify(drafts,null,2)+'\n','application/json'));
   els.assignmentFile.addEventListener('change', async () => { try {
     const value = JSON.parse(await els.assignmentFile.files[0].text());
+    if (value && value.schemaVersion === 1 && Array.isArray(value.manifestRows) &&
+        Array.isArray(value.assignments) && typeof value.packId === 'string') {
+      if (!value.manifestRows.length || value.manifestRows.length > 1000 || !value.assignments.length) {
+        throw new Error('Reviewer pack must contain 1–1,000 records and at least one assignment');
+      }
+      const ids = new Set();
+      for (const row of value.manifestRows) {
+        if (!row || typeof row.id !== 'string' || !row.id || row.task !== 'quality' ||
+            typeof row.image !== 'string' || !row.image || ids.has(row.id) ||
+            row.reviewedLabel != null) {
+          throw new Error('Reviewer pack contains an invalid or previously labeled record');
+        }
+        ids.add(row.id);
+      }
+      const mergedById = new Map(allManifest.map(row => [row.id, row]));
+      for (const row of value.manifestRows) {
+        const existing = mergedById.get(row.id);
+        if (existing && (existing.image !== row.image || existing.packId !== value.packId)) {
+          throw new Error(`Reviewer pack record ${row.id} conflicts with a loaded record`);
+        }
+        if (!existing) mergedById.set(row.id, row);
+      }
+      const mergedManifest = Array.from(mergedById.values());
+      const reviewerIds = new Set(value.assignments.map(item => item?.reviewerId));
+      const mergedAssignments = [
+        ...(assignmentConfig?.assignments || []).filter(item => !reviewerIds.has(item.reviewerId)),
+        ...value.assignments
+      ];
+      const nextConfig = ReviewState.assignmentIndex({
+        schemaVersion: 1,
+        manifestRowCount: mergedManifest.length,
+        assignments: mergedAssignments
+      }, mergedManifest);
+      allManifest = mergedManifest;
+      assignmentConfig = nextConfig;
+      populateAssignments(assignmentConfig);
+      els.task.value = 'quality';
+      els.filter.value = 'unreviewed';
+      els.assignment.value = value.assignments[0].reviewerId;
+      applyAssignment();
+      toast(`${value.manifestRows.length.toLocaleString()} assigned fruit photos loaded`);
+      return;
+    }
     assignmentConfig = ReviewState.assignmentIndex(value, allManifest);
     populateAssignments(assignmentConfig); els.assignment.value = 'all'; applyAssignment();
     toast(`${assignmentConfig.assignments.length} recheck assignments loaded locally`);
@@ -284,3 +327,4 @@
     rebuild();
   } catch (error) { els.status.textContent = error.message; els.status.style.color = '#ff9bad'; }
 })();
+
