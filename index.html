@@ -1,3 +1,6 @@
+Warning: truncated output (original token count: 10931)
+Total output lines: 761
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -163,7 +166,7 @@
 
       <!-- Harvest Gauge -->
       <div class="chart-container">
-        <div class="chart-title">Harvest Readiness</div>
+        <div class="chart-title chart-heading-row"><span>Harvest Readiness</span><label class="chart-range-control">Timeline<select class="chart-range-select" data-chart-range="dashboard-readiness"><option value="7d">7 days</option><option value="1m">1 month</option><option value="3m">3 months</option><option value="5m">5 months</option><option value="1y">1 year</option></select></label></div>
         <div class="gauge-container">
           <svg class="gauge-svg" viewBox="0 0 160 100" id="harvestGauge">
             <path d="M 20 90 A 60 60 0 0 1 140 90" fill="none" stroke="rgba(148,163,184,0.1)" stroke-width="12" stroke-linecap="round"/>
@@ -179,20 +182,21 @@
           <div class="gauge-value" id="gaugeValue">--%</div>
           <div class="gauge-label">Average image-based maturity of saved scans</div>
         </div>
+        <div class="chart-legend readiness-legend">
+          <div class="legend-item"><span class="legend-dot" style="background:#EF4444"></span>0–40% · Early</div>
+          <div class="legend-item"><span class="legend-dot" style="background:#F59E0B"></span>41–69% · Approaching</div>
+          <div class="legend-item"><span class="legend-dot" style="background:#22C55E"></span>70–100% · Ready indicator</div>
+        </div>
+        <p class="chart-footnote">Image-based maturity estimate only; it does not predict a guaranteed harvest date.</p>
       </div>
 
       <!-- Grade Distribution -->
       <div class="chart-container">
-        <div class="chart-title">Grade Distribution</div>
+        <div class="chart-title chart-heading-row"><span>Grade Distribution</span><label class="chart-range-control">Timeline<select class="chart-range-select" data-chart-range="dashboard-grades"><option value="7d">7 days</option><option value="1m">1 month</option><option value="3m">3 months</option><option value="5m">5 months</option><option value="1y">1 year</option></select></label></div>
         <div class="chart-canvas-wrap">
           <canvas id="gradeChart" width="400" height="260"></canvas>
         </div>
-        <div class="chart-legend" id="gradeLegend">
-          <div class="legend-item"><span class="legend-dot" style="background:var(--grade-a)"></span> Grade A</div>
-          <div class="legend-item"><span class="legend-dot" style="background:var(--grade-b)"></span> Grade B</div>
-          <div class="legend-item"><span class="legend-dot" style="background:var(--grade-c)"></span> Grade C</div>
-          <div class="legend-item"><span class="legend-dot" style="background:var(--grade-reject)"></span> Reject</div>
-        </div>
+        <div class="chart-legend" id="gradeLegend"></div>
       </div>
 
       <!-- Recent Scans -->
@@ -221,312 +225,7 @@
       <!-- Mode Toggle -->
       <div class="scan-mode-toggle" id="scanModeToggle">
         <button class="mode-btn active" data-mode="photo" id="modePhotoBtn">
-          <svg class="icon-svg" style="width:16px;height:16px" viewBox="0 0 24 24"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
-          Photo Mode
-        </button>
-        <button class="mode-btn" data-mode="live" id="modeLiveBtn">
-          <svg class="icon-svg" style="width:16px;height:16px" viewBox="0 0 24 24"><path d="m22 8-6 4 6 4V8Z"/><rect x="2" y="6" width="14" height="12" rx="2"/></svg>
-          Live Scanner
-        </button>
-      </div>
-
-      <!-- Photo Mode (existing) -->
-      <div id="photoModePanel">
-        <div class="scanner-zone" id="scannerZone">
-          <div id="scanPlaceholder">
-            <div style="text-align:center">
-              <div class="scan-placeholder-icon">
-                <svg class="icon-svg animate-pulse-slow" style="width:48px;height:48px" viewBox="0 0 24 24"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
-              </div>
-              <div class="scan-placeholder-text">Tap to capture or upload</div>
-              <div class="scan-placeholder-hint">JPG, PNG - best results with good lighting</div>
-            </div>
-          </div>
-          <img class="scanner-preview" id="scannerPreview" style="display:none" alt="Dragon fruit preview">
-          <div class="scanner-overlay" id="scannerOverlay" style="display:none">
-            <div class="scanner-guide"></div>
-          </div>
-          <div class="processing-overlay hidden" id="processingOverlay">
-            <div class="processing-ring"></div>
-            <div class="processing-steps">
-              <div class="processing-step" data-step="resize">&#11036; Preparing image for analysis...</div>
-              <div class="processing-step" data-step="normalize">&#11036; RGB to HSV color space conversion...</div>
-              <div class="processing-step" data-step="segment">&#11036; Region-of-interest segmentation...</div>
-              <div class="processing-step" data-step="grade">&#11036; Assessing quality grade...</div>
-              <div class="processing-step" data-step="disease">&#11036; Estimating visible disease symptoms...</div>
-              <div class="processing-step" data-step="result">&#11036; Multi-dimensional scoring...</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="photo-adjust-panel" id="imageAdjustPanel" hidden>
-          <div class="photo-adjust-heading">
-            <div><strong>Adjust scan area</strong><span>Drag the image so one whole fruit fills the guide.</span></div>
-            <output id="imageZoomValue" for="imageZoom">100%</output>
-          </div>
-          <label class="photo-zoom-control" for="imageZoom">
-            <span>Zoom</span>
-            <input id="imageZoom" type="range" min="1" max="3" step="0.05" value="1">
-          </label>
-          <div class="photo-adjust-actions">
-            <button class="btn btn-secondary" id="rotateImageLeftBtn" type="button" aria-label="Rotate image left 90 degrees">&#8634; Left</button>
-            <button class="btn btn-secondary" id="resetImageAdjustBtn" type="button">Reset</button>
-            <button class="btn btn-secondary" id="rotateImageRightBtn" type="button" aria-label="Rotate image right 90 degrees">Right &#8635;</button>
-          </div>
-          <p class="photo-adjust-note">Only the adjusted square shown above is analyzed. For the most reliable result, use one intact fruit with minimal background.</p>
-        </div>
-
-        <input type="file" id="fileInput" accept="image/*" capture="environment" style="display:none">
-
-        <div style="display:flex;gap:8px;margin-bottom:16px">
-          <button class="btn btn-primary btn-full" id="captureBtn">
-            <svg class="icon-svg" style="width:18px;height:18px" viewBox="0 0 24 24"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
-            Capture Photo
-          </button>
-          <button class="btn btn-secondary" id="uploadBtn" style="flex-shrink:0">
-            <svg class="icon-svg" style="width:18px;height:18px" viewBox="0 0 24 24"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
-          </button>
-        </div>
-
-        <button class="btn btn-success btn-full btn-lg" id="analyzeBtn" style="display:none">
-          Analyze Dragon Fruit
-        </button>
-      </div>
-
-      <!-- Live Scanner Mode -->
-      <div id="liveModePanel" style="display:none">
-        <div class="live-scanner-container" id="liveScannerContainer">
-          <!-- Camera Feed -->
-          <video id="liveVideo" class="live-video" autoplay playsinline muted></video>
-          <canvas id="liveCanvas" style="display:none"></canvas>
-
-          <!-- Scanning Guide Overlay -->
-          <div class="live-scanner-overlay">
-            <div class="live-scan-guide">
-              <div class="guide-corner tl"></div>
-              <div class="guide-corner tr"></div>
-              <div class="guide-corner bl"></div>
-              <div class="guide-corner br"></div>
-              <div class="scan-line" id="liveScanLine"></div>
-            </div>
-          </div>
-
-          <!-- Real-time Status HUD -->
-          <div class="live-hud" id="liveHud">
-            <div class="hud-top">
-              <div class="hud-badge hud-model" id="hudModel">
-                <svg class="icon-svg" style="width:12px;height:12px" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/></svg>
-                YOLOv8-Nano + HSV
-              </div>
-              <div class="hud-badge hud-detected" id="hudDetected" style="background: rgba(233, 30, 99, 0.25); color: var(--color-primary-light); font-weight: 800; border: 1px solid rgba(233, 30, 99, 0.15);">
-                Object: Detecting...
-              </div>
-              <div class="hud-badge hud-fps" id="hudFps">-- FPS</div>
-            </div>
-
-            <div class="hud-bottom">
-              <!-- Grade Badge -->
-              <div class="hud-card hud-grade-card" id="hudGradeCard">
-                <div class="hud-card-label">Quality Grade</div>
-                <div class="hud-grade-value" id="hudGradeValue">--</div>
-                <div class="hud-conf-bar"><div class="hud-conf-fill" id="hudGradeConf"></div></div>
-              </div>
-
-              <!-- Disease Badge -->
-              <div class="hud-card hud-disease-card" id="hudDiseaseCard">
-                <div class="hud-card-label">Disease</div>
-                <div class="hud-disease-value" id="hudDiseaseValue">--</div>
-                <div class="hud-conf-bar"><div class="hud-conf-fill" id="hudDiseaseConf"></div></div>
-              </div>
-
-              <!-- Maturity Badge -->
-              <div class="hud-card hud-maturity-card" id="hudMaturityCard">
-                <div class="hud-card-label">Maturity</div>
-                <div class="hud-maturity-value" id="hudMaturityValue">--</div>
-                <div class="hud-conf-bar"><div class="hud-conf-fill" id="hudMaturityConf"></div></div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Live Status Indicator -->
-          <div class="live-status-indicator" id="liveStatusIndicator">
-            <span class="live-dot"></span>
-            <span>SCANNING</span>
-          </div>
-        </div>
-
-        <!-- Live Controls -->
-        <div class="live-controls" id="liveControls">
-          <button class="btn btn-secondary live-ctrl-btn" id="liveSwitchCamBtn" title="Switch Camera">
-            <svg class="icon-svg" style="width:20px;height:20px" viewBox="0 0 24 24"><path d="M11 19H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5"/><path d="M13 5h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-5"/><circle cx="12" cy="12" r="3"/><path d="m18 22-3-3 3-3"/><path d="m6 2 3 3-3 3"/></svg>
-          </button>
-          <button class="live-capture-btn" id="liveCaptureBtn" title="Capture and Analyze">
-            <div class="capture-btn-inner"></div>
-          </button>
-          <button class="btn btn-secondary live-ctrl-btn" id="liveStopBtn" title="Stop Scanner">
-            <svg class="icon-svg" style="width:20px;height:20px" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
-          </button>
-        </div>
-        <p class="live-mode-help" aria-live="polite" style="margin:10px 8px 0;text-align:center;font-size:12px;line-height:1.45;color:var(--text-secondary)">
-          Live estimates update automatically. Tap the center button only when you want to save a full result.
-        </p>
-      </div>
-
-      <!-- Results Area -->
-      <div id="resultArea" style="display:none"></div>
-    </section>
-
-    <!-- History View -->
-    <section class="view" id="view-history">
-      <div style="margin-bottom:16px">
-        <h1 style="font-family:var(--font-display);font-size:22px;font-weight:700;margin-bottom:4px">Scan History</h1>
-        <p style="font-size:13px;color:var(--text-secondary)">All your recorded assessments</p>
-      </div>
-
-      <div class="search-wrap">
-        <span class="search-icon">🔍</span>
-        <input type="search" class="search-input" id="historySearch" placeholder="Search by notes...">
-      </div>
-
-      <div class="filter-bar" id="historyFilters">
-        <button class="filter-chip active" data-filter="all">All</button>
-        <button class="filter-chip" data-filter="grade-a">Grade A</button>
-        <button class="filter-chip" data-filter="grade-b">Grade B</button>
-        <button class="filter-chip" data-filter="grade-c">Grade C</button>
-        <button class="filter-chip" data-filter="reject">Reject</button>
-        <button class="filter-chip" data-filter="diseased">Diseased</button>
-      </div>
-
-      <div id="historyList">
-        <div class="empty-state">
-          <div class="empty-state-icon">📋</div>
-          <div class="empty-state-title">No records yet</div>
-          <div class="empty-state-text">Scanned dragon fruit assessments will appear here.</div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Analytics View -->
-    <section class="view" id="view-analytics">
-      <div style="margin-bottom:16px">
-        <h1 style="font-family:var(--font-display);font-size:22px;font-weight:700;margin-bottom:4px">Analytics</h1>
-        <p style="font-size:13px;color:var(--text-secondary)">Deep insights into your farm data</p>
-      </div>
-
-      <div class="stats-grid">
-        <div class="stat-card primary">
-          <div class="stat-icon">
-            <svg class="icon-svg" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 16V8"/><path d="M11 16V12"/><path d="M15 16V10"/><path d="M19 16V4"/></svg>
-          </div>
-          <div class="stat-value" id="analyticsTotal">0</div>
-          <div class="stat-label">Total Scans</div>
-        </div>
-        <div class="stat-card success">
-          <div class="stat-icon">
-            <svg class="icon-svg" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-          </div>
-          <div class="stat-value" id="analyticsPremium">0%</div>
-          <div class="stat-label">Premium Rate</div>
-        </div>
-      </div>
-
-      <!-- AI Insights Card -->
-      <div class="chart-container ai-insights-container" id="aiInsightsWidget" style="border: 1px solid rgba(233, 30, 99, 0.15); background: linear-gradient(135deg, rgba(233, 30, 99, 0.03) 0%, rgba(15, 23, 42, 0.9) 100%); margin-bottom: 20px;">
-        <div class="chart-title" style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom:12px; margin-bottom:12px;">
-          <span style="display:flex; align-items:center; gap:8px; font-weight:700;">
-            <svg class="icon-svg animate-pulse-slow" style="width:16px; height:16px; color:#E91E63;" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-            AI Farm Insights
-          </span>
-          <span class="hud-badge" id="aiInsightsStatus" style="font-size:10px; background:rgba(255,255,255,0.05); padding:2px 6px; border-radius:4px; font-weight:600; color:var(--text-secondary);">Initializing...</span>
-        </div>
-        <div id="aiInsightsContent">
-          <!-- Skeleton loader displayed during generation -->
-          <div class="skeleton-loader" style="padding:4px 0;">
-            <div style="height:14px; background:rgba(255,255,255,0.04); margin-bottom:8px; border-radius:4px; width:95%; animation: shimmer 1.5s infinite ease-in-out;"></div>
-            <div style="height:14px; background:rgba(255,255,255,0.04); margin-bottom:8px; border-radius:4px; width:80%; animation: shimmer 1.5s infinite ease-in-out;"></div>
-            <div style="height:14px; background:rgba(255,255,255,0.04); border-radius:4px; width:45%; animation: shimmer 1.5s infinite ease-in-out;"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Disease Trend -->
-      <div class="chart-container">
-        <div class="chart-title">Disease Trend (Last 7 Days)</div>
-        <div class="chart-canvas-wrap">
-          <canvas id="diseaseTrendChart" width="400" height="220"></canvas>
-        </div>
-      </div>
-
-      <!-- Grade Over Time -->
-      <div class="chart-container">
-        <div class="chart-title">Quality Over Time</div>
-        <div class="chart-canvas-wrap">
-          <canvas id="qualityTrendChart" width="400" height="220"></canvas>
-        </div>
-      </div>
-
-      <!-- Disease Breakdown -->
-      <div class="chart-container">
-        <div class="chart-title">Disease Breakdown</div>
-        <div class="chart-canvas-wrap">
-          <canvas id="diseaseBreakdownChart" width="400" height="260"></canvas>
-        </div>
-        <div class="chart-legend" id="diseaseLegend"></div>
-      </div>
-    </section>
-
-    <!-- Reports View -->
-    <section class="view" id="view-reports">
-      <div style="margin-bottom:16px">
-        <h1 style="font-family:var(--font-display);font-size:22px;font-weight:700;margin-bottom:4px">Reports</h1>
-        <p style="font-size:13px;color:var(--text-secondary)">Generate and export farm reports</p>
-      </div>
-
-      <div class="card" style="margin-bottom:16px">
-        <div style="font-size:14px;font-weight:600;margin-bottom:12px">Date Range</div>
-        <div class="date-range-row">
-          <label>From</label>
-          <input type="date" class="date-input" id="reportFrom" style="flex:1">
-        </div>
-        <div class="date-range-row">
-          <label>To</label>
-          <input type="date" class="date-input" id="reportTo" style="flex:1">
-        </div>
-      </div>
-
-      <div style="display:flex;gap:8px;margin-bottom:24px">
-        <button class="btn btn-primary btn-full" id="generateReportBtn">📄 Generate Report</button>
-        <button class="btn btn-secondary" id="exportCSVBtn" style="flex-shrink:0">CSV</button>
-      </div>
-      <button class="btn btn-secondary btn-full" id="exportRejectionsBtn" style="margin-top:-14px;margin-bottom:24px">Export Rejection Testing CSV</button>
-
-      <div id="reportPreviewArea"></div>
-    </section>
-
-    <!-- Settings View -->
-    <section class="view" id="view-settings">
-      <div style="margin-bottom:20px">
-        <h1 style="font-family:var(--font-display);font-size:22px;font-weight:700;margin-bottom:4px">Settings</h1>
-        <p style="font-size:13px;color:var(--text-secondary)">Configure your preferences</p>
-      </div>
-
-      <div class="settings-group">
-        <div class="settings-group-title">General</div>
-        <div class="settings-item">
-          <div class="settings-item-left">
-            <div class="settings-item-icon">
-              <svg class="icon-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-            </div>
-            <div>
-              <div class="settings-item-label">Language</div>
-              <div class="settings-item-sub" id="currentLang">English / Filipino — interface translation; detailed guidance remains in English</div>
-            </div>
-          </div>
-          <select class="btn btn-sm btn-secondary" id="languageSelect" aria-label="Language" data-no-translate><option value="en">English</option><option value="fil">Filipino</option></select>
-        </div>
-        <div class="settings-item" id="installAppRow" style="display:none">
-          <div class="settings-item-left">
-            <div class="settings-item-icon">
+          <svg class="icon-svg" style="width:16px;height:16px" viewBox="0 0 24 24"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z…4931 tokens truncated…iv class="settings-item-icon">
               <svg class="icon-svg" viewBox="0 0 24 24"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
             </div>
             <div>
@@ -568,7 +267,7 @@
             </div>
             <div>
               <label class="settings-item-label" for="modelSelect">Analysis Model</label>
-              <div class="settings-item-sub" id="selectedModelName">YOLOv8-Nano (bundled ONNX)</div>
+                <div class="settings-item-sub" id="selectedModelName">EfficientNet-B3 v7 (bundled ONNX)</div>
             </div>
           </div>
           <select id="modelSelect" class="btn btn-sm btn-secondary" aria-label="Analysis model"></select>
@@ -592,10 +291,10 @@
             </div>
             <div>
               <div class="settings-item-label">Detection Threshold</div>
-              <div class="settings-item-sub" id="thresholdValue">50%</div>
+                <div class="settings-item-sub" id="thresholdValue">25%</div>
             </div>
           </div>
-          <input id="detectionThreshold" type="range" min="10" max="95" step="1" value="50" aria-label="Detection confidence threshold" style="width:110px;accent-color:var(--color-primary)">
+            <input id="detectionThreshold" type="range" min="10" max="95" step="1" value="25" aria-label="Detection confidence threshold" style="width:110px;accent-color:var(--color-primary)">
         </div>
       </div>
 
@@ -680,7 +379,6 @@
         <div style="font-size:12px;color:var(--text-tertiary)">Pre-Harvest Quality Grading &amp; Disease Detection</div>
         <div style="font-size:11px;color:var(--text-tertiary);margin-top:4px">YOLOv8 ONNX with image-based disease estimates</div>
         <a href="https://irlcrshrgva-ui.github.io/PitayaGrade/site/" target="_blank" rel="noopener" style="display:inline-flex;margin-top:12px;color:var(--color-primary);font-size:12px;font-weight:700">Open PitayaGrade website &#8599;</a>
-        <a href="https://github.com/irlcrshrgva-ui/PitayaGrade/releases/download/v1.0.3/PitayaGrade-1.0.3.apk" target="_blank" rel="noopener" style="display:inline-flex;margin-left:12px;margin-top:12px;color:var(--color-primary);font-size:12px;font-weight:700">Download signed Android APK (1.0.3) &#8599;</a>
         <a href="https://irlcrshrgva-ui.github.io/PitayaGrade/site/testing.html" target="_blank" rel="noopener" style="display:inline-flex;margin-left:12px;margin-top:12px;color:var(--color-success);font-size:12px;font-weight:700">Open testing kit &#8599;</a>
         <div style="font-size:11px;color:var(--text-tertiary);margin-top:8px">Capstone Project 2025-2026</div>
       </div>
@@ -738,3 +436,4 @@
 <script src="js/app.js"></script>
 </body>
 </html>
+

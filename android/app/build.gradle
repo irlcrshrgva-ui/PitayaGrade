@@ -5,6 +5,8 @@ def releaseKeyAlias = System.getenv('PITAYAGRADE_KEY_ALIAS')
 def releaseStorePassword = System.getenv('PITAYAGRADE_STORE_PASSWORD')
 def releaseKeyPassword = System.getenv('PITAYAGRADE_KEY_PASSWORD')
 def releaseSigningReady = [releaseKeystorePath, releaseKeyAlias, releaseStorePassword, releaseKeyPassword].every { it }
+def pilotBuild = System.getenv('PITAYAGRADE_PILOT_APK') == '1'
+def debugKeystorePath = System.getenv('PITAYAGRADE_DEBUG_KEYSTORE_PATH')
 
 android {
     namespace = "com.pitayagrade.app"
@@ -13,8 +15,8 @@ android {
         applicationId "com.pitayagrade.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 3
-        versionName "1.0.2-testing"
+        versionCode 5
+        versionName "1.0.4"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -23,6 +25,11 @@ android {
         }
     }
     signingConfigs {
+        if (debugKeystorePath) {
+            debug {
+                storeFile file(debugKeystorePath)
+            }
+        }
         if (releaseSigningReady) {
             release {
                 storeFile file(releaseKeystorePath)
@@ -33,6 +40,14 @@ android {
         }
     }
     buildTypes {
+        debug {
+            versionNameSuffix "-testing"
+            if (pilotBuild) {
+                applicationIdSuffix '.pilot'
+                resValue 'string', 'app_name', 'PitayaGrade Test'
+                resValue 'string', 'title_activity_main', 'PitayaGrade Test'
+            }
+        }
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
@@ -71,3 +86,4 @@ try {
 } catch(Exception e) {
     logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
 }
+

@@ -1,4 +1,6 @@
-const CACHE_NAME = 'pitayagrade-web-2026-11-05-4';
+importScripts('./js/model-registry.js');
+
+const CACHE_NAME = 'pitayagrade-web-2026-11-14-2';
 const BASE_URL = new URL('./', self.location.href);
 const localUrl = path => new URL(path, BASE_URL).href;
 
@@ -12,7 +14,6 @@ const APP_SHELL = [
   'css/styles.css',
   'ort.min.js',
   'ort-wasm-simd-threaded.mjs',
-  'model/gate/dragonfruit-presence-gate.onnx',
   'js/storage.js',
   'js/language.js',
   'js/notifications.js',
@@ -26,6 +27,11 @@ const APP_SHELL = [
   'js/app.js'
 ].map(localUrl);
 
+const SCANNER_RUNTIME = [
+  'ort-wasm-simd-threaded.wasm',
+  ...PitayaModelRegistry.filter(model => model.available).map(model => model.modelPath)
+].map(localUrl);
+
 const isLargeRuntime = pathname =>
   pathname.endsWith('/ort-wasm-simd-threaded.wasm') ||
   (pathname.includes('/model/') && pathname.endsWith('.onnx'));
@@ -33,7 +39,11 @@ const isLargeRuntime = pathname =>
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(APP_SHELL))
+      .then(async cache => {
+        await cache.addAll(APP_SHELL);
+        // Cache each model before activation without downloading all large files at once.
+        for (const url of SCANNER_RUNTIME) await cache.add(url);
+      })
       .then(() => self.skipWaiting())
   );
 });
@@ -86,6 +96,10 @@ self.addEventListener('fetch', event => {
   if (request.method !== 'GET') return;
   const url = new URL(request.url);
   if (url.origin !== self.location.origin || !url.pathname.startsWith(BASE_URL.pathname)) return;
+  if (APP_SHELL.includes(url.href)) {
+    event.respondWith(cacheFirst(request));
+    return;
+  }
 
   if (request.mode === 'navigate') {
     event.respondWith(networkFirst(request));
@@ -101,3 +115,4 @@ self.addEventListener('fetch', event => {
   }
   event.respondWith(staleWhileRevalidate(request));
 });
+

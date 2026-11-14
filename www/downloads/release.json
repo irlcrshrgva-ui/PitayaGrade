@@ -1,0 +1,12 @@
+{
+  "version": "1.0.4",
+  "channel": "Signed release",
+  "file": "PitayaGrade-1.0.4.apk",
+  "downloadUrl": "https://github.com/irlcrshrgva-ui/PitayaGrade/releases/latest/download/PitayaGrade-1.0.4.apk",
+  "sha256": "9283b878de5668dcf6bcba745805ea0d89a54b877af9d89ae0df92d4ff579e81",
+  "bytes": 189440163,
+  "commit": null,
+  "builtAt": "2026-11-14T16:52:21Z",
+  "signedRelease": true
+}
+

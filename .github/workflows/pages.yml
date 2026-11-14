@@ -1,8 +1,8 @@
 name: Publish web preview
 
 on:
-  push:
-    branches: [main]
+  release:
+    types: [published]
   workflow_dispatch:
 
 permissions:
@@ -26,32 +26,17 @@ jobs:
         with:
           node-version: '22'
           cache: npm
-      - uses: actions/setup-java@v5
-        with:
-          distribution: temurin
-          java-version: '21'
       - run: npm ci
-      - run: npm run sync:android
-      - uses: android-actions/setup-android@v3
-        with:
-          log-accepted-android-sdk-licenses: false
-          packages: platform-tools
-      - name: Build downloadable testing APK
+      - run: npm run build
+      - name: Build testing worksheets for the published signed APK
         run: |
-          sdkmanager 'platforms;android-36' 'build-tools;35.0.0'
-          chmod +x android/gradlew
-          cd android
-          ./gradlew assembleDebug --console=plain
-          cd ..
-          mkdir -p www/downloads
-          cp android/app/build/outputs/apk/debug/app-debug.apk www/downloads/PitayaGrade-debug.apk
-          APK_PATH=www/downloads/PitayaGrade-debug.apk
-          APK_SHA=$(sha256sum "$APK_PATH" | cut -d' ' -f1)
-          APK_BYTES=$(stat -c%s "$APK_PATH")
-          BUILD_TIME=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
-          node -e 'const fs=require("fs"); const [file,sha,bytes,commit,builtAt]=process.argv.slice(1); fs.writeFileSync("www/downloads/release.json", JSON.stringify({version:"1.0.2-testing",channel:"Testing build",file,sha256:sha,bytes:Number(bytes),commit,builtAt,signedRelease:false},null,2)+"\n");' "PitayaGrade-debug.apk" "$APK_SHA" "$APK_BYTES" "$GITHUB_SHA" "$BUILD_TIME"
-          printf '%s  %s\n' "$APK_SHA" 'PitayaGrade-debug.apk' > www/downloads/PitayaGrade-debug.apk.sha256
-          python3 scripts/create_testing_pack.py --output-dir www/testing-pack --apk "$APK_PATH" --app-version 1.0.2-testing
+          APK_PATH="$RUNNER_TEMP/PitayaGrade-1.0.4.apk"
+          DOWNLOAD_URL=$(node -e 'process.stdout.write(require("./downloads/release.json").downloadUrl)')
+          EXPECTED_SHA=$(node -e 'process.stdout.write(require("./downloads/release.json").sha256)')
+          curl --fail --location --retry 3 "$DOWNLOAD_URL" --output "$APK_PATH"
+          ACTUAL_SHA=$(sha256sum "$APK_PATH" | cut -d' ' -f1)
+          test "$ACTUAL_SHA" = "$EXPECTED_SHA"
+          python3 scripts/create_testing_pack.py --output-dir www/testing-pack --apk "$APK_PATH" --app-version 1.0.4
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
@@ -59,3 +44,4 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+

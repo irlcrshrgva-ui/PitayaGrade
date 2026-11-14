@@ -1,3 +1,6 @@
+Warning: truncated output (original token count: 7184)
+Total output lines: 627
+
 /* =============================================
    PitayaGrade - YOLOv8 ONNX Inference Module
    Runs the trained YOLOv8n model via onnxruntime-web.
@@ -17,9 +20,9 @@ const ModelInference = {
   ASSET_BASE: new URL('.', document.querySelector('script[src$="ort.min.js"]').src).href,
   CONF_THRESHOLD: 0.30,
   MODELS: PitayaModelRegistry.map(model => ({ ...model, classes: Array.from(model.classes) })),
-  selectedModelId: 'yolov8-nano',
+  selectedModelId: 'efficientnet-b3-quality',
   selectedDiseaseModelId: 'yolov8n-disease-seg',
-  OBJECT_GATE_THRESHOLD: 0.50,
+  OBJECT_GATE_THRESHOLD: 0.25,
 
   _isGradeModel(model) {
     return model && ['integrated-detector-grader', 'quality-classifier'].includes(model.role);
@@ -30,7 +33,7 @@ const ModelInference = {
   },
 
   canSelectModel(model) {
-    return Boolean(model && model.available && this._isGradeModel(model));
+    return Boolean(model && model.available && model.selectable !== false && this._isGradeModel(model));
   },
 
   _isDiseaseModel(model) {
@@ -170,6 +173,9 @@ const ModelInference = {
     if (model.outputContract === 'yolov8-grade-detection-v1') {
       return this._postprocessGradeDetection(outputTensor, model, confidenceThreshold);
     }
+    if (model.outputContract === 'yolov8-fruit-detection-v1') {
+      return this._postprocessFruitDetection(outputTensor, model, confidenceThreshold);
+    }
     throw new Error('Unsupported model output contract');
   },
 
@@ -269,78 +275,18 @@ const ModelInference = {
     };
   },
 
-  _postprocessDisease(outputs, model, fruitBox = null) {
-    const tensors = Object.values(outputs || {});
-    const prototypes = tensors.find(tensor => tensor.dims?.length === 4 && tensor.dims[0] === 1);
-    const detection = tensors.find(tensor => tensor.dims?.length === 3 && tensor.dims[0] === 1);
-    if (!prototypes || !detection) throw new Error('Unsupported disease segmentation outputs');
-    const maskChannels = prototypes.dims[1];
-    const maskHeight = prototypes.dims[2];
-    const maskWidth = prototypes.dims[3];
-    const expectedChannels = 4 + model.classes.length + maskChannels;
-    if (detection.dims[1] !== expectedChannels || detection.dims[2] < 1 ||
-        prototypes.data.length !== maskChannels * maskHeight * maskWidth) {
-      throw new Error('Unsupported disease segmentation output shape');
+  _postprocessFruitDetection(outputTensor, model, confidenceThreshold = model.threshold) {
+    const dims = Array.from(outputTensor.dims || []);
+    const data = outputTensor.data || [];
+    if (dims.length !== 3 || dims[0] !== 1 || dims[1] !== 5 || dims[2] < 1 || data.length !== 5 * dims[2]) {
+      throw new Error('Unsupported single-class fruit detector output shape');
     }
-
-    const count = detection.dims[2];
-    const candidates = [];
-    for (let index = 0; index < count; index++) {
-      let bestClass = -1;
-      let bestConfidence = 0;
-      for (let classIndex = 0; classIndex < model.classes.length; classIndex++) {
-        const confidence = detection.data[(4 + classIndex) * count + index];
-        if (confidence > bestConfidence) {
-          bestConfidence = confidence;
-          bestClass = classIndex;
-        }
-      }
-      if (bestClass < 0 || bestConfidence < this.CONF_THRESHOLD) continue;
-      const centerX = detection.data[index];
-      const centerY = detection.data[count + index];
-      const width = detection.data[2 * count + index];
-      const height = detection.data[3 * count + index];
-      const box = {
-        x: Math.max(0, (centerX - width / 2) / model.inputSize),
-        y: Math.max(0, (centerY - height / 2) / model.inputSize),
-        right: Math.min(1, (centerX + width / 2) / model.inputSize),
-        bottom: Math.min(1, (centerY + height / 2) / model.inputSize)
-      };
-      if (box.right > box.x && box.bottom > box.y) {
-        candidates.push({ index, classIndex:bestClass, confidence:bestConfidence, box });
-      }
-    }
-    if (!candidates.length) return null;
-    candidates.sort((left, right) => right.confidence - left.confidence);
-    const dominantClass = candidates[0].classIndex;
-    const retained = [];
-    for (const candidate of candidates.filter(item => item.classIndex === dominantClass)) {
-      const overlaps = retained.some(other => {
-        const left = Math.max(candidate.box.x, other.box.x);
-        const top = Math.max(candidate.box.y, other.box.y);
-        const right = Math.min(candidate.box.right, other.box.right);
-        const bottom = Math.min(candidate.box.bottom, other.box.bottom);
-        const intersection = Math.max(0, right - left) * Math.max(0, bottom - top);
-        const candidateArea = (candidate.box.right - candidate.box.x) * (candidate.box.bottom - candidate.box.y);
-        const otherArea = (other.box.right - other.box.x) * (other.box.bottom - other.box.y);
-        return intersection / (candidateArea + otherArea - intersection) > 0.45;
-      });
-      if (!overlaps) retained.push(candidate);
-    }
-
-    const className = model.classes[dominantClass];
-    const bestConfidence = retained[0].confidence;
-    let areaPercent = null;
-    if (fruitBox &&
-        [fruitBox.x, fruitBox.y, fruitBox.right, fruitBox.bottom].every(Number.isFinite)) {
-      const left = Math.max(0, Math.min(maskWidth, Math.floor(fruitBox.x * maskWidth)));
-      const top = Math.max(0, Math.min(maskHeight, Math.floor(fruitBox.y * maskHeight)));
-      const right = Math.max(left + 1, Math.min(maskWidth, Math.ceil(fruitBox.right * maskWidth)));
-      const bottom = Math.max(top + 1, Math.min(maskHeight, Math.ceil(fruitBox.bottom * maskHeight)));
-      let positive = 0;
-      let total = 0;
-      for (let y = top; y < bottom; y++) {
-        for (let x = left; x < right; x++) {
+    const count = dims[2];
+    let bestIndex = -1;
+    let bestConfidence = 0;
+    for (let i = 0; i < count; i++) {
+      const confidence = data[4 * count + i];
+      if (Number.isFinite(confidence) && c…1184 tokens truncated…let x = left; x < right; x++) {
           const normalizedX = (x + 0.5) / maskWidth;
           const normalizedY = (y + 0.5) / maskHeight;
           let covered = false;
@@ -419,11 +365,11 @@ const ModelInference = {
     return crop;
   },
 
-  // Quality classifiers assign a grade only after the bundled detector verifies
-  // and localizes a dragon fruit. This prevents a closed-set grade classifier
-  // from treating an arbitrary high-confidence object (for example, a face) as
-  // a fruit merely because it must choose one of four grade labels.
-  async infer(imgElement, modelId = this.selectedModelId, confidenceThreshold = this.CONF_THRESHOLD) {
+  // Quality classifiers use the fruit gate and locator to guard closed-set
+  // grading. Full-frame graders use a verified full photo rather than a crop;
+  // ordinary crop graders retain the localized-crop route.
+  async infer(imgElement, modelId = this.selectedModelId, confidenceThreshold = this.CONF_THRESHOLD,
+    { allowPhotoRecovery = false } = {}) {
     const model = this.MODELS.find(candidate => candidate.id === modelId && this.canSelectModel(candidate));
     if (!model) return null;
     const threshold = Number.isFinite(confidenceThreshold)
@@ -452,11 +398,34 @@ const ModelInference = {
         requiresVisualGate: true
       };
     }
+    // The v7 EfficientNetB3 checkpoint was trained and evaluated on complete
+    // fruit photos. When the full-frame presence gate confirms fruit, grade
+    // the same full frame instead of feeding it a detector crop (a different
+    // image domain). Ambiguous scenes still need YOLO localization plus crop
+    // verification below before the full-frame grade is accepted.
+    const fullFrameGrader = model.inferenceMode === 'full-frame-when-fruit-verified';
+    if (fullFrameGrader && presence.isDragonFruit) {
+      const classification = await this._inferSingle(imgElement, model, 0);
+      if (!classification) return null;
+      return {
+        ...classification,
+        modelId: model.id,
+        requestedModelId: model.id,
+        presenceConfidence: presence.confidence,
+        classificationInput: 'full-frame',
+        modelName: `${presenceGate.name} + ${model.name} (full-frame grade)`,
+        requiresVisualGate: true
+      };
+    }
     const detector = model.role === 'integrated-detector-grader' ? model
-      : this.MODELS.find(candidate => candidate.id === 'yolov8-nano' && this.canSelectModel(candidate));
+      : this.MODELS.find(candidate => candidate.id === 'yolov8-fruit-locator-negative-aware' && candidate.available);
     if (!detector) return null;
     const gateThreshold = Math.max(threshold, this.OBJECT_GATE_THRESHOLD);
-    const detection = await this._inferSingle(imgElement, detector, gateThreshold);
+    const recoveryConfidence = model.photoRecoveryGradeConfidence;
+    const allowRecovery = allowPhotoRecovery && Number.isFinite(recoveryConfidence) &&
+      gateThreshold === this.OBJECT_GATE_THRESHOLD && presence.isDragonFruit && presence.confidence >= .9;
+    const locationThreshold = allowRecovery ? .25 : gateThreshold;
+    const detection = await this._inferSingle(imgElement, detector, locationThreshold);
     if (!detection) return null;
     if (!detection.isDragonFruit || !detection.box) {
       return {
@@ -476,9 +445,11 @@ const ModelInference = {
     }
 
     const crop = this._cropToBox(imgElement, detection.box);
+    const recovered = allowRecovery && detection.confidence < gateThreshold;
     // Scene context must not stand in for the object itself. Recheck the
     // localized crop with the independently trained binary presence gate.
-    const cropThreshold = presence.isDragonFruit ? presenceGate.threshold : Math.max(presenceGate.threshold, 0.85);
+    const cropThreshold = recovered ? .95
+      : presence.isDragonFruit ? presenceGate.threshold : Math.max(presenceGate.threshold, 0.85);
     const cropPresence = crop ? await this._inferSingle(crop, presenceGate, cropThreshold) : null;
     if (crop && !cropPresence) return null;
     if (!cropPresence?.isDragonFruit) {
@@ -494,7 +465,7 @@ const ModelInference = {
         gradingSkipped: true, requiresVisualGate: true
       };
     }
-    if (model.role === 'integrated-detector-grader') {
+    if (model.role === 'integrated-detector-grader' && !model.cropGraderId) {
       return {
         ...detection, presenceConfidence: presence.confidence,
         cropPresenceConfidence: cropPresence.confidence,
@@ -507,16 +478,30 @@ const ModelInference = {
     // softmax score is grade confidence, not object confidence, so it must not
     // turn a detected fruit into "No Dragon Fruit" merely because no grade is
     // above the user's object-detection threshold.
-    const classification = await this._inferSingle(crop, model, 0);
+    const cropGrader = model.cropGraderId
+      ? this.MODELS.find(candidate => candidate.id === model.cropGraderId && candidate.available)
+      : model;
+    if (!cropGrader) return null;
+    const classificationImage = fullFrameGrader ? imgElement : crop;
+    const classification = await this._inferSingle(classificationImage, cropGrader, 0);
     if (!classification) return null;
+    if (recovered && !(classification.confidence >= recoveryConfidence)) {
+      return {
+        isDragonFruit: false, grade: null, detectionConfidence: detection.confidence, detectionThreshold: gateThreshold,
+        rejectionReason: 'A possible fruit was found. Move closer and center it for a reliable grade.',
+        requiresVisualGate: true
+      };
+    }
     return {
       ...classification,
       box: detection.box,
       detectionConfidence: detection.confidence,
-      detectionThreshold: gateThreshold,
+      detectionThreshold: recovered ? locationThreshold : gateThreshold,
       presenceConfidence: presence.confidence,
       cropPresenceConfidence: cropPresence.confidence,
-      modelName: `${presenceGate.name} + ${detector.name} + ${model.name}`,
+      classificationInput: fullFrameGrader ? 'full-frame-after-object-verification' : 'detector-crop',
+      modelName: `${presenceGate.name} + ${detector.name} + ${cropGrader.name}` +
+        (fullFrameGrader ? ' (full-frame grade)' : ''),
       requiresVisualGate: true
     };
   },
@@ -546,3 +531,4 @@ const ModelInference = {
     }
   },
 };
+
