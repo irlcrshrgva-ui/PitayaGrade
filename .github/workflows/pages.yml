@@ -28,6 +28,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
+      - name: Keep model upload chunks out of the deployed site
+        run: rm -f www/model/quality/efficientnet-b3.onnx.part-01 www/model/quality/efficientnet-b3.onnx.part-02
       - name: Build testing worksheets for the published signed APK
         run: |
           APK_PATH="$RUNNER_TEMP/PitayaGrade-1.0.4.apk"
@@ -44,4 +46,3 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
-
