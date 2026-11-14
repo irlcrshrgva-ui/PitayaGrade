@@ -40,13 +40,7 @@ jobs:
       - run: npm run build
       - run: npm test
       - name: Check packaged sources are committed
-        run: |
-          unexpected=$(git diff --name-only -- www | grep -vx 'www/model/quality/efficientnet-b3.onnx' || true)
-          if [ -n "$unexpected" ]; then
-            echo "Generated web sources are out of sync:"
-            printf '%s\n' "$unexpected"
-            exit 1
-          fi
+        run: node scripts/verify-web-sync.js
 
   android:
     needs: software
