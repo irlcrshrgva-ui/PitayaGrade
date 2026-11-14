@@ -22,7 +22,9 @@ MODEL_SOURCES = (
         "predictions": "training_results/final-quality-2026-10-27/MobileNetV2_onnx_predictions.csv",
         "confusion": "training_results/final-quality-2026-10-27/held-out-summary/confusion-mobilenetv2-quality.csv",
         "runtime": "training_results/final-quality-2026-10-27/runtime-verification/mobilenetv2-quality.json",
-        "model": "www/model/quality/mobilenetv2.onnx",
+        # Keep the October evaluation tied to its frozen model. The deployed
+        # web asset may advance independently as newer candidates are promoted.
+        "model": "training_results/final-quality-2026-10-27/frozen-models/MobileNetV2.onnx",
     },
     {
         "id": "resnet50-quality",

@@ -18,7 +18,7 @@ test('marketing site contains home, about, contact and direct APK navigation', (
     assert.match(html, /href="contact\.html"/);
   }
   const home = fs.readFileSync(path.join(root, 'site', 'index.html'), 'utf8');
-  const apkUrl = 'https://github.com/irlcrshrgva-ui/PitayaGrade/releases/download/v1.0.3/PitayaGrade-1.0.3.apk';
+  const apkUrl = JSON.parse(fs.readFileSync(path.join(root, 'downloads/release.json'), 'utf8')).downloadUrl;
   assert.equal(home.split(`href="${apkUrl}"`).length - 1, 2);
   assert.match(home, /Signed Android release/i);
   assert.doesNotMatch(home, /PitayaGrade-debug\.apk/);
@@ -44,15 +44,17 @@ test('Pages workflow publishes an APK with immutable verification metadata', () 
   const workflow = fs.readFileSync(path.join(root, '.github', 'workflows', 'pages.yml'), 'utf8');
   assert.match(workflow, /sha256sum/);
   assert.match(workflow, /release\.json/);
-  assert.match(workflow, /PitayaGrade-debug\.apk\.sha256/);
-  assert.match(workflow, /signedRelease:false/);
+  assert.match(workflow, /types: \[published\]/);
+  assert.match(workflow, /create_testing_pack\.py/);
+  assert.doesNotMatch(workflow, /PitayaGrade-debug\.apk/);
 });
 
 test('application links testers to the PitayaGrade website', () => {
   const app = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
   assert.match(app, /https:\/\/irlcrshrgva-ui\.github\.io\/PitayaGrade\/site\//);
   assert.match(app, /site\/testing\.html/);
-  assert.ok(app.includes('https://github.com/irlcrshrgva-ui/PitayaGrade/releases/download/v1.0.3/PitayaGrade-1.0.3.apk'));
+  const site = fs.readFileSync(path.join(root, 'site/index.html'), 'utf8');
+  assert.ok(site.includes(JSON.parse(fs.readFileSync(path.join(root, 'downloads/release.json'), 'utf8')).downloadUrl));
 });
 
 test('testing page links only to blank APK-bound worksheet downloads', () => {
@@ -75,24 +77,31 @@ test('packaged marketing site matches editable source', () => {
 });
 
 test('the checksum button copies the signed APK digest', async () => {
-  const checksum = fs.readFileSync(path.join(root, 'site/index.html'), 'utf8')
-    .match(/<code data-build-sha>([a-f0-9]{64})<\/code>/)[1];
+  const release = JSON.parse(fs.readFileSync(path.join(root, 'downloads/release.json'), 'utf8'));
+  const checksum = release.sha256;
   let onClick;
   let copied;
   const button = {addEventListener: (_name, handler) => { onClick = handler; }};
+  const apkLink = {href: ''};
   const context = {
-    window: {setTimeout() {}},
+    URL,
+    window: {location: {href: 'https://irlcrshrgva-ui.github.io/PitayaGrade/site/'}, setTimeout() {}},
     document: {
       querySelector: selector => {
+        if (selector === '[data-apk-link]') return apkLink;
         if (selector === '[data-copy-checksum]') return button;
-        if (selector === '[data-build-sha]') return {textContent: checksum};
+        if (selector === '[data-checksum-card]') return {hidden: true};
+        if (selector === '[data-build-sha]') return {textContent: ''};
         return null;
       },
-      querySelectorAll: () => []
+      querySelectorAll: selector => selector === '[data-apk-link]' ? [apkLink] : []
     },
+    fetch: async () => ({ok: true, json: async () => release}),
     navigator: {clipboard: {writeText: async value => { copied = value; }}}
   };
   vm.runInNewContext(fs.readFileSync(path.join(root, 'site/site.js'), 'utf8'), context);
+  await new Promise(resolve => setImmediate(resolve));
   await onClick();
-  assert.equal(copied, '5cc6b976b77b83715d870bedd00c4e0a7c11cbd584e1aef7ea2977f6a1182f84');
+  assert.equal(copied, checksum);
+  assert.match(apkLink.href, /PitayaGrade-1\.0\.4\.apk/);
 });

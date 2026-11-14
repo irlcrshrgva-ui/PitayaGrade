@@ -163,7 +163,7 @@
 
       <!-- Harvest Gauge -->
       <div class="chart-container">
-        <div class="chart-title">Harvest Readiness</div>
+        <div class="chart-title chart-heading-row"><span>Harvest Readiness</span><label class="chart-range-control">Timeline<select class="chart-range-select" data-chart-range="dashboard-readiness"><option value="7d">7 days</option><option value="1m">1 month</option><option value="3m">3 months</option><option value="5m">5 months</option><option value="1y">1 year</option></select></label></div>
         <div class="gauge-container">
           <svg class="gauge-svg" viewBox="0 0 160 100" id="harvestGauge">
             <path d="M 20 90 A 60 60 0 0 1 140 90" fill="none" stroke="rgba(148,163,184,0.1)" stroke-width="12" stroke-linecap="round"/>
@@ -179,20 +179,21 @@
           <div class="gauge-value" id="gaugeValue">--%</div>
           <div class="gauge-label">Average image-based maturity of saved scans</div>
         </div>
+        <div class="chart-legend readiness-legend">
+          <div class="legend-item"><span class="legend-dot" style="background:#EF4444"></span>0–40% · Early</div>
+          <div class="legend-item"><span class="legend-dot" style="background:#F59E0B"></span>41–69% · Approaching</div>
+          <div class="legend-item"><span class="legend-dot" style="background:#22C55E"></span>70–100% · Ready indicator</div>
+        </div>
+        <p class="chart-footnote">Image-based maturity estimate only; it does not predict a guaranteed harvest date.</p>
       </div>
 
       <!-- Grade Distribution -->
       <div class="chart-container">
-        <div class="chart-title">Grade Distribution</div>
+        <div class="chart-title chart-heading-row"><span>Grade Distribution</span><label class="chart-range-control">Timeline<select class="chart-range-select" data-chart-range="dashboard-grades"><option value="7d">7 days</option><option value="1m">1 month</option><option value="3m">3 months</option><option value="5m">5 months</option><option value="1y">1 year</option></select></label></div>
         <div class="chart-canvas-wrap">
           <canvas id="gradeChart" width="400" height="260"></canvas>
         </div>
-        <div class="chart-legend" id="gradeLegend">
-          <div class="legend-item"><span class="legend-dot" style="background:var(--grade-a)"></span> Grade A</div>
-          <div class="legend-item"><span class="legend-dot" style="background:var(--grade-b)"></span> Grade B</div>
-          <div class="legend-item"><span class="legend-dot" style="background:var(--grade-c)"></span> Grade C</div>
-          <div class="legend-item"><span class="legend-dot" style="background:var(--grade-reject)"></span> Reject</div>
-        </div>
+        <div class="chart-legend" id="gradeLegend"></div>
       </div>
 
       <!-- Recent Scans -->
@@ -428,6 +429,24 @@
           <div class="stat-value" id="analyticsPremium">0%</div>
           <div class="stat-label">Premium Rate</div>
         </div>
+        <div class="stat-card warning">
+          <div class="stat-icon">🩺</div>
+          <div class="stat-value" id="analyticsDiseaseRate">0%</div>
+          <div class="stat-label">Symptom-Flagged Scans</div>
+        </div>
+      </div>
+      <p class="analytics-range-note">Summary cards use all saved scans. Each chart uses its own selected timeline.</p>
+
+      <div class="chart-container">
+        <div class="chart-title chart-heading-row"><span>Harvest Readiness</span><label class="chart-range-control">Timeline<select class="chart-range-select" data-chart-range="analytics-readiness"><option value="7d">7 days</option><option value="1m">1 month</option><option value="3m">3 months</option><option value="5m">5 months</option><option value="1y">1 year</option></select></label></div>
+        <div class="readiness-analytics-summary"><div class="readiness-analytics-value" id="analyticsReadiness">--%</div><div class="readiness-analytics-coverage" id="analyticsReadinessCoverage">No maturity estimates in this period</div></div>
+        <div id="readinessAnalyticsBreakdown" class="readiness-breakdown"></div>
+        <div class="chart-legend readiness-legend">
+          <div class="legend-item"><span class="legend-dot" style="background:#EF4444"></span>0–40% · Early</div>
+          <div class="legend-item"><span class="legend-dot" style="background:#F59E0B"></span>41–69% · Approaching</div>
+          <div class="legend-item"><span class="legend-dot" style="background:#22C55E"></span>70–100% · Ready indicator</div>
+        </div>
+        <p class="chart-footnote">Image-based maturity estimate only; this is not a guaranteed harvest date.</p>
       </div>
 
       <!-- AI Insights Card -->
@@ -451,23 +470,25 @@
 
       <!-- Disease Trend -->
       <div class="chart-container">
-        <div class="chart-title">Disease Trend (Last 7 Days)</div>
+        <div class="chart-title chart-heading-row"><span>Disease Trend</span><label class="chart-range-control">Timeline<select class="chart-range-select" data-chart-range="analytics-disease"><option value="7d">7 days</option><option value="1m">1 month</option><option value="3m">3 months</option><option value="5m">5 months</option><option value="1y">1 year</option></select></label></div>
         <div class="chart-canvas-wrap">
           <canvas id="diseaseTrendChart" width="400" height="220"></canvas>
         </div>
+        <div class="chart-legend" id="diseaseTrendLegend"></div>
       </div>
 
       <!-- Grade Over Time -->
       <div class="chart-container">
-        <div class="chart-title">Quality Over Time</div>
+        <div class="chart-title chart-heading-row"><span>Quality Over Time</span><label class="chart-range-control">Timeline<select class="chart-range-select" data-chart-range="analytics-quality"><option value="7d">7 days</option><option value="1m">1 month</option><option value="3m">3 months</option><option value="5m">5 months</option><option value="1y">1 year</option></select></label></div>
         <div class="chart-canvas-wrap">
           <canvas id="qualityTrendChart" width="400" height="220"></canvas>
         </div>
+        <div class="chart-legend" id="qualityTrendLegend"></div>
       </div>
 
       <!-- Disease Breakdown -->
       <div class="chart-container">
-        <div class="chart-title">Disease Breakdown</div>
+        <div class="chart-title chart-heading-row"><span>Disease Breakdown</span><label class="chart-range-control">Timeline<select class="chart-range-select" data-chart-range="analytics-breakdown"><option value="7d">7 days</option><option value="1m">1 month</option><option value="3m">3 months</option><option value="5m">5 months</option><option value="1y">1 year</option></select></label></div>
         <div class="chart-canvas-wrap">
           <canvas id="diseaseBreakdownChart" width="400" height="260"></canvas>
         </div>
@@ -568,7 +589,7 @@
             </div>
             <div>
               <label class="settings-item-label" for="modelSelect">Analysis Model</label>
-              <div class="settings-item-sub" id="selectedModelName">YOLOv8-Nano (bundled ONNX)</div>
+                <div class="settings-item-sub" id="selectedModelName">EfficientNet-B3 v7 (bundled ONNX)</div>
             </div>
           </div>
           <select id="modelSelect" class="btn btn-sm btn-secondary" aria-label="Analysis model"></select>
@@ -592,10 +613,10 @@
             </div>
             <div>
               <div class="settings-item-label">Detection Threshold</div>
-              <div class="settings-item-sub" id="thresholdValue">50%</div>
+                <div class="settings-item-sub" id="thresholdValue">25%</div>
             </div>
           </div>
-          <input id="detectionThreshold" type="range" min="10" max="95" step="1" value="50" aria-label="Detection confidence threshold" style="width:110px;accent-color:var(--color-primary)">
+            <input id="detectionThreshold" type="range" min="10" max="95" step="1" value="25" aria-label="Detection confidence threshold" style="width:110px;accent-color:var(--color-primary)">
         </div>
       </div>
 
@@ -680,7 +701,6 @@
         <div style="font-size:12px;color:var(--text-tertiary)">Pre-Harvest Quality Grading &amp; Disease Detection</div>
         <div style="font-size:11px;color:var(--text-tertiary);margin-top:4px">YOLOv8 ONNX with image-based disease estimates</div>
         <a href="https://irlcrshrgva-ui.github.io/PitayaGrade/site/" target="_blank" rel="noopener" style="display:inline-flex;margin-top:12px;color:var(--color-primary);font-size:12px;font-weight:700">Open PitayaGrade website &#8599;</a>
-        <a href="https://github.com/irlcrshrgva-ui/PitayaGrade/releases/download/v1.0.3/PitayaGrade-1.0.3.apk" target="_blank" rel="noopener" style="display:inline-flex;margin-left:12px;margin-top:12px;color:var(--color-primary);font-size:12px;font-weight:700">Download signed Android APK (1.0.3) &#8599;</a>
         <a href="https://irlcrshrgva-ui.github.io/PitayaGrade/site/testing.html" target="_blank" rel="noopener" style="display:inline-flex;margin-left:12px;margin-top:12px;color:var(--color-success);font-size:12px;font-weight:700">Open testing kit &#8599;</a>
         <div style="font-size:11px;color:var(--text-tertiary);margin-top:8px">Capstone Project 2025-2026</div>
       </div>
