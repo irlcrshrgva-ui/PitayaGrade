@@ -16,17 +16,18 @@ test('the bundled ONNX backend contains the matching JS, MJS and WASM files', ()
 
 test('the model catalog exposes only checksum-verified bundled assets', () => {
   const models = verifyModelRegistry(www);
-  assert.equal(models.length, 6);
+  assert.equal(models.length, 8);
   assert.deepEqual(models.filter(model => model.available).map(model => model.id), [
-    'dragonfruit-presence-gate', 'yolov8-nano', 'mobilenetv2-quality', 'resnet50-quality', 'efficientnet-b3-quality'
+    'dragonfruit-presence-gate', 'yolov8-nano', 'yolov8-fruit-locator-negative-aware',
+    'yolov8-nano-crop-grader', 'mobilenetv2-quality', 'resnet50-quality', 'efficientnet-b3-quality'
   ]);
   const gate = models.find(model => model.id === 'dragonfruit-presence-gate');
   assert.equal(gate.outputContract, 'binary-presence-logits-v1');
   assert.equal(gate.evaluation.specificity, 0.996);
   assert.equal(models.find(model => model.id === 'efficientnet-b3-quality').inputSize, 224);
   assert.equal(models.find(model => model.id === 'efficientnet-b3-quality').preprocessing, 'rgb-imagenet-normalized');
-  assert.equal(models.find(model => model.id === 'resnet50-quality').evaluation.sampleCount, 226);
-  assert.equal(models.find(model => model.id === 'resnet50-quality').evaluation.accuracy, 0.7433628319);
+  assert.equal(models.find(model => model.id === 'resnet50-quality').evaluation.sampleCount, 147);
+  assert.equal(models.find(model => model.id === 'resnet50-quality').evaluation.accuracy, 0.7687074829931972);
   assert.equal(models.find(model => model.id === 'yolov8n-disease-seg').available, false);
 });
 

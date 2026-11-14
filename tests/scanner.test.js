@@ -32,7 +32,7 @@ test('root and packaged pages use bundled assets', () => {
 });
 test('only verified bundled models can be selected', () => {
   const instance = model('http://localhost/www/js/model-inference.js');
-  assert.equal(instance.getModelCatalog().length, 6);
+  assert.equal(instance.getModelCatalog().length, 8);
   assert.deepEqual(Array.from(instance.getAvailableModels(), item => item.id), [
     'yolov8-nano', 'mobilenetv2-quality', 'resnet50-quality', 'efficientnet-b3-quality'
   ]);
@@ -110,16 +110,17 @@ test('postprocessing reads output dimensions and respects rejection threshold', 
   output.data[12] = 0.9;
   output.data[0] = output.data[2] = 320;
   output.data[4] = output.data[6] = 320;
-  assert.equal(instance._postprocess(output).grade, 'Grade C');
-  assert.equal(instance._postprocess(output).box.x, 0.25);
-  assert.equal(instance._postprocess(output).box.bottom, 0.75);
+  const detector = instance.MODELS.find(item => item.id === 'yolov8-nano');
+  assert.equal(instance._postprocess(output, detector).grade, 'Grade C');
+  assert.equal(instance._postprocess(output, detector).box.x, 0.25);
+  assert.equal(instance._postprocess(output, detector).box.bottom, 0.75);
   instance.CONF_THRESHOLD = 0.95;
-  assert.equal(instance._postprocess(output).isDragonFruit, false);
+  assert.equal(instance._postprocess(output, detector).isDragonFruit, false);
   instance.CONF_THRESHOLD = 0.30;
-  assert.equal(instance._postprocess(output, instance.getSelectedModel(), 0.95).isDragonFruit, false);
+  assert.equal(instance._postprocess(output, detector, 0.95).isDragonFruit, false);
   output.data[12] = 0.1;
-  assert.equal(instance._postprocess(output).isDragonFruit, false);
-  assert.throws(() => instance._postprocess({ dims: [1, 6, 2] }), /Unsupported/);
+  assert.equal(instance._postprocess(output, detector).isDragonFruit, false);
+  assert.throws(() => instance._postprocess({ dims: [1, 6, 2] }, detector), /Unsupported/);
 });
 test('quality classifier postprocessing accepts probabilities and logits', () => {
   const instance = model('http://localhost/www/js/model-inference.js');
@@ -154,12 +155,12 @@ test('quality classifiers require the detector gate before assigning a grade', a
   class Tensor { dispose() {} }
   const instance = model('http://localhost/www/js/model-inference.js', { Tensor });
   const tensor = (dims, values) => ({ dims, data:new Float32Array(values), dispose() {} });
-  const detectorOutput = tensor([1, 8, 1], [320, 320, 320, 320, 0.2, 0.1, 0.1, 0.1]);
+  const detectorOutput = tensor([1, 5, 1], [208, 208, 208, 208, 0.1]);
   let classifierCalls = 0;
   instance.sessions = {
     'dragonfruit-presence-gate': { inputNames:['images'], outputNames:['probabilities'], run:async () =>
       ({probabilities:tensor([1, 2], [-5, 5])}) },
-    'yolov8-nano': { inputNames:['images'], outputNames:['output0'], run:async () => ({output0:detectorOutput}) },
+    'yolov8-fruit-locator-negative-aware': { inputNames:['images'], outputNames:['output'], run:async () => ({output:detectorOutput}) },
     'resnet50-quality': { inputNames:['images'], outputNames:['output'], run:async () => {
       classifierCalls++;
       return {output:tensor([1, 4], [0.7, 0.1, 0.1, 0.1])};
@@ -177,26 +178,26 @@ test('quality classifiers grade only the detector-localized fruit crop', async (
   class Tensor { dispose() {} }
   const instance = model('http://localhost/www/js/model-inference.js', { Tensor });
   const tensor = (dims, values) => ({ dims, data:new Float32Array(values), dispose() {} });
-  const detectorOutput = tensor([1, 8, 1], [320, 320, 320, 320, 0.1, 0.9, 0.1, 0.1]);
+  const detectorOutput = tensor([1, 5, 1], [208, 208, 208, 208, 0.9]);
   let classifiedImage = null;
   instance.sessions = {
     'dragonfruit-presence-gate': { inputNames:['images'], outputNames:['probabilities'], run:async () =>
       ({probabilities:tensor([1, 2], [-5, 5])}) },
-    'yolov8-nano': { inputNames:['images'], outputNames:['output0'], run:async () => ({output0:detectorOutput}) },
-    'efficientnet-b3-quality': { inputNames:['images'], outputNames:['output'], run:async () =>
+    'yolov8-fruit-locator-negative-aware': { inputNames:['images'], outputNames:['output'], run:async () => ({output:detectorOutput}) },
+    'mobilenetv2-quality': { inputNames:['images'], outputNames:['output'], run:async () =>
       ({output:tensor([1, 4], [0.1, 0.4, 0.3, 0.2])}) }
   };
   instance.load = async id => Boolean(instance.sessions[id]);
   instance._preprocess = image => { classifiedImage = image; return new Tensor(); };
   const crop = { width:160, height:160 };
   instance._cropToBox = () => crop;
-  const result = await instance.infer({}, 'efficientnet-b3-quality', 0.5);
+  const result = await instance.infer({}, 'mobilenetv2-quality', 0.5);
   assert.equal(result.isDragonFruit, true);
   assert.equal(result.grade, 'Grade B');
   assert.ok(Math.abs(result.detectionConfidence - 0.9) < 1e-6);
   assert.equal(result.box.x, 0.25);
   assert.equal(classifiedImage, crop);
-  assert.match(result.modelName, /Presence Gate \+ YOLOv8-Nano \+ EfficientNet-B3/);
+  assert.match(result.modelName, /Presence Gate \+ YOLOv8 Fruit Locator .*MobileNetV2/);
 });
 test('presence gate blocks every grading model before detector or classifier inference', async () => {
   class Tensor { dispose() {} }
@@ -232,7 +233,7 @@ test('a fruit-like scene cannot approve a non-fruit object crop for any grading 
     if (selected.role === 'quality-classifier') { classifierCalls++; return {}; }
     return { isDragonFruit:true, grade:'Grade A', confidence:.98, box:{x:.2,y:.2,right:.8,bottom:.8} };
   };
-  for (const id of ['yolov8-nano', 'mobilenetv2-quality', 'resnet50-quality', 'efficientnet-b3-quality']) {
+  for (const id of ['yolov8-nano', 'mobilenetv2-quality', 'resnet50-quality']) {
     const result = await instance.infer(full, id, .1);
     assert.equal(result.isDragonFruit, false);
     assert.equal(result.grade, null);
@@ -293,10 +294,12 @@ test('integrated grader verifies both the scene and object while preserving the 
   assert.equal(result.grade, 'Grade B');
   assert.equal(result.confidence, .81);
   assert.equal(result.cropPresenceConfidence, .97);
-  assert.equal(checks.length, 3);
+  assert.equal(checks.length, 4);
   assert.equal(checks[0].input, full);
-  assert.equal(checks[1].threshold, .5);
+  assert.equal(checks[1].threshold, instance.OBJECT_GATE_THRESHOLD);
   assert.equal(checks[2].input, crop);
+  assert.equal(checks[3].input, crop);
+  assert.equal(checks[3].role, 'quality-classifier');
 });
 test('preprocessing follows zero-to-one and ImageNet registry contracts', () => {
   class Tensor {

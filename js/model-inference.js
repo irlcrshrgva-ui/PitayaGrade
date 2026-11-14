@@ -1,6 +1,3 @@
-Warning: truncated output (original token count: 7184)
-Total output lines: 627
-
 /* =============================================
    PitayaGrade - YOLOv8 ONNX Inference Module
    Runs the trained YOLOv8n model via onnxruntime-web.
@@ -286,7 +283,103 @@ const ModelInference = {
     let bestConfidence = 0;
     for (let i = 0; i < count; i++) {
       const confidence = data[4 * count + i];
-      if (Number.isFinite(confidence) && c…1184 tokens truncated…let x = left; x < right; x++) {
+      if (Number.isFinite(confidence) && confidence > bestConfidence) {
+        bestConfidence = confidence;
+        bestIndex = i;
+      }
+    }
+    if (bestIndex < 0 || bestConfidence < confidenceThreshold) {
+      return { isDragonFruit: false, grade: null, confidence: bestConfidence };
+    }
+    const centerX = data[bestIndex];
+    const centerY = data[count + bestIndex];
+    const boxWidth = data[2 * count + bestIndex];
+    const boxHeight = data[3 * count + bestIndex];
+    return {
+      isDragonFruit: true,
+      grade: null,
+      confidence: bestConfidence,
+      box: {
+        x: Math.max(0, (centerX - boxWidth / 2) / model.inputSize),
+        y: Math.max(0, (centerY - boxHeight / 2) / model.inputSize),
+        right: Math.min(1, (centerX + boxWidth / 2) / model.inputSize),
+        bottom: Math.min(1, (centerY + boxHeight / 2) / model.inputSize)
+      }
+    };
+  },
+
+  _postprocessDisease(outputs, model, fruitBox = null) {
+    const tensors = Object.values(outputs || {});
+    const prototypes = tensors.find(tensor => tensor.dims?.length === 4 && tensor.dims[0] === 1);
+    const detection = tensors.find(tensor => tensor.dims?.length === 3 && tensor.dims[0] === 1);
+    if (!prototypes || !detection) throw new Error('Unsupported disease segmentation outputs');
+    const maskChannels = prototypes.dims[1];
+    const maskHeight = prototypes.dims[2];
+    const maskWidth = prototypes.dims[3];
+    const expectedChannels = 4 + model.classes.length + maskChannels;
+    if (detection.dims[1] !== expectedChannels || detection.dims[2] < 1 ||
+        prototypes.data.length !== maskChannels * maskHeight * maskWidth) {
+      throw new Error('Unsupported disease segmentation output shape');
+    }
+
+    const count = detection.dims[2];
+    const candidates = [];
+    for (let index = 0; index < count; index++) {
+      let bestClass = -1;
+      let bestConfidence = 0;
+      for (let classIndex = 0; classIndex < model.classes.length; classIndex++) {
+        const confidence = detection.data[(4 + classIndex) * count + index];
+        if (confidence > bestConfidence) {
+          bestConfidence = confidence;
+          bestClass = classIndex;
+        }
+      }
+      if (bestClass < 0 || bestConfidence < this.CONF_THRESHOLD) continue;
+      const centerX = detection.data[index];
+      const centerY = detection.data[count + index];
+      const width = detection.data[2 * count + index];
+      const height = detection.data[3 * count + index];
+      const box = {
+        x: Math.max(0, (centerX - width / 2) / model.inputSize),
+        y: Math.max(0, (centerY - height / 2) / model.inputSize),
+        right: Math.min(1, (centerX + width / 2) / model.inputSize),
+        bottom: Math.min(1, (centerY + height / 2) / model.inputSize)
+      };
+      if (box.right > box.x && box.bottom > box.y) {
+        candidates.push({ index, classIndex:bestClass, confidence:bestConfidence, box });
+      }
+    }
+    if (!candidates.length) return null;
+    candidates.sort((left, right) => right.confidence - left.confidence);
+    const dominantClass = candidates[0].classIndex;
+    const retained = [];
+    for (const candidate of candidates.filter(item => item.classIndex === dominantClass)) {
+      const overlaps = retained.some(other => {
+        const left = Math.max(candidate.box.x, other.box.x);
+        const top = Math.max(candidate.box.y, other.box.y);
+        const right = Math.min(candidate.box.right, other.box.right);
+        const bottom = Math.min(candidate.box.bottom, other.box.bottom);
+        const intersection = Math.max(0, right - left) * Math.max(0, bottom - top);
+        const candidateArea = (candidate.box.right - candidate.box.x) * (candidate.box.bottom - candidate.box.y);
+        const otherArea = (other.box.right - other.box.x) * (other.box.bottom - other.box.y);
+        return intersection / (candidateArea + otherArea - intersection) > 0.45;
+      });
+      if (!overlaps) retained.push(candidate);
+    }
+
+    const className = model.classes[dominantClass];
+    const bestConfidence = retained[0].confidence;
+    let areaPercent = null;
+    if (fruitBox &&
+        [fruitBox.x, fruitBox.y, fruitBox.right, fruitBox.bottom].every(Number.isFinite)) {
+      const left = Math.max(0, Math.min(maskWidth, Math.floor(fruitBox.x * maskWidth)));
+      const top = Math.max(0, Math.min(maskHeight, Math.floor(fruitBox.y * maskHeight)));
+      const right = Math.max(left + 1, Math.min(maskWidth, Math.ceil(fruitBox.right * maskWidth)));
+      const bottom = Math.max(top + 1, Math.min(maskHeight, Math.ceil(fruitBox.bottom * maskHeight)));
+      let positive = 0;
+      let total = 0;
+      for (let y = top; y < bottom; y++) {
+        for (let x = left; x < right; x++) {
           const normalizedX = (x + 0.5) / maskWidth;
           const normalizedY = (y + 0.5) / maskHeight;
           let covered = false;
@@ -531,4 +624,3 @@ const ModelInference = {
     }
   },
 };
-

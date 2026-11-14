@@ -97,4 +97,3 @@ const PitayaModelRegistry = Object.freeze([
       'Pest Damage', 'Sunburn', 'Fungal Spots'])
   })
 ]);
-
