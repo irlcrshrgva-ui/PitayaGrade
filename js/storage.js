@@ -1,6 +1,71 @@
 /* Shared access to the existing pg_scans and pg_settings local data. */
 const ScanStore = {
   warnings: new Set(),
+  nativeDatabase: null,
+  scanCache: null,
+  rejectionCache: null,
+  persistQueue: Promise.resolve(),
+
+  async init() {
+    const capacitor = window.Capacitor;
+    if (!capacitor?.isNativePlatform?.() || capacitor.getPlatform?.() !== 'android') return;
+    if (capacitor.isPluginAvailable && !capacitor.isPluginAvailable('PitayaGradeDatabase')) {
+      this.warnings.add('native_database');
+      return;
+    }
+    const plugin = capacitor.Plugins?.PitayaGradeDatabase || capacitor.registerPlugin?.('PitayaGradeDatabase');
+    if (!plugin) return;
+    this.nativeDatabase = plugin;
+    try {
+      const result = await plugin.loadAll();
+      if (result?.initialized) {
+        this.scanCache = this._validatedScans(result.scans || []);
+        this.rejectionCache = this._validatedRejections(result.rejections || []);
+        return;
+      }
+
+      // First launch after upgrade: move legacy browser records into SQLite.
+      const oldScans = this._validatedScans(this.read('pg_scans', [], Array.isArray, true));
+      const oldRejections = this._validatedRejections(this.read('pg_rejections', [], Array.isArray, true));
+      if (this.warnings.has('pg_scans') || this.warnings.has('pg_rejections')) {
+        throw new Error('Legacy scan data needs review before it can be migrated.');
+      }
+      await plugin.saveAll({ scans: oldScans, rejections: oldRejections });
+      this.scanCache = oldScans;
+      this.rejectionCache = oldRejections;
+    } catch (error) {
+      this.nativeDatabase = null;
+      this.warnings.add('native_database');
+      console.error('[ScanStore] SQLite initialization failed; retaining legacy records.', error);
+    }
+  },
+
+  _validatedScans(scans) {
+    const valid = Array.isArray(scans) ? scans.filter(scan => this.validScan(scan)) : [];
+    if (Array.isArray(scans) && valid.length !== scans.length) this.warnings.add('pg_scans');
+    return valid.sort((a, b) => Date.parse(b.timestamp) - Date.parse(a.timestamp));
+  },
+
+  _validatedRejections(records) {
+    const valid = Array.isArray(records) ? records.filter(record => this.validRejection(record)) : [];
+    if (Array.isArray(records) && valid.length !== records.length) this.warnings.add('pg_rejections');
+    return valid.sort((a, b) => Date.parse(b.timestamp) - Date.parse(a.timestamp));
+  },
+
+  _persistNative() {
+    if (!this.nativeDatabase) return;
+    const scans = this.scanCache || [];
+    const rejections = this.rejectionCache || [];
+    this.persistQueue = this.persistQueue
+      .catch(() => {})
+      .then(() => this.nativeDatabase?.saveAll({ scans, rejections }))
+      .catch(error => {
+        this.warnings.add('native_database');
+        console.error('[ScanStore] SQLite save failed.', error);
+        throw error;
+      });
+    return this.persistQueue;
+  },
 
   read(key, fallback, validate = () => true, strict = false) {
     try {
@@ -54,6 +119,7 @@ const ScanStore = {
   },
 
   getRejections(strict = false) {
+    if (this.rejectionCache) return this.rejectionCache.map(record => JSON.parse(JSON.stringify(record)));
     const records = this.read('pg_rejections', [], Array.isArray, strict);
     const valid = records.filter(record => this.validRejection(record));
     if (valid.length !== records.length) {
@@ -63,7 +129,7 @@ const ScanStore = {
     return valid.sort((a, b) => Date.parse(b.timestamp) - Date.parse(a.timestamp));
   },
 
-  saveRejectionFeedback(result, values, thumbnail = '') {
+  async saveRejectionFeedback(result, values, thumbnail = '') {
     const record = {
       id: result?.id,
       timestamp: result?.timestamp,
@@ -83,12 +149,21 @@ const ScanStore = {
     const records = this.getRejections(true).filter(item => String(item.id) !== String(record.id));
     records.unshift(record);
     if (records.length > 200) records.length = 200;
-    localStorage.setItem('pg_rejections', JSON.stringify(records));
+    const previous = this.rejectionCache;
+    if (this.rejectionCache) this.rejectionCache = records;
+    else localStorage.setItem('pg_rejections', JSON.stringify(records));
+    try {
+      await this._persistNative();
+    } catch (error) {
+      this.rejectionCache = previous;
+      throw error;
+    }
     window.dispatchEvent(new Event('pg:rejections-changed'));
     return record;
   },
 
   getScans(strict = false) {
+    if (this.scanCache) return this.scanCache.map(scan => JSON.parse(JSON.stringify(scan)));
     const scans = this.read('pg_scans', [], Array.isArray, strict);
     const valid = scans.filter(scan => this.validScan(scan));
     if (valid.length !== scans.length) {
@@ -98,22 +173,30 @@ const ScanStore = {
     return valid.sort((a, b) => Date.parse(b.timestamp) - Date.parse(a.timestamp));
   },
 
-  saveScans(scans) {
+  async saveScans(scans) {
     if (!Array.isArray(scans) || !scans.every(scan => this.validScan(scan))) throw new Error('Invalid scan record');
-    localStorage.setItem('pg_scans', JSON.stringify(scans));
+    const previous = this.scanCache;
+    if (this.scanCache) this.scanCache = this._validatedScans(scans);
+    else localStorage.setItem('pg_scans', JSON.stringify(scans));
+    try {
+      await this._persistNative();
+    } catch (error) {
+      this.scanCache = previous;
+      throw error;
+    }
     this.changed();
   },
 
-  updateNotes(id, notes) {
+  async updateNotes(id, notes) {
     if (notes.length > 2000) throw new Error('Notes must contain at most 2,000 characters.');
     const scans = this.getScans(true);
     const scan = scans.find(item => String(item.id) === String(id));
     if (!scan) throw new Error('This record no longer exists.');
     scan.notes = notes;
-    this.saveScans(scans);
+    await this.saveScans(scans);
   },
 
-  updateReview(id, values) {
+  async updateReview(id, values) {
     const scans = this.getScans(true);
     const scan = scans.find(item => String(item.id) === String(id));
     if (!scan) throw new Error('This record no longer exists.');
@@ -132,13 +215,27 @@ const ScanStore = {
       throw new Error('Complete the validation fields using the available options. Reviewer is required.');
     }
     scan.review = review;
-    this.saveScans(scans);
+    await this.saveScans(scans);
     return review;
   },
 
-  clear() {
-    localStorage.removeItem('pg_scans');
-    localStorage.removeItem('pg_rejections');
+  async clear() {
+    if (this.nativeDatabase) {
+      const previousScans = this.scanCache;
+      const previousRejections = this.rejectionCache;
+      this.scanCache = [];
+      this.rejectionCache = [];
+      try {
+        await this._persistNative();
+      } catch (error) {
+        this.scanCache = previousScans;
+        this.rejectionCache = previousRejections;
+        throw error;
+      }
+    } else {
+      localStorage.removeItem('pg_scans');
+      localStorage.removeItem('pg_rejections');
+    }
     this.warnings.delete('pg_scans');
     this.warnings.delete('pg_rejections');
     this.changed();

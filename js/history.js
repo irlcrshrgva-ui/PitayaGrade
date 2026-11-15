@@ -369,18 +369,18 @@ const HistoryManager = {
 
     modal.classList.add('open');
     backdrop.classList.add('open');
-    document.getElementById('saveNotesBtn').addEventListener('click', () => {
+    document.getElementById('saveNotesBtn').addEventListener('click', async () => {
       try {
-        ScanStore.updateNotes(id, document.getElementById('scanNotes').value);
+        await ScanStore.updateNotes(id, document.getElementById('scanNotes').value);
         ToastManager.show('Notes saved', 'success');
       } catch (error) { ToastManager.show(error.message, 'error'); }
     });
     document.getElementById('reviewObject').addEventListener('change', event => {
       if (event.target.value === 'not-dragon-fruit') document.getElementById('reviewGrade').value = 'Not Applicable';
     });
-    document.getElementById('saveReviewBtn').addEventListener('click', () => {
+    document.getElementById('saveReviewBtn').addEventListener('click', async () => {
       try {
-        ScanStore.updateReview(id, {
+        await ScanStore.updateReview(id, {
           verdict: document.getElementById('reviewVerdict').value,
           actualObject: document.getElementById('reviewObject').value,
           actualGrade: document.getElementById('reviewGrade').value,
@@ -393,14 +393,14 @@ const HistoryManager = {
     });
   },
 
-  deleteScan(id) {
+  async deleteScan(id) {
     const message = 'Delete this scan record?';
     if (!(typeof LanguageManager !== 'undefined' ? LanguageManager.confirm(message) : confirm(message))) return;
     
     try {
     let scans = ScanStore.getScans(true);
     scans = scans.filter(s => String(s.id) !== String(id));
-    ScanStore.saveScans(scans);
+    await ScanStore.saveScans(scans);
     } catch (error) {
       ToastManager.show('Unable to delete record. ' + error.message, 'error');
       return;

@@ -314,7 +314,8 @@ const Scanner = {
 
     const imgEl = document.getElementById('scannerPreview');
     const modelPromise = (typeof ModelInference !== 'undefined' && imgEl)
-      ? ModelInference.infer(imgEl, PitayaApp.settings.selectedModel, PitayaApp.settings.threshold / 100)
+      ? ModelInference.infer(imgEl, PitayaApp.settings.selectedModel, PitayaApp.settings.threshold / 100,
+        { allowPhotoRecovery: true })
       : Promise.resolve(null);
 
     for (let i = 0; i < 4; i++) markStep(i, 'done');
@@ -344,7 +345,7 @@ const Scanner = {
 
     this._displayResult(result);
     try {
-      this._saveScan(result);
+      await this._saveScan(result);
     } catch (err) {
       console.error('Unable to save scan:', err);
       ToastManager.show('Assessment displayed but could not be saved. Check available storage.', 'error');
@@ -1296,7 +1297,7 @@ const Scanner = {
     area.scrollIntoView({ behavior: 'smooth', block: 'start' });
   },
 
-  saveRejectionFeedback() {
+  async saveRejectionFeedback() {
     const result = this.currentResult;
     if (!result || result.isDragonFruit !== false) return;
     try {
@@ -1308,7 +1309,7 @@ const Scanner = {
         canvas.getContext('2d').drawImage(preview, 0, 0, 80, 80);
         thumbnail = canvas.toDataURL('image/jpeg', 0.6);
       }
-      ScanStore.saveRejectionFeedback(result, {
+      await ScanStore.saveRejectionFeedback(result, {
         actualObject: document.getElementById('rejectionActualObject')?.value,
         skinColor: document.getElementById('rejectionSkinColor')?.value,
         reviewer: document.getElementById('rejectionReviewer')?.value,
@@ -1324,7 +1325,7 @@ const Scanner = {
     }
   },
 
-  _saveScan(result) {
+  async _saveScan(result) {
     if (result.isDragonFruit === false) return; // Skip saving unrecognized scans to keep history clean
     const scans = ScanStore.getScans(true);
     // Store thumbnail instead of full image to save space
@@ -1351,7 +1352,7 @@ const Scanner = {
     scans.unshift(scanRecord);
     // Keep max 500 scans
     if (scans.length > 500) scans.length = 500;
-    ScanStore.saveScans(scans);
+    await ScanStore.saveScans(scans);
     if (typeof NotificationManager !== 'undefined') NotificationManager.generateScanAlert(scanRecord);
 
     // Update dashboard

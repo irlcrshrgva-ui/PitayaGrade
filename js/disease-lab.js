@@ -28,15 +28,18 @@
       const bytes = await model.arrayBuffer();
       const digest = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', bytes)))
         .map(x => x.toString(16).padStart(2, '0')).join('');
+      const views = report.preprocessing?.views;
+      const supportedInput = views === undefined ? report.preprocessing?.size === 160
+        : report.preprocessing?.size === 224 && JSON.stringify(views) === '["original","flip","center"]';
       if (digest !== report.modelSha256 || report.task !== task || report.status !== 'experimental-evaluated-image-classifier' ||
-          !Array.isArray(report.classes) || report.classes.length < 2 || report.preprocessing.size !== 160 ||
+          !Array.isArray(report.classes) || report.classes.length < 2 || !supportedInput ||
           !Number.isFinite(report.test?.metrics?.accuracy)) throw new Error('Model or evaluation contract mismatch.');
       ort.env.wasm.wasmPaths = './';
       session = await ort.InferenceSession.create(bytes, {executionProviders: ['wasm']});
       el('photo').disabled = false;
       el('task').disabled = false;
-      el('model-status').textContent = 'Experimental MobileNetV3-small classifier · local inference';
-      el('evaluation').textContent = `Held-out test: ${report.test.count} images; accuracy ${(100 * report.test.metrics.accuracy).toFixed(1)}%; macro F1 ${report.test.metrics['macro avg']['f1-score'].toFixed(3)}. Checkpoint selected by validation loss. These results apply to the source dataset split.`;
+      el('model-status').textContent = `Experimental ${report.architecture || 'MobileNetV3-small classifier'} · local inference`;
+      el('evaluation').textContent = `Held-out test: ${report.test.count} images; accuracy ${(100 * report.test.metrics.accuracy).toFixed(1)}%; macro F1 ${report.test.metrics['macro avg']['f1-score'].toFixed(3)}. These results apply to the source dataset split.`;
       status('Model verified. Choose a photo.');
     } catch (error) { status(error.message); el('load').disabled = false; el('task').disabled = false; }
   };
@@ -65,12 +68,29 @@
       const size = report.preprocessing.size;
       const canvas = document.createElement('canvas'); canvas.width = canvas.height = size;
       const context = canvas.getContext('2d');
-      context.drawImage(el('preview'), 0, 0, size, size);
-      const rgba = context.getImageData(0, 0, size, size).data;
-      const data = new Float32Array(3 * size * size);
-      for (let c = 0; c < 3; c++) for (let i = 0; i < size * size; i++)
-        data[c * size * size + i] = (rgba[i * 4 + c] / 255 - report.preprocessing.mean[c]) / report.preprocessing.std[c];
-      const input = new ort.Tensor('float32', data, [1, 3, size, size]);
+      const image = el('preview');
+      const views = report.preprocessing.views || ['original'];
+      const area = size * size;
+      const data = new Float32Array(views.length * 3 * area);
+      views.forEach((view, index) => {
+        if (view === 'flip') {
+          context.save();
+          context.translate(size, 0);
+          context.scale(-1, 1);
+        }
+        if (view === 'center') {
+          const x = Math.floor(image.naturalWidth * .08);
+          const y = Math.floor(image.naturalHeight * .08);
+          context.drawImage(image, x, y, image.naturalWidth - 2 * x, image.naturalHeight - 2 * y, 0, 0, size, size);
+        } else {
+          context.drawImage(image, 0, 0, size, size);
+        }
+        if (view === 'flip') context.restore();
+        const rgba = context.getImageData(0, 0, size, size).data;
+        for (let c = 0; c < 3; c++) for (let i = 0; i < area; i++)
+          data[(index * 3 + c) * area + i] = (rgba[i * 4 + c] / 255 - report.preprocessing.mean[c]) / report.preprocessing.std[c];
+      });
+      const input = new ort.Tensor('float32', data, [views.length, 3, size, size]);
       let output, logits;
       try {
         output = await session.run({images: input});

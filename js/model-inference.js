@@ -498,15 +498,44 @@ const ModelInference = {
     // verification below before the full-frame grade is accepted.
     const fullFrameGrader = model.inferenceMode === 'full-frame-when-fruit-verified';
     if (fullFrameGrader && presence.isDragonFruit) {
+      // Full-frame classification returns a grade, but no object box. The
+      // scanner requires a localized fruit ROI before displaying a grade.
+      // Run the fruit locator and keep its confidence separate from the
+      // classifier's grade confidence.
+      const locator = this.MODELS.find(candidate =>
+        candidate.id === 'yolov8-fruit-locator-negative-aware' && candidate.available);
+      if (!locator) return null;
+      const detectionThreshold = Math.max(threshold, this.OBJECT_GATE_THRESHOLD);
+      const detection = await this._inferSingle(imgElement, locator, detectionThreshold);
+      if (!detection) return null;
+      if (!detection.isDragonFruit || !detection.box) {
+        return {
+          ...detection,
+          isDragonFruit: false,
+          grade: null,
+          modelId: model.id,
+          requestedModelId: model.id,
+          detectionConfidence: detection.confidence,
+          detectionThreshold,
+          presenceConfidence: presence.confidence,
+          modelName: `${presenceGate.name} + ${locator.name} (grading skipped)`,
+          gradingSkipped: true,
+          rejectionReason: 'The fruit presence check passed, but the locator could not place a reliable fruit box. Center the whole fruit and try again.',
+          requiresVisualGate: true
+        };
+      }
       const classification = await this._inferSingle(imgElement, model, 0);
       if (!classification) return null;
       return {
         ...classification,
+        box: detection.box,
         modelId: model.id,
         requestedModelId: model.id,
+        detectionConfidence: detection.confidence,
+        detectionThreshold,
         presenceConfidence: presence.confidence,
         classificationInput: 'full-frame',
-        modelName: `${presenceGate.name} + ${model.name} (full-frame grade)`,
+        modelName: `${presenceGate.name} + ${locator.name} + ${model.name} (full-frame grade)`,
         requiresVisualGate: true
       };
     }

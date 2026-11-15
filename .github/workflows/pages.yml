@@ -1,6 +1,8 @@
 name: Publish web preview
 
 on:
+  push:
+    branches: [main]
   release:
     types: [published]
   workflow_dispatch:
@@ -32,13 +34,14 @@ jobs:
         run: rm -f www/model/quality/efficientnet-b3.onnx.part-01 www/model/quality/efficientnet-b3.onnx.part-02
       - name: Build testing worksheets for the published signed APK
         run: |
-          APK_PATH="$RUNNER_TEMP/PitayaGrade-1.0.4.apk"
+          VERSION=$(node -e 'process.stdout.write(require("./downloads/release.json").version)')
+          APK_PATH="$RUNNER_TEMP/PitayaGrade-${VERSION}.apk"
           DOWNLOAD_URL=$(node -e 'process.stdout.write(require("./downloads/release.json").downloadUrl)')
           EXPECTED_SHA=$(node -e 'process.stdout.write(require("./downloads/release.json").sha256)')
           curl --fail --location --retry 3 "$DOWNLOAD_URL" --output "$APK_PATH"
           ACTUAL_SHA=$(sha256sum "$APK_PATH" | cut -d' ' -f1)
           test "$ACTUAL_SHA" = "$EXPECTED_SHA"
-          python3 scripts/create_testing_pack.py --output-dir www/testing-pack --apk "$APK_PATH" --app-version 1.0.4
+          python3 scripts/create_testing_pack.py --output-dir www/testing-pack --apk "$APK_PATH" --app-version "$VERSION"
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
