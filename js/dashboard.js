@@ -4,6 +4,9 @@
    ============================================= */
 
 const DashboardManager = {
+  rangeChoices: Object.freeze({ '7d': 7, '1m': 1, '3m': 3, '5m': 5, '1y': 12 }),
+  rangeLabels: Object.freeze({ '7d': '7 days', '1m': '1 month', '3m': '3 months', '5m': '5 months', '1y': '1 year' }),
+
   _text(value) {
     return typeof LanguageManager === 'undefined' ? value : LanguageManager.translate(value);
   },
@@ -13,14 +16,81 @@ const DashboardManager = {
   },
 
   init() {
+    this._bindChartRanges();
     this.refresh();
+  },
+
+  _bindChartRanges() {
+    if (this.chartRangesBound) return;
+    this.chartRangesBound = true;
+    document.querySelectorAll('[data-chart-range]').forEach(select => {
+      select.addEventListener('change', () => {
+        if (select.dataset.chartRange === 'dashboard-readiness') this._updateGauge(this._rangeScans(this._getScans(), 'dashboard-readiness'));
+        if (select.dataset.chartRange === 'dashboard-grades') this._renderGradeChart(this._rangeScans(this._getScans(), 'dashboard-grades'));
+        if (select.dataset.chartRange.startsWith('analytics-') && PitayaApp.currentView === 'analytics') this.renderAnalytics();
+      });
+    });
+  },
+
+  _rangeValue(key) {
+    const select = document.querySelector(`[data-chart-range="${key}"]`);
+    return this.rangeChoices[select?.value] ? select.value : '7d';
+  },
+
+  _rangeScans(scans, key) {
+    const range = this._rangeValue(key);
+    const now = new Date();
+    const { start, end } = this._rangeBounds(range, now);
+    const startTime = start.getTime();
+    const endTime = end.getTime();
+    return scans.filter(scan => {
+      const time = new Date(scan.timestamp).getTime();
+      return Number.isFinite(time) && time >= startTime && time < endTime;
+    });
+  },
+
+  _rangeBounds(range, now = new Date()) {
+    const end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+    let start;
+    if (range === '7d') start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6);
+    else if (range === '1y') start = new Date(now.getFullYear(), now.getMonth() - 11, 1);
+    else start = new Date(now.getFullYear(), now.getMonth() - this.rangeChoices[range], now.getDate());
+    return { start, end };
+  },
+
+  _buildTimeBuckets(range) {
+    const now = new Date();
+    const { start: rangeStart, end: rangeEnd } = this._rangeBounds(range, now);
+    const buckets = [];
+    if (range === '1y') {
+      for (let i = 0; i < 12; i++) {
+        const start = new Date(rangeStart.getFullYear(), rangeStart.getMonth() + i, 1);
+        const end = new Date(rangeStart.getFullYear(), rangeStart.getMonth() + i + 1, 1);
+        buckets.push({ start, end, label: start.toLocaleDateString(this._locale(), { month: 'short', year: '2-digit' }) });
+      }
+      return buckets;
+    }
+    const daily = range === '7d' || range === '1m';
+    const step = daily ? 1 : 7;
+    for (let cursor = new Date(rangeStart); cursor < rangeEnd;) {
+      const bucketStart = new Date(cursor);
+      const next = new Date(bucketStart);
+      next.setDate(next.getDate() + step);
+      const end = next < rangeEnd ? next : rangeEnd;
+      let label;
+      if (range === '7d') label = bucketStart.toLocaleDateString(this._locale(), { weekday: 'short' });
+      else label = bucketStart.toLocaleDateString(this._locale(), { day: 'numeric', month: 'short' });
+      buckets.push({ start: bucketStart, end, label });
+      cursor = end;
+    }
+    return buckets;
   },
 
   refresh() {
     const scans = this._getScans();
     this._updateStats(scans);
-    this._updateGauge(scans);
-    this._renderGradeChart(scans);
+    this._updateGauge(this._rangeScans(scans, 'dashboard-readiness'));
+    this._renderGradeChart(this._rangeScans(scans, 'dashboard-grades'));
     this._renderRecentScans(scans);
   },
 
@@ -39,8 +109,10 @@ const DashboardManager = {
     if (scans.length === 0) {
       const total = document.getElementById('analyticsTotal');
       const premium = document.getElementById('analyticsPremium');
+      const diseaseRate = document.getElementById('analyticsDiseaseRate');
       if (total) this._animateCounter(total, 0);
       if (premium) premium.textContent = '0%';
+      if (diseaseRate) diseaseRate.textContent = '0%';
       if (avgEl) avgEl.textContent = '--';
       if (diseaseEl) diseaseEl.textContent = '0%';
       if (healthyEl) healthyEl.textContent = '0%';
@@ -66,11 +138,13 @@ const DashboardManager = {
     // Analytics page stats
     const analyticsTotal = document.getElementById('analyticsTotal');
     const analyticsPremium = document.getElementById('analyticsPremium');
+    const analyticsDiseaseRate = document.getElementById('analyticsDiseaseRate');
     if (analyticsTotal) this._animateCounter(analyticsTotal, scans.length);
     if (analyticsPremium) {
       const premiumCount = scans.filter(s => s.grade.label === 'Grade A').length;
       analyticsPremium.textContent = ((premiumCount / scans.length) * 100).toFixed(0) + '%';
     }
+    if (analyticsDiseaseRate) analyticsDiseaseRate.textContent = ((diseased / scans.length) * 100).toFixed(1) + '%';
   },
 
   _animateCounter(element, target) {
@@ -96,10 +170,13 @@ const DashboardManager = {
     const arc = document.getElementById('gaugeArc');
     const valueEl = document.getElementById('gaugeValue');
     if (!arc || !valueEl) return;
+    const gaugeLabel = document.querySelector('#harvestGauge')?.closest('.chart-container')?.querySelector('.gauge-label');
+    const rangeLabel = this.rangeLabels[this._rangeValue('dashboard-readiness')];
 
     if (scans.length === 0) {
       arc.style.strokeDashoffset = 188.5;
       valueEl.textContent = '--%';
+      if (gaugeLabel) gaugeLabel.textContent = `No scans in selected period · ${rangeLabel}`;
       return;
     }
 
@@ -107,6 +184,7 @@ const DashboardManager = {
     if (!measured.length) {
       arc.style.strokeDashoffset = 188.5;
       valueEl.textContent = '--%';
+      if (gaugeLabel) gaugeLabel.textContent = `No maturity estimates · 0/${scans.length} scans · ${rangeLabel}`;
       return;
     }
     const avgReadiness = measured.reduce((sum, s) => sum + Math.max(0, Math.min(100, s.maturity.value)), 0) / measured.length;
@@ -121,7 +199,8 @@ const DashboardManager = {
     }, 200);
 
     valueEl.textContent = readiness + '%';
-    valueEl.style.color = readiness > 70 ? 'var(--color-success)' : readiness > 40 ? 'var(--color-warning)' : 'var(--color-error)';
+    valueEl.style.color = readiness >= 70 ? 'var(--color-success)' : readiness > 40 ? 'var(--color-warning)' : 'var(--color-error)';
+    if (gaugeLabel) gaugeLabel.textContent = `Average image-based maturity · ${measured.length}/${scans.length} scans · ${rangeLabel} selected`;
   },
 
   _renderGradeChart(scans) {
@@ -164,6 +243,12 @@ const DashboardManager = {
     ];
 
     const total = data.reduce((s, d) => s + d.value, 0);
+    const gradeLegend = document.getElementById('gradeLegend');
+    if (gradeLegend) gradeLegend.innerHTML = data.map(d => `
+      <div class="legend-item"><span class="legend-dot" style="background:${d.color}"></span>
+        Grade ${d.label}: ${d.value} (${total ? ((d.value / total) * 100).toFixed(1) : '0.0'}%)
+      </div>
+    `).join('');
     if (total === 0) return;
 
     // Draw donut chart
@@ -254,15 +339,47 @@ const DashboardManager = {
 
   // Analytics charts
   renderAnalytics() {
+    this._bindChartRanges();
     const scans = this._getScans();
     this._updateStats(scans);
-    this._renderDiseaseTrend(scans);
-    this._renderQualityTrend(scans);
-    this._renderDiseaseBreakdown(scans);
+    this._renderDiseaseTrend(this._rangeScans(scans, 'analytics-disease'), this._rangeValue('analytics-disease'));
+    this._renderQualityTrend(this._rangeScans(scans, 'analytics-quality'), this._rangeValue('analytics-quality'));
+    this._renderDiseaseBreakdown(this._rangeScans(scans, 'analytics-breakdown'));
+    this._renderReadinessAnalytics(this._rangeScans(scans, 'analytics-readiness'));
     this.generateAIInsights(scans);
   },
 
-  _renderDiseaseTrend(scans) {
+  _renderReadinessAnalytics(scans) {
+    const valueEl = document.getElementById('analyticsReadiness');
+    const coverageEl = document.getElementById('analyticsReadinessCoverage');
+    const breakdownEl = document.getElementById('readinessAnalyticsBreakdown');
+    if (!valueEl || !coverageEl || !breakdownEl) return;
+    const measured = scans.filter(scan => Number.isFinite(scan.maturity?.value))
+      .map(scan => Math.max(0, Math.min(100, scan.maturity.value)));
+    const rangeLabel = this.rangeLabels[this._rangeValue('analytics-readiness')];
+    if (!measured.length) {
+      valueEl.textContent = '--%';
+      coverageEl.textContent = `Maturity estimates: 0/${scans.length} scans · ${rangeLabel}`;
+      breakdownEl.innerHTML = '<div class="empty-state-text">No maturity estimates in this period.</div>';
+      return;
+    }
+    const average = measured.reduce((sum, score) => sum + score, 0) / measured.length;
+    valueEl.textContent = `${Math.round(average)}%`;
+    coverageEl.textContent = `Average image-based maturity · estimates on ${measured.length}/${scans.length} scans · ${rangeLabel}`;
+    const bands = [
+      { label: 'Early (0–40%)', color: '#EF4444', count: measured.filter(value => value <= 40).length },
+      { label: 'Approaching (41–69%)', color: '#F59E0B', count: measured.filter(value => value > 40 && value < 70).length },
+      { label: 'Ready indicator (70–100%)', color: '#22C55E', count: measured.filter(value => value >= 70).length }
+    ];
+    breakdownEl.innerHTML = bands.map(band => `
+      <div class="readiness-breakdown-row">
+        <span>${band.label}</span>
+        <span class="readiness-breakdown-track"><span class="readiness-breakdown-fill" style="display:block;width:${(band.count / measured.length) * 100}%;background:${band.color}"></span></span>
+        <span>${band.count} (${((band.count / measured.length) * 100).toFixed(1)}%)</span>
+      </div>`).join('');
+  },
+
+  _renderDiseaseTrend(scans, range = '7d') {
     const canvas = document.getElementById('diseaseTrendChart');
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -279,27 +396,30 @@ const DashboardManager = {
     const h = 220;
     ctx.clearRect(0, 0, w, h);
 
-    // Group by day (last 7 days)
-    const days = [];
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date();
-      d.setDate(d.getDate() - i);
-      days.push({
-        date: ScanStore.localDate(d),
-        label: d.toLocaleDateString(this._locale(), { weekday: 'short' }),
+    const days = this._buildTimeBuckets(range).map(bucket => ({
+        start: bucket.start,
+        end: bucket.end,
+        label: bucket.label,
         healthy: 0,
         diseased: 0
-      });
-    }
+      }));
 
     scans.forEach(s => {
-      const scanDate = ScanStore.localDate(new Date(s.timestamp));
-      const day = days.find(d => d.date === scanDate);
+      const time = new Date(s.timestamp).getTime();
+      const day = days.find(d => time >= d.start.getTime() && time < d.end.getTime());
       if (day) {
         if (s.disease.isHealthy) day.healthy++;
         else day.diseased++;
       }
     });
+
+    const healthyTotal = days.reduce((sum, day) => sum + day.healthy, 0);
+    const flaggedTotal = days.reduce((sum, day) => sum + day.diseased, 0);
+    const trendLegend = document.getElementById('diseaseTrendLegend');
+    if (trendLegend) trendLegend.innerHTML = `
+      <div class="legend-item"><span class="legend-dot" style="background:#22C55E"></span>Healthy scans: ${healthyTotal}</div>
+      <div class="legend-item"><span class="legend-dot" style="background:#EF4444"></span>Symptom-flagged scans: ${flaggedTotal}</div>
+      <div class="legend-item">Total in period: ${healthyTotal + flaggedTotal}</div>`;
 
     const maxVal = Math.max(...days.map(d => d.healthy + d.diseased), 1);
     const padding = { top: 20, right: 20, bottom: 40, left: 35 };
@@ -322,6 +442,7 @@ const DashboardManager = {
     const barGap = barW * 0.3;
     const singleBarW = (barW - barGap) / 2;
 
+    const labelStride = days.length > 12 ? Math.ceil(days.length / 8) : 1;
     days.forEach((d, i) => {
       const x = padding.left + i * barW + barGap / 2;
 
@@ -343,7 +464,9 @@ const DashboardManager = {
       ctx.fillStyle = '#64748B';
       ctx.font = '11px Inter, sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText(d.label, x + (barW - barGap) / 2, h - padding.bottom + 20);
+      if (i % labelStride === 0 || i === days.length - 1) {
+        ctx.fillText(d.label, x + (barW - barGap) / 2, h - padding.bottom + 20);
+      }
     });
 
     // Y-axis labels
@@ -357,7 +480,7 @@ const DashboardManager = {
     }
   },
 
-  _renderQualityTrend(scans) {
+  _renderQualityTrend(scans, range = '7d') {
     const canvas = document.getElementById('qualityTrendChart');
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -374,24 +497,25 @@ const DashboardManager = {
     const h = 220;
     ctx.clearRect(0, 0, w, h);
 
-    // Group by day
-    const days = [];
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date();
-      d.setDate(d.getDate() - i);
-      days.push({
-        date: ScanStore.localDate(d),
-        label: d.toLocaleDateString(this._locale(), { weekday: 'short' }),
+    const days = this._buildTimeBuckets(range).map(bucket => ({
+        start: bucket.start,
+        end: bucket.end,
+        label: bucket.label,
         scores: []
-      });
-    }
+      }));
 
     const gradeMap = { 'Grade A': 4, 'Grade B': 3, 'Grade C': 2, 'Reject': 1 };
     scans.forEach(s => {
-      const scanDate = ScanStore.localDate(new Date(s.timestamp));
-      const day = days.find(d => d.date === scanDate);
+      const time = new Date(s.timestamp).getTime();
+      const day = days.find(d => time >= d.start.getTime() && time < d.end.getTime());
       if (day) day.scores.push(gradeMap[s.grade.label] || 2);
     });
+    const qualityCount = days.reduce((sum, day) => sum + day.scores.length, 0);
+    const qualitySum = days.reduce((sum, day) => sum + day.scores.reduce((a, b) => a + b, 0), 0);
+    const qualityLegend = document.getElementById('qualityTrendLegend');
+    if (qualityLegend) qualityLegend.innerHTML = qualityCount
+      ? `<span>Grade scale: A = 4 · B = 3 · C = 2 · Reject = 1</span><span>Period average: ${(qualitySum / qualityCount).toFixed(2)} · ${qualityCount} scans</span>`
+      : '<span>Grade scale: A = 4 · B = 3 · C = 2 · Reject = 1</span><span>No scans in this period</span>';
 
     const padding = { top: 20, right: 20, bottom: 40, left: 35 };
     const chartW = w - padding.left - padding.right;
@@ -456,7 +580,9 @@ const DashboardManager = {
     ctx.fillStyle = '#64748B';
     ctx.font = '11px Inter, sans-serif';
     ctx.textAlign = 'center';
-    points.forEach(p => {
+    const labelStride = points.length > 24 ? Math.ceil(points.length / 8) : 1;
+    points.forEach((p, index) => {
+      if (index % labelStride !== 0 && index !== points.length - 1) return;
       ctx.fillText(p.label, p.x, h - padding.bottom + 20);
     });
 
@@ -562,7 +688,7 @@ const DashboardManager = {
       legendEl.innerHTML = data.map(d => `
         <div class="legend-item">
           <span class="legend-dot" style="background:${d.color}"></span>
-          ${d.label}
+          ${ScanStore.escape(d.label)}: ${d.value} (${((d.value / total) * 100).toFixed(1)}%)
         </div>
       `).join('');
     }

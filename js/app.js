@@ -15,7 +15,8 @@ const PitayaApp = {
     selectedDiseaseModel: 'yolov8n-disease-seg'
   },
 
-  init() {
+  async init() {
+    await ScanStore.init();
     // Load settings
     const saved = ScanStore.read('pg_settings', {}, value => value && typeof value === 'object' && !Array.isArray(value));
     const savedTuningVersion = Number(saved.detectorTuningVersion);
@@ -263,10 +264,10 @@ const PitayaApp = {
       clearBtn.addEventListener('keydown', event => {
         if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); clearBtn.click(); }
       });
-      clearBtn.addEventListener('click', () => {
+      clearBtn.addEventListener('click', async () => {
         if (LanguageManager.confirm('Delete all scan records and rejection testing feedback? This cannot be undone.')) {
           try {
-            ScanStore.clear();
+            await ScanStore.clear();
             document.getElementById('detailModal').classList.remove('open');
             document.getElementById('modalBackdrop').classList.remove('open');
             ToastManager.show('All local testing records cleared', 'info');
@@ -418,7 +419,7 @@ const Tutorial = {
   steps: [
     {
       title: 'Welcome to PitayaGrade!',
-      icon: '&#127815;',
+      icon: '<svg class="tutorial-fruit-art" viewBox="0 0 48 48" role="img" aria-label="Dragon fruit" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="tutorialFruitSkin" x1="12" y1="12" x2="35" y2="43" gradientUnits="userSpaceOnUse"><stop stop-color="#ff6b9a"/><stop offset="1" stop-color="#e91e63"/></linearGradient></defs><g fill="#8bc34a" stroke="#b8e986" stroke-width=".7" stroke-linejoin="round"><path d="M20 17C16 11 16 6 18 3c4 3 7 8 8 14z"/><path d="M16 20C10 16 6 15 3 17c2 4 7 7 13 8z"/><path d="M15 29C9 28 5 30 3 33c4 3 8 3 13 1z"/><path d="M18 36c-4 4-5 8-3 11 4-2 7-6 9-11z"/><path d="M31 20c5-5 10-6 13-4-2 4-7 7-13 9z"/><path d="M33 29c6-1 10 1 12 4-4 3-8 3-13 1z"/><path d="M30 36c4 4 5 8 3 11-4-2-7-6-9-11z"/></g><path d="M24 13c8 0 13 7 13 16 0 10-6 17-13 17S11 39 11 29c0-9 5-16 13-16z" fill="url(#tutorialFruitSkin)" stroke="#ff9db8" stroke-width="1"/><g fill="#ffd2df" opacity=".8"><circle cx="19" cy="22" r=".8"/><circle cx="27" cy="20" r=".7"/><circle cx="31" cy="27" r=".8"/><circle cx="18" cy="31" r=".7"/><circle cx="25" cy="35" r=".8"/><circle cx="29" cy="40" r=".6"/></g></svg>',
       desc: 'Your AI-powered dragon fruit grading assistant. Let us show you around in just a few steps.',
       target: null,
       badge: 'Welcome',
